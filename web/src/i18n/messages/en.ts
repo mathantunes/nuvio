@@ -33,6 +33,15 @@ export const en = {
     welcomeWithEmail: "Welcome, {email}.",
     workspaceIntro:
       "This is your authenticated workspace. Next steps: wire your base currency, accounts, and first transactions.",
+    budgetsListTitle: "Budgets",
+    budgetsListSubtitle:
+      "Create one budget per year, then plan and track income, expenses, and savings against it.",
+    budgetsEmptyState:
+      "You don't have any budgets yet. Create one to get started.",
+    budgetsYearLabel: "Year",
+    budgetsCreateLabel: "Create budget",
+    budgetsCreateHelper:
+      "You can start with the current year and add past or future years later.",
     profileCardTitle: "Profile & base currency",
     profileBaseCurrencyLabel: "Base currency",
     profileBaseCurrencyUnset: "Base currency is not set yet.",

@@ -1,13 +1,15 @@
 import { redirect } from "next/navigation";
-import { createServerClientWithCookies } from "@/lib/supabase-server";
+import { createClient } from "@/lib/supabase-server";
 import { getMessages } from "@/i18n";
 import { db } from "@/db/client";
-import { profiles } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { budgets } from "@/db/schema";
+import { BudgetsForm } from "./budgets-form";
+import { desc, eq } from "drizzle-orm";
+import Link from "next/link";
 
 export default async function AppHomePage() {
   const messages = getMessages("en");
-  const supabase = await createServerClientWithCookies();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -16,86 +18,69 @@ export default async function AppHomePage() {
     redirect("/login");
   }
 
-  const profile = await db.query.profiles.findFirst({
-    where: eq(profiles.id, user.id),
-  });
+  const userBudgets = await db
+    .select()
+    .from(budgets)
+    .where(eq(budgets.userId, user.id))
+    .orderBy(desc(budgets.year));
 
-  const hasProfile = !!profile;
+  const currentYear = new Date().getFullYear();
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-4 py-16 text-center dark:bg-black">
       <div className="w-full max-w-3xl space-y-6 rounded-2xl bg-white p-8 shadow-sm dark:bg-zinc-900">
-        <header className="space-y-2">
-          <p className="text-sm font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+        <header className="space-y-2 text-left">
+          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
             {messages.common.appName}
           </p>
           <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
-            {user.email
-              ? messages.app.welcomeWithEmail.replace("{email}", user.email)
-              : messages.app.welcome}
+            {messages.app.budgetsListTitle}
           </h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            {messages.app.workspaceIntro}
+            {messages.app.budgetsListSubtitle}
           </p>
         </header>
 
-        <section className="grid gap-4 text-left sm:grid-cols-[1.1fr_0.9fr]">
-          <div className="space-y-4">
-            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-left dark:border-zinc-700 dark:bg-zinc-950">
-              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                {messages.app.profileCardTitle}
-              </h2>
-              {!hasProfile ? (
-                <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
-                  {messages.app.profileBaseCurrencyUnset}
-                </p>
-              ) : (
-                <dl className="mt-3 space-y-2 text-xs text-zinc-600 dark:text-zinc-400">
-                  <div className="flex items-center justify-between gap-4">
-                    <dt className="font-medium text-zinc-700 dark:text-zinc-200">
-                      {messages.app.profileBaseCurrencyLabel}
-                    </dt>
-                    <dd className="font-mono uppercase text-zinc-900 dark:text-zinc-50">
-                      {profile.baseCurrency}
-                    </dd>
-                  </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <dt className="font-medium text-zinc-700 dark:text-zinc-200">
-                      {messages.app.profileLocaleLabel}
-                    </dt>
-                    <dd className="font-mono text-zinc-900 dark:text-zinc-50">
-                      {profile.locale}
-                    </dd>
-                  </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <dt className="font-medium text-zinc-700 dark:text-zinc-200">
-                      {messages.app.profileTimeZoneLabel}
-                    </dt>
-                    <dd className="font-mono text-zinc-900 dark:text-zinc-50">
-                      {profile.timeZone}
-                    </dd>
-                  </div>
-                </dl>
-              )}
-            </div>
+        <section className="space-y-4 text-left">
+          <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-950">
+            {userBudgets.length === 0 ? (
+              <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                {messages.app.budgetsEmptyState}
+              </p>
+            ) : (
+              <ul className="divide-y divide-zinc-200 text-sm dark:divide-zinc-800">
+                {userBudgets.map((budget) => (
+                  <li key={budget.id} className="py-2">
+                    <Link
+                      href={`/app/${budget.year}`}
+                      className="flex items-center justify-between gap-3 rounded-lg px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    >
+                      <span className="text-zinc-900 dark:text-zinc-50">
+                        {budget.year}
+                      </span>
+                      <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                        Open
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
-          <div className="space-y-4">
-            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-left dark:border-zinc-700 dark:bg-zinc-950">
-              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                {messages.app.gettingStartedTitle}
-              </h2>
-              <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
-                {messages.app.gettingStartedBody}
-              </p>
+          <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-950">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                  {messages.app.budgetsCreateLabel}
+                </h2>
+                <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                  {messages.app.budgetsCreateHelper}
+                </p>
+              </div>
             </div>
-            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-left dark:border-zinc-700 dark:bg-zinc-950">
-              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                {messages.app.fxSectionTitle}
-              </h2>
-              <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
-                {messages.app.fxSectionBody}
-              </p>
+            <div className="mt-3">
+              <BudgetsForm suggestedYear={currentYear} />
             </div>
           </div>
         </section>

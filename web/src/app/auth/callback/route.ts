@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { createServerClientWithCookies } from "@/lib/supabase-server";
+import { createClient } from "@/lib/supabase-server";
 
 export async function GET(request: Request) {
-  const supabase = await createServerClientWithCookies();
+  const supabase = await createClient();
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
 
