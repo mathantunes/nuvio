@@ -8,6 +8,13 @@
       "when": 1770215862156,
       "tag": "0000_peaceful_dark_beast",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1770218793601,
+      "tag": "0001_boring_nextwave",
+      "breakpoints": true
     }
   ]
 }

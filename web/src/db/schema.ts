@@ -1,5 +1,7 @@
 import {
   boolean,
+  integer,
+  numeric,
   pgTable,
   text,
   timestamp,
@@ -35,4 +37,166 @@ export const accounts = pgTable("accounts", {
     .notNull()
     .defaultNow(),
 });
+
+// ENUM-LIKE TYPES
+// Stored as text, but constrained by application logic for now.
+export const transactionTypeValues = ["income", "expense", "transfer"] as const;
+
+// CATEGORIES
+export const categories = pgTable("categories", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(),
+  name: text("name").notNull(),
+  // Optional type to distinguish income vs expense vs savings buckets.
+  kind: text("kind"), // e.g. 'income' | 'fixed_cost' | 'variable_cost' | 'savings'
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// BUDGETS & BUDGET LINES
+export const budgets = pgTable("budgets", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(),
+  // Budgets are always defined for a calendar year (e.g. 2026).
+  year: integer("year").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const budgetLines = pgTable("budget_lines", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  budgetId: uuid("budget_id").notNull(),
+  categoryId: uuid("category_id").notNull(),
+  // Month index within the budget year (1-12).
+  month: integer("month").notNull(),
+  // Planned amount in the user's base currency.
+  plannedAmount: numeric("planned_amount", { precision: 18, scale: 4 })
+    .notNull()
+    .default("0"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// FX RATES
+export const fxRates = pgTable("fx_rates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(),
+  baseCurrency: text("base_currency").notNull(), // e.g. 'USD'
+  quoteCurrency: text("quote_currency").notNull(), // e.g. 'BRL'
+  rate: numeric("rate", { precision: 18, scale: 8 }).notNull(),
+  asOf: timestamp("as_of", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// TRANSACTIONS
+export const transactions = pgTable("transactions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(),
+  accountId: uuid("account_id").notNull(),
+  categoryId: uuid("category_id"),
+  transactionType: text("transaction_type").notNull().default("expense"),
+  // Amount and currency as stored on the account.
+  amount: numeric("amount", { precision: 18, scale: 4 }).notNull(),
+  currencyCode: text("currency_code").notNull(),
+  // Optional link to a budget line this transaction belongs to.
+  budgetLineId: uuid("budget_line_id"),
+  occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// TRANSFERS (explicit cross-currency or intra-currency money moves)
+export const transfers = pgTable("transfers", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(),
+  // Source side
+  sourceAccountId: uuid("source_account_id").notNull(),
+  sourceAmount: numeric("source_amount", { precision: 18, scale: 4 })
+    .notNull()
+    .default("0"),
+  sourceCurrencyCode: text("source_currency_code").notNull(),
+  // Target side
+  targetAccountId: uuid("target_account_id").notNull(),
+  targetAmount: numeric("target_amount", { precision: 18, scale: 4 })
+    .notNull()
+    .default("0"),
+  targetCurrencyCode: text("target_currency_code").notNull(),
+  // FX details
+  fxRate: numeric("fx_rate", { precision: 18, scale: 8 }),
+  // Fees and taxes in source currency.
+  feeAmount: numeric("fee_amount", { precision: 18, scale: 4 }).default("0"),
+  taxAmount: numeric("tax_amount", { precision: 18, scale: 4 }).default("0"),
+  // Optional derived effective rate stored for convenience.
+  effectiveFxRate: numeric("effective_fx_rate", {
+    precision: 18,
+    scale: 8,
+  }),
+  // Optional note or provider label, e.g. "Revolut", "Wise".
+  note: text("note"),
+  occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// SAVINGS SNAPSHOTS (starting savings at a point in time)
+export const savingsSnapshots = pgTable("savings_snapshots", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(),
+  // Point-in-time date for this snapshot, e.g. start of a year.
+  asOf: timestamp("as_of", { withTimezone: true }).notNull(),
+  // Optional human-friendly label like "Start of 2026".
+  label: text("label"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const savingsSnapshotLines = pgTable("savings_snapshot_lines", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  snapshotId: uuid("snapshot_id").notNull(),
+  // Optional link to a concrete account; can be null for abstract items like "pension".
+  accountId: uuid("account_id"),
+  // Short label like "bank account 1", "stocks bank 2", "pension".
+  label: text("label").notNull(),
+  // Amount as of the snapshot; typically in the user's base currency.
+  amount: numeric("amount", { precision: 18, scale: 4 }).notNull(),
+  // Optional raw currency code if you capture snapshot amounts in original currency.
+  currencyCode: text("currency_code"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+
 
