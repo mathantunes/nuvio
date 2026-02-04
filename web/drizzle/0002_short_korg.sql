@@ -1,0 +1,1 @@
+ALTER TABLE "budget_lines" ADD COLUMN "currency_code" text DEFAULT 'USD' NOT NULL;

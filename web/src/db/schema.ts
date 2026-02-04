@@ -77,10 +77,12 @@ export const budgetLines = pgTable("budget_lines", {
   categoryId: uuid("category_id").notNull(),
   // Month index within the budget year (1-12).
   month: integer("month").notNull(),
-  // Planned amount in the user's base currency.
+  // Planned amount (stored in the currency specified by currencyCode).
   plannedAmount: numeric("planned_amount", { precision: 18, scale: 4 })
     .notNull()
     .default("0"),
+  // Currency code for the planned amount (ISO 4217).
+  currencyCode: text("currency_code").notNull().default("USD"),
   notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
