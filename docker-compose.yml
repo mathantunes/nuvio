@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: globudget-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: globudget
+      POSTGRES_USER: globudget
+      POSTGRES_PASSWORD: globudget
+    ports:
+      - "5432:5432"
+    volumes:
+      - globudget-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U globudget -d globudget"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  globudget-postgres-data:
+    driver: local
+
