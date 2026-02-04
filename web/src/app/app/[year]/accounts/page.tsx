@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase-server";
 import { AccountsForm } from "../../accounts-form";
 import { and, desc, eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import { deleteAccount } from "../../accounts.actions";
 
 type Props = {
   params: Promise<{ year: string }>;
@@ -57,7 +58,7 @@ export default async function BudgetAccountsPage({ params }: Props) {
             {userAccounts.map((account) => (
               <li
                 key={account.id}
-                className="flex items-center justify-between gap-3 py-2"
+                className="grid grid-cols-3 justify-between gap-3 py-2"
               >
                 <div className="space-y-0.5">
                   <p className="font-medium text-zinc-900 dark:text-zinc-50">
@@ -72,6 +73,20 @@ export default async function BudgetAccountsPage({ params }: Props) {
                 <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-zinc-700 dark:text-zinc-200">
                   {account.currencyCode}
                 </span>
+                <div>
+                  <form action={async () => {
+                    "use server";
+                    await deleteAccount(account.id);
+                  }}
+                  >
+                    <button
+                      type="submit"
+                      className="text-xs leading-5 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+                    >
+                      Delete
+                    </button>
+                  </form>
+                </div>
               </li>
             ))}
           </ul>

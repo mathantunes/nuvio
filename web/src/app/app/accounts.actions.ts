@@ -6,6 +6,7 @@ import { z } from "zod";
 import { db } from "@/db/client";
 import { accounts } from "@/db/schema";
 import { createClient } from "@/lib/supabase-server";
+import { eq } from "drizzle-orm";
 
 const createAccountSchema = z.object({
   name: z.string().min(1).max(120),
@@ -56,3 +57,21 @@ export async function createAccount(formData: FormData) {
   return { success: true };
 }
 
+
+export async function deleteAccount(accountId: string) {
+  "use server";
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You must be signed in to delete an account." };
+  }
+
+  await db.delete(accounts).where(eq(accounts.id, accountId));
+
+  revalidatePath("/app");
+
+  return { success: true };
+}
