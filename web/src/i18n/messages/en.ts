@@ -33,6 +33,13 @@ export const en = {
     welcomeWithEmail: "Welcome, {email}.",
     workspaceIntro:
       "This is your authenticated workspace. Next steps: wire your base currency, accounts, and first transactions.",
+    profileCardTitle: "Profile & base currency",
+    profileBaseCurrencyLabel: "Base currency",
+    profileBaseCurrencyUnset: "Base currency is not set yet.",
+    profileLocaleLabel: "Locale",
+    profileTimeZoneLabel: "Time zone",
+    profileLoading: "Loading your profile…",
+    profileError: "We couldn't load your profile. Please try again.",
     gettingStartedTitle: "Getting started",
     gettingStartedBody:
       "Soon you'll be able to define your base currency, create accounts in multiple currencies, and set up your first budget.",
