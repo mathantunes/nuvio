@@ -346,11 +346,11 @@ export function TrackingTabs({
                         {actual > 0 && percentage !== null ? (
                           <div className="inline-flex items-center justify-end gap-1 text-sm leading-5 font-semibold">
                             {isOver ? (
-                              <span className="text-red-600 dark:text-red-400">
+                              <span className={`${activeTab === "income" ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
                                 ↑
                               </span>
                             ) : isUnder ? (
-                              <span className="text-emerald-600 dark:text-emerald-400">
+                              <span className={`${activeTab === "income" ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>
                                 ↓
                               </span>
                             ) : (
@@ -361,9 +361,9 @@ export function TrackingTabs({
                             <span
                               className={
                                 isOver
-                                  ? "text-red-600 dark:text-red-400"
+                                  ? `${activeTab === "income" ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`
                                   : isUnder
-                                    ? "text-emerald-600 dark:text-emerald-400"
+                                    ? `${activeTab === "income" ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`
                                     : "text-zinc-700 dark:text-zinc-300"
                               }
                             >
