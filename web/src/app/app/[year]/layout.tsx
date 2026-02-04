@@ -40,7 +40,7 @@ export default async function BudgetYearLayout({ children, params }: Props) {
 
   return (
     <main className="flex min-h-screen bg-zinc-50 text-left dark:bg-black">
-      <aside className="hidden w-56 flex-shrink-0 border-r border-zinc-200 bg-white px-4 py-6 text-sm dark:border-zinc-800 dark:bg-zinc-950 sm:block">
+      <aside className="hidden w-48 border-r border-zinc-200 bg-white px-4 py-6 text-sm dark:border-zinc-800 dark:bg-zinc-950 sm:block">
         <div className="mb-6 space-y-1">
           <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
             {messages.common.appName}

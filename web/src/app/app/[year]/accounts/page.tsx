@@ -70,7 +70,7 @@ export default async function BudgetAccountsPage({ params }: Props) {
                     </p>
                   ) : null}
                 </div>
-                <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-zinc-700 dark:text-zinc-200">
+                <span className="text-[11px] uppercase tracking-[0.15em] text-zinc-700 dark:text-zinc-200">
                   {account.currencyCode}
                 </span>
                 <div>
