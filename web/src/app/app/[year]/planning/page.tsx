@@ -89,7 +89,7 @@ export default async function BudgetPlanningPage({ params }: Props) {
         </p>
       </header>
 
-      <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
+      <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-left dark:border-zinc-700 dark:bg-zinc-950">
         <PlanningTabs
           budgetId={budget.id}
           year={year}

@@ -37,6 +37,7 @@ export async function deleteTransaction(transactionId: string, year: number) {
   await db.delete(transactions).where(eq(transactions.id, transactionId));
 
   revalidatePath(`/app/${year}/tracking`);
+  revalidatePath(`/app/${year}`);
 
   return { success: true };
 }
@@ -104,6 +105,7 @@ export async function createTransaction(formData: FormData) {
   });
 
   revalidatePath(`/app/${formData.get("year")}/tracking`);
+  revalidatePath(`/app/${formData.get("year")}`);
 
   return { success: true };
 }

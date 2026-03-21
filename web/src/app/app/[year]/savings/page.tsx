@@ -65,7 +65,7 @@ export default async function SavingsPage({ params }: Props) {
                 </p>
             </header>
 
-            <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
+            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-left dark:border-zinc-700 dark:bg-zinc-950">
                 <table className="w-full text-xs">
                     <thead>
                         <tr>
@@ -80,7 +80,7 @@ export default async function SavingsPage({ params }: Props) {
                             </th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-zinc-200 text-xs dark:divide-zinc-800">
                         {allSavingsLines.map((line) => (
                             <tr key={line.id}>
                                 <td className="text-left py-2 px-2 text-zinc-700 dark:text-zinc-300">{
@@ -98,7 +98,7 @@ export default async function SavingsPage({ params }: Props) {
                     data.set("snapshotId", savings.id);
                     await createSavingsSnapshotLine(data);
                 }}
-                    className="space-y-3 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
+                    className="mt-4 border-t border-dashed border-zinc-200 pt-3 dark:border-zinc-800 space-y-3">
                     <div className="space-y-1">
                         <label className="block text-xs font-medium text-zinc-900 dark:text-zinc-50">
                             Label

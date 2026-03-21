@@ -1,3 +1,5 @@
+"use server";
+
 import { db } from "@/db/client";
 import { savingsSnapshotLines } from "@/db/schema";
 import { createClient } from "@/lib/supabase-server";
@@ -22,6 +24,7 @@ export async function createSavingsSnapshotLine(formData: FormData) {
     });
 
     revalidatePath(`/app/${formData.get("year")}/savings`);
+    revalidatePath(`/app/${formData.get("year")}`);
 
     return { success: true };
 }
