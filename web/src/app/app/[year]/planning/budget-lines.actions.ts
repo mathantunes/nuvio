@@ -125,6 +125,7 @@ export async function createBudgetLine(formData: FormData) {
   );
 
   revalidatePath(`/app/${formData.get("year")}/planning`);
+  revalidatePath(`/app/${formData.get("year")}`);
 
   return { success: true };
 }
@@ -182,6 +183,7 @@ export async function updateBudgetLine(formData: FormData) {
     .where(eq(budgetLines.id, budgetLineId));
 
   revalidatePath(`/app/${formData.get("year")}/planning`);
+  revalidatePath(`/app/${formData.get("year")}`);
 
   return { success: true };
 }
