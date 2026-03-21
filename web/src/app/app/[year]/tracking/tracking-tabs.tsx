@@ -213,7 +213,7 @@ export function TrackingTabs({
       </div>
 
       {/* Month Header */}
-      <div className="rounded-lg bg-zinc-50 px-4 py-2 dark:bg-zinc-800">
+      <div className="rounded-lg border-zinc-200 bg-zinc-50 p-4 text-left dark:border-zinc-700 dark:bg-zinc-950">
         <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
           {fullMonthNames[selectedMonth - 1]} {year}
         </h2>
