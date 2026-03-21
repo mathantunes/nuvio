@@ -11,7 +11,7 @@ import {
   savingsSnapshots,
   savingsSnapshotLines,
 } from "@/db/schema";
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, eq, gte, lte, sum, desc } from "drizzle-orm";
 import { formatCurrency } from "./planning/currency-format";
 
 const MONTH_NAMES = [
@@ -24,21 +24,6 @@ type CurrencyTotals = Record<string, number>;
 
 function addTo(totals: CurrencyTotals, currency: string, amount: number) {
   totals[currency] = (totals[currency] ?? 0) + amount;
-}
-
-/** Returns sorted [currency, amount] pairs, highest amount first, non-zero only. */
-function sortedEntries(totals: CurrencyTotals): [string, number][] {
-  return Object.entries(totals)
-    .filter(([, amt]) => amt > 0)
-    .sort(([, a], [, b]) => b - a);
-}
-
-/** True if, for any shared currency, actual > planned. */
-function hasOverspend(planned: CurrencyTotals, actual: CurrencyTotals): boolean {
-  return Object.entries(actual).some(([currency, actualAmt]) => {
-    const plannedAmt = planned[currency] ?? 0;
-    return plannedAmt > 0 && actualAmt > plannedAmt;
-  });
 }
 
 type MonthData = {
@@ -70,7 +55,7 @@ export default async function BudgetDashboardPage({
   if (!budget) redirect("/app");
 
   // Budget lines with category kind
-  const allBudgetLinesRaw = await db
+  const allBudgetLines = await db
     .select({
       categoryId: budgetLines.categoryId,
       month: budgetLines.month,
@@ -84,18 +69,6 @@ export default async function BudgetDashboardPage({
       and(eq(budgetLines.categoryId, categories.id), eq(categories.userId, user.id))
     )
     .where(eq(budgetLines.budgetId, budget.id));
-
-  // De-duplicate: keep one row per (categoryId, month, currencyCode).
-  // The planning page uses Map.set with the same key, meaning the last row wins per cell.
-  // This ensures the dashboard matches what the user sees in the planning grid.
-  const allBudgetLines = Array.from(
-    allBudgetLinesRaw
-      .reduce((map, l) => {
-        map.set(`${l.categoryId}_${l.month}_${l.currencyCode}`, l);
-        return map;
-      }, new Map<string, (typeof allBudgetLinesRaw)[0]>())
-      .values()
-  );
 
   const allTransactions = await db
     .select({
@@ -115,30 +88,23 @@ export default async function BudgetDashboardPage({
         eq(budgetLines.budgetId, budget.id)
       ));
 
-      console.log(allTransactions.filter(tx => tx.month === 1 && tx.transactionType === "expense"));
   // Savings snapshot for Jan 1 of this year
   const yearStart = new Date(year, 0, 1);
   const yearEnd = new Date(year, 11, 31, 23, 59, 59);
 
-  const savingsSnapshot = await db.query.savingsSnapshots.findFirst({
-    where: and(
+  const allSavingsLines = await db
+    .select({
+      amount: sum(savingsSnapshotLines.amount),
+      currencyCode: accounts.currencyCode,
+    }).from(savingsSnapshotLines)
+    .innerJoin(savingsSnapshots, eq(savingsSnapshotLines.snapshotId, savingsSnapshots.id))
+    .leftJoin(accounts, eq(savingsSnapshotLines.accountId, accounts.id))
+    .where(and(
       eq(savingsSnapshots.userId, user.id),
       eq(savingsSnapshots.asOf, yearStart)
-    ),
-  });
-
-  const allSavingsLines = savingsSnapshot
-    ? await db
-        .select({
-          amount: savingsSnapshotLines.amount,
-          // Prefer the explicitly stored currencyCode; fall back to the linked account's currency.
-          currencyCode: savingsSnapshotLines.currencyCode,
-          accountCurrencyCode: accounts.currencyCode,
-        })
-        .from(savingsSnapshotLines)
-        .leftJoin(accounts, eq(savingsSnapshotLines.accountId, accounts.id))
-        .where(eq(savingsSnapshotLines.snapshotId, savingsSnapshot.id))
-    : [];
+    ))
+    .orderBy(desc(sum(savingsSnapshotLines.amount)))
+    .groupBy(accounts.currencyCode);
 
   // FX transfers for this year (count + unique currency pairs)
   const yearTransfers = await db
@@ -222,13 +188,6 @@ export default async function BudgetDashboardPage({
     if (net !== 0) yearNetActual[c] = net;
   }
 
-  // Savings per currency — use line's explicit currencyCode, then account's, skip if neither
-  const savingsByCurrency: CurrencyTotals = {};
-  for (const l of allSavingsLines) {
-    const c = l.currencyCode ?? l.accountCurrencyCode;
-    if (c) addTo(savingsByCurrency, c, Number(l.amount));
-  }
-
   // Transfer currency pairs
   const transferPairs = new Set(
     yearTransfers.map((t) => `${t.sourceCurrencyCode}→${t.targetCurrencyCode}`)
@@ -270,59 +229,51 @@ export default async function BudgetDashboardPage({
                   Month
                 </th>
                 <th className="py-2 px-2 text-right font-medium text-zinc-500 dark:text-zinc-400">
-                  Inc. Plan
+                  Income
                 </th>
                 <th className="py-2 px-2 text-right font-medium text-zinc-500 dark:text-zinc-400">
-                  Inc. Actual
-                </th>
-                <th className="py-2 px-2 text-right font-medium text-zinc-500 dark:text-zinc-400">
-                  Exp. Plan
-                </th>
-                <th className="py-2 pl-2 text-right font-medium text-zinc-500 dark:text-zinc-400">
-                  Exp. Actual
+                  Expenses
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-900">
               {monthlyData.map((m) => {
-                const overspent = hasOverspend(m.plannedExpenses, m.actualExpenses);
                 const isFuture = m.month - 1 > currentMonthIdx && now.getUTCFullYear() === year;
                 const hasActivity =
                   Object.keys(m.actualIncome).length > 0 ||
                   Object.keys(m.actualExpenses).length > 0;
+                const currencies = Object.keys(m.plannedIncome);
 
                 return (
                   <tr
                     key={m.month}
-                    className={overspent ? "bg-red-50 dark:bg-red-950/20" : undefined}
                   >
                     <td className="py-2 pr-3 font-medium text-zinc-900 dark:text-zinc-50 whitespace-nowrap">
                       {m.name}
-                      {overspent && (
-                        <span className="ml-1.5 text-[10px] font-bold uppercase tracking-wide text-red-600 dark:text-red-400">
-                          over
-                        </span>
-                      )}
                     </td>
                     <td className="py-2 px-2 text-right text-zinc-500 dark:text-zinc-400">
-                      <AmountStack totals={m.plannedIncome} />
-                    </td>
-                    <td className={`py-2 px-2 text-right ${isFuture ? "opacity-30" : ""}`}>
-                      <AmountStack
-                        totals={m.actualIncome}
-                        compareWith={m.plannedIncome}
-                        positiveIsGood
-                      />
+                      <div className={`grid grid-rows-${currencies.length} items-start`}>
+                        {currencies.length > 0 &&
+                          (Object.entries(m.plannedIncome).map(([currency, plannedIncome]) =>
+                            <div key={currency} className={`px-2 text-right ${isFuture ? "opacity-30" : ""}`}>
+                              <span className={`${(m.actualIncome[currency] ?? 0) > plannedIncome
+                                ? "text-emerald-600 dark:text-emerald-400"
+                                : "font-semibold text-red-400 dark:text-red-400"}`}>{formatCurrency(m.actualIncome[currency] ?? 0, currency)}</span> / {formatCurrency(plannedIncome, currency)}
+                            </div>
+                          ))}
+                      </div>
                     </td>
                     <td className="py-2 px-2 text-right text-zinc-500 dark:text-zinc-400">
-                      <AmountStack totals={m.plannedExpenses} />
-                    </td>
-                    <td className={`py-2 pl-2 text-right ${isFuture && !hasActivity ? "opacity-30" : ""}`}>
-                      <AmountStack
-                        totals={m.actualExpenses}
-                        compareWith={m.plannedExpenses}
-                        positiveIsGood={false}
-                      />
+                      <div className={`grid grid-rows-${currencies.length} items-start`}>
+                        {currencies.length > 0 &&
+                          (Object.entries(m.plannedExpenses).map(([currency, plannedExpenses]) =>
+                            <div key={currency} className={`px-2 text-right ${isFuture ? "opacity-30" : ""}`}>
+                              <span className={`${(m.actualExpenses[currency] ?? 0) < plannedExpenses
+                                ? "text-emerald-600 dark:text-emerald-400"
+                                : "font-semibold text-red-400 dark:text-red-400"}`}>{formatCurrency(m.actualExpenses[currency] ?? 0, currency)}</span> / {formatCurrency(plannedExpenses, currency)}
+                            </div>
+                          ))}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -332,16 +283,26 @@ export default async function BudgetDashboardPage({
               <tr className="border-t-2 border-zinc-300 font-semibold text-zinc-900 dark:border-zinc-700 dark:text-zinc-50">
                 <td className="py-2 pr-3">Total</td>
                 <td className="py-2 px-2 text-right">
-                  <AmountStack totals={yearIncomePlanned} />
+                  <div className={`grid grid-rows-${Object.keys(yearIncomePlanned).length} items-start`}>
+                    {Object.entries(yearIncomePlanned).map(([currency, yearIncomePlanned]) =>
+                      <div key={currency} className={`px-2 text-right`}>
+                        <span className={`${(yearIncomeActual[currency] ?? 0) > yearIncomePlanned
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "font-semibold text-red-400 dark:text-red-400"}`}>{formatCurrency(yearIncomeActual[currency] ?? 0, currency)}</span> / {formatCurrency(yearIncomePlanned, currency)}
+                      </div>
+                    )}
+                  </div>
                 </td>
                 <td className="py-2 px-2 text-right">
-                  <AmountStack totals={yearIncomeActual} />
-                </td>
-                <td className="py-2 px-2 text-right">
-                  <AmountStack totals={yearExpensesPlanned} />
-                </td>
-                <td className="py-2 pl-2 text-right">
-                  <AmountStack totals={yearExpensesActual} />
+                  <div className={`grid grid-rows-${Object.keys(yearExpensesPlanned).length} items-start`}>
+                    {Object.entries(yearExpensesPlanned).map(([currency, yearExpensesPlanned]) =>
+                      <div key={currency} className={`px-2 text-right`}>
+                        <span className={`${(yearExpensesActual[currency] ?? 0) < yearExpensesPlanned
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "font-semibold text-red-400 dark:text-red-400"}`}>{formatCurrency(yearExpensesActual[currency] ?? 0, currency)}</span> / {formatCurrency(yearExpensesPlanned, currency)}
+                      </div>
+                    )}
+                  </div>
                 </td>
               </tr>
             </tfoot>
@@ -350,40 +311,20 @@ export default async function BudgetDashboardPage({
       </div>
 
       {/* Net Balance + Savings + Transfers */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {/* Net balance per currency */}
+      <div className="grid gap-3">
         <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-          <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Net Balance (actual)</p>
-          {Object.keys(yearNetActual).length > 0 ? (
-            <div className="mt-1 space-y-1">
-              {Object.entries(yearNetActual)
-                .sort(([, a], [, b]) => Math.abs(b) - Math.abs(a))
-                .map(([currency, net]) => (
-                  <div key={currency} className={`text-sm font-semibold font-mono ${
-                    net > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
-                  }`}>
-                    {net > 0 ? "+" : ""}{formatCurrency(net, currency)}
-                  </div>
-                ))}
-            </div>
-          ) : (
-            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">No activity yet.</p>
-          )}
-        </div>
-
-        {/* Savings snapshot */}
-        <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-          <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Savings Snapshot</p>
+          <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Year snapshot</p>
           {allSavingsLines.length > 0 ? (
             <div className="mt-1 space-y-1">
-              {sortedEntries(savingsByCurrency).map(([currency, amount]) => (
-                <div key={currency} className="text-sm font-semibold font-mono text-zinc-900 dark:text-zinc-50">
-                  {formatCurrency(amount, currency)}
+              {allSavingsLines.map(({ currencyCode, amount }) => <div key={currencyCode} className={`grid grid-cols-${Object.keys(allSavingsLines).length}`}>
+                <div className="text-sm font-semibold font-mono text-zinc-900 dark:text-zinc-50">
+                  {formatCurrency(Number(amount), currencyCode!)}
                 </div>
-              ))}
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                {allSavingsLines.length} item{allSavingsLines.length !== 1 ? "s" : ""} · Jan 1, {year}
-              </p>
+                <div className={`text-sm font-semibold font-mono ${yearNetActual[currencyCode!] > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
+                  }`}>
+                  {yearNetActual[currencyCode!] > 0 ? "+" : ""}{formatCurrency(yearNetActual[currencyCode!] ?? 0, currencyCode!)}
+                </div>
+              </div>)}
             </div>
           ) : (
             <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
@@ -395,7 +336,6 @@ export default async function BudgetDashboardPage({
           )}
         </div>
 
-        {/* FX transfers */}
         <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
           <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">FX Transfers</p>
           {yearTransfers.length > 0 ? (
@@ -417,52 +357,6 @@ export default async function BudgetDashboardPage({
           )}
         </div>
       </div>
-    </div>
-  );
-}
-
-// --- Sub-components ---
-
-function Dash() {
-  return <span className="text-zinc-300 dark:text-zinc-700">—</span>;
-}
-
-/**
- * Stacks currency amounts vertically in a table cell.
- * When compareWith is provided, colors the amount based on whether it's
- * better (green) or worse (red) relative to the plan.
- */
-function AmountStack({
-  totals,
-  compareWith,
-  positiveIsGood,
-}: {
-  totals: CurrencyTotals;
-  compareWith?: CurrencyTotals;
-  positiveIsGood?: boolean;
-}) {
-  const entries = sortedEntries(totals);
-  if (entries.length === 0) return <Dash />;
-
-  return (
-    <div className="space-y-0.5">
-      {entries.map(([currency, amount]) => {
-        let colorClass = "text-zinc-700 dark:text-zinc-300";
-        if (compareWith !== undefined && positiveIsGood !== undefined) {
-          const planned = compareWith[currency] ?? 0;
-          if (planned > 0) {
-            const isGood = positiveIsGood ? amount >= planned : amount <= planned;
-            colorClass = isGood
-              ? "text-emerald-600 dark:text-emerald-400"
-              : "font-semibold text-red-600 dark:text-red-400";
-          }
-        }
-        return (
-          <div key={currency} className={`font-mono ${colorClass}`}>
-            {formatCurrency(amount, currency)}
-          </div>
-        );
-      })}
     </div>
   );
 }
@@ -511,32 +405,30 @@ function MultiCurrencyCard({
                   <div className="text-[11px] text-zinc-400 dark:text-zinc-600">
                     plan {planned > 0 ? formatCurrency(planned, currency) : "—"}
                   </div>
-                  <div className={`text-sm font-bold font-mono ${
-                    actual > 0
-                      ? positiveWhenActualHigher
-                        ? actual >= planned && planned > 0
-                          ? "text-emerald-600 dark:text-emerald-400"
-                          : "text-zinc-900 dark:text-zinc-50"
-                        : actual > planned && planned > 0
+                  <div className={`text-sm font-bold font-mono ${actual > 0
+                    ? positiveWhenActualHigher
+                      ? actual >= planned && planned > 0
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-zinc-900 dark:text-zinc-50"
+                      : actual > planned && planned > 0
                         ? "text-red-600 dark:text-red-400"
                         : "text-zinc-900 dark:text-zinc-50"
-                      : "text-zinc-400 dark:text-zinc-600"
-                  }`}>
+                    : "text-zinc-400 dark:text-zinc-600"
+                    }`}>
                     {actual > 0 ? formatCurrency(actual, currency) : "—"}
                   </div>
                 </div>
 
                 {/* Percentage with arrow (only when same currency can be compared) */}
                 {pct !== null ? (
-                  <div className={`text-right text-sm font-semibold ${
-                    positiveWhenActualHigher
-                      ? isActualHigher
-                        ? "text-emerald-600 dark:text-emerald-400"
-                        : "text-red-600 dark:text-red-400"
-                      : isActualHigher
+                  <div className={`text-right text-sm font-semibold ${positiveWhenActualHigher
+                    ? isActualHigher
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : "text-red-600 dark:text-red-400"
+                    : isActualHigher
                       ? "text-red-600 dark:text-red-400"
                       : "text-emerald-600 dark:text-emerald-400"
-                  }`}>
+                    }`}>
                     {isActualHigher ? "↑" : "↓"} {pct}%
                   </div>
                 ) : (
