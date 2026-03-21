@@ -14,11 +14,6 @@ import {
 import { and, eq, gte, lte, sum, desc } from "drizzle-orm";
 import { formatCurrency } from "./planning/currency-format";
 
-const MONTH_NAMES = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
-
 // Amounts grouped by ISO currency code — never forced into a single currency.
 type CurrencyTotals = Record<string, number>;
 
@@ -42,6 +37,10 @@ export default async function BudgetDashboardPage({
 }) {
   const { year: yearString } = await params;
   const year = Number(yearString);
+
+  const monthNames = Array.from({ length: 12 }, (_, i) =>
+    new Date(year, i).toLocaleString("en-US", { month: "short" })
+);
 
   const user = await AuthService.getCurrentUser();
 
@@ -139,7 +138,7 @@ export default async function BudgetDashboardPage({
       else addTo(actualExpenses, tx.currencyCode, Number(tx.amount));
     }
 
-    return { month, name: MONTH_NAMES[i], plannedIncome, actualIncome, plannedExpenses, actualExpenses };
+    return { month, name: monthNames[i], plannedIncome, actualIncome, plannedExpenses, actualExpenses };
   });
 
   // Current UTC month index (0-based) for "future" dimming and YTD cutoff
