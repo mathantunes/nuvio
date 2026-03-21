@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation";
 
-import { createClient } from "@/lib/supabase-server";
 import { db } from "@/db/client";
-import { budgets, budgetLines, categories, profiles, savingsSnapshotLines, savingsSnapshots, accounts } from "@/db/schema";
-import { and, eq, inArray, lt } from "drizzle-orm";
+import { profiles, savingsSnapshotLines, savingsSnapshots, accounts } from "@/db/schema";
+import { and, eq } from "drizzle-orm";
 import { createSavingsSnapshotLine } from "./savings.actions";
 import { formatCurrency } from "../planning/currency-format";
+import { AuthService } from "@/lib/auth-service";
 
 type Props = {
     params: Promise<{ year: string }>;
@@ -19,14 +19,7 @@ export default async function SavingsPage({ params }: Props) {
         redirect("/app");
     }
 
-    const supabase = await createClient();
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-        redirect("/login");
-    }
+    const user = await AuthService.getCurrentUser();
 
     // Get budget
     const savings = await db.query.savingsSnapshots.findFirst({
@@ -87,7 +80,7 @@ export default async function SavingsPage({ params }: Props) {
                                     `${allAccounts.find(a => a.id == line.accountId)?.name} (${allAccounts.find(a => a.id == line.accountId)?.currencyCode})`
                                 }</td>
                                 <td className="text-left py-2 px-2 text-zinc-700 dark:text-zinc-300">{line.label}</td>
-                                <td className="text-left py-2 px-2 text-zinc-700 dark:text-zinc-300">{formatCurrency(Number(line.amount), allAccounts.find(a => a.id == line.accountId)?.currencyCode!)}</td>
+                                <td className="text-left py-2 px-2 text-zinc-700 dark:text-zinc-300">{formatCurrency(Number(line.amount), allAccounts.find(a => a.id == line.accountId)?.currencyCode ?? "")}</td>
                             </tr>
                         ))}
                     </tbody>

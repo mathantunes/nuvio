@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase-server";
+import { AuthService } from "@/lib/auth-service";
 import { getMessages } from "@/i18n";
 import { db } from "@/db/client";
 import { budgets } from "@/db/schema";
@@ -9,14 +8,7 @@ import Link from "next/link";
 
 export default async function AppHomePage() {
   const messages = getMessages("en");
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const user = await AuthService.getCurrentUser();
 
   const userBudgets = await db
     .select()

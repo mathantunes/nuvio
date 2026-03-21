@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 
-import { createClient } from "@/lib/supabase-server";
 import { db } from "@/db/client";
 import { budgets, budgetLines, categories, profiles } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { PlanningTabs } from "./planning-tabs";
+import { AuthService } from "@/lib/auth-service";
 
 type Props = {
   params: Promise<{ year: string }>;
@@ -18,14 +18,7 @@ export default async function BudgetPlanningPage({ params }: Props) {
     redirect("/app");
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const user = await AuthService.getCurrentUser();
 
   // Get budget
   const budget = await db.query.budgets.findFirst({

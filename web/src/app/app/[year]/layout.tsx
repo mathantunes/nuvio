@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { createClient } from "@/lib/supabase-server";
 import { db } from "@/db/client";
 import { budgets } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getMessages } from "@/i18n";
+import { AuthService } from "@/lib/auth-service";
 
 type Props = {
   children: React.ReactNode;
@@ -19,14 +19,7 @@ export default async function BudgetYearLayout({ children, params }: Props) {
     redirect("/app");
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const user = await AuthService.getCurrentUser();
 
   const budget = await db.query.budgets.findFirst({
     where: eq(budgets.year, numericYear),

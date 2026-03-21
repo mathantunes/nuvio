@@ -5,12 +5,12 @@ import { z } from "zod";
 
 import { db } from "@/db/client";
 import { budgetLines, categories, budgets } from "@/db/schema";
-import { createClient } from "@/lib/supabase-server";
+import { AuthService } from "@/lib/auth-service";
 import { and, eq } from "drizzle-orm";
 
 const createBudgetLineSchema = z
   .object({
-    budgetId: z.string().uuid(),
+    budgetId: z.uuid(),
     categoryName: z.string().min(1).max(120),
     categoryKind: z.enum(["income", "expense"]),
     isMonthly: z.string().transform((val) => val === "true"),
@@ -36,7 +36,7 @@ const createBudgetLineSchema = z
   });
 
 const updateBudgetLineSchema = z.object({
-  budgetLineId: z.string().uuid(),
+  budgetLineId: z.uuid(),
   plannedAmount: z
     .string()
     .transform((val) => parseFloat(val))
@@ -50,16 +50,10 @@ const updateBudgetLineSchema = z.object({
 });
 
 export async function createBudgetLine(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  try {
+    const user = await AuthService.getCurrentUser();
 
-  if (!user) {
-    return { error: "You must be signed in to create a budget line." };
-  }
-
-  const raw = {
+    const raw = {
     budgetId: String(formData.get("budgetId") ?? ""),
     categoryName: String(formData.get("categoryName") ?? ""),
     categoryKind: String(formData.get("categoryKind") ?? ""),
@@ -125,20 +119,18 @@ export async function createBudgetLine(formData: FormData) {
   );
 
   revalidatePath(`/app/${formData.get("year")}/planning`);
-  revalidatePath(`/app/${formData.get("year")}`);
+    revalidatePath(`/app/${formData.get("year")}`);
 
-  return { success: true };
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to create budget line:", error);
+    return { error: error instanceof Error ? error.message : "Failed to create budget line." };
+  }
 }
 
 export async function updateBudgetLine(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: "You must be signed in to update a budget line." };
-  }
+  try {
+    const user = await AuthService.getCurrentUser();
 
   const raw = {
     budgetLineId: String(formData.get("budgetLineId") ?? ""),
@@ -186,4 +178,8 @@ export async function updateBudgetLine(formData: FormData) {
   revalidatePath(`/app/${formData.get("year")}`);
 
   return { success: true };
+  } catch (error) {
+    console.error("Failed to update budget line:", error);
+    return { error: error instanceof Error ? error.message : "Failed to update budget line." };
+  }
 }

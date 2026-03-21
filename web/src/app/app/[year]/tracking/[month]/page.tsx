@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { createClient } from "@/lib/supabase-server";
+import { AuthService } from "@/lib/auth-service";
 import { db } from "@/db/client";
 import {
   budgets,
@@ -32,14 +32,7 @@ export default async function BudgetTrackingMonthPage({ params }: Props) {
     redirect(`/app/${year}/tracking/${fallbackMonth}`);
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const user = await AuthService.getCurrentUser();
 
   // Get budget
   const budget = await db.query.budgets.findFirst({

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase-server";
+import { AuthService } from "@/lib/auth-service";
 import { db } from "@/db/client";
 import {
   accounts,
@@ -43,11 +43,7 @@ export default async function BudgetDashboardPage({
   const { year: yearString } = await params;
   const year = Number(yearString);
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const user = await AuthService.getCurrentUser();
 
   const budget = await db.query.budgets.findFirst({
     where: and(eq(budgets.year, year), eq(budgets.userId, user.id)),

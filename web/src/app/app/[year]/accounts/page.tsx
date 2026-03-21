@@ -1,6 +1,6 @@
 import { db } from "@/db/client";
 import { accounts, profiles } from "@/db/schema";
-import { createClient } from "@/lib/supabase-server";
+import { AuthService } from "@/lib/auth-service";
 import { AccountsForm } from "../../accounts-form";
 import { and, desc, eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
@@ -17,14 +17,7 @@ export default async function BudgetAccountsPage({ params }: Props) {
     redirect("/app");
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const user = await AuthService.getCurrentUser();
 
   const profile = await db.query.profiles.findFirst({
     where: eq(profiles.id, user.id),

@@ -5,12 +5,12 @@ import { z } from "zod";
 
 import { db } from "@/db/client";
 import { transactions, budgetLines, categories } from "@/db/schema";
-import { createClient } from "@/lib/supabase-server";
+import { AuthService } from "@/lib/auth-service";
 import { and, eq } from "drizzle-orm";
 
 const createTransactionSchema = z.object({
-  budgetLineId: z.string().uuid(),
-  accountId: z.string().uuid(),
+  budgetLineId: z.uuid(),
+  accountId: z.uuid(),
   amount: z
     .string()
     .transform((val) => parseFloat(val))
@@ -25,32 +25,24 @@ const createTransactionSchema = z.object({
 });
 
 export async function deleteTransaction(transactionId: string, year: number) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  try {
+    const user = await AuthService.getCurrentUser();
 
-  if (!user) {
-    return { error: "You must be signed in to delete a transaction." };
-  }
-
-  await db.delete(transactions).where(eq(transactions.id, transactionId));
+    await db.delete(transactions).where(eq(transactions.id, transactionId));
 
   revalidatePath(`/app/${year}/tracking`);
   revalidatePath(`/app/${year}`);
 
   return { success: true };
+} catch (error) {
+  console.error("Failed to delete transaction:", error);
+  return { error: error instanceof Error ? error.message : "Failed to delete transaction." };
+}
 }
 
 export async function createTransaction(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: "You must be signed in to create a transaction." };
-  }
+  try {
+    const user = await AuthService.getCurrentUser();
 
   const raw = {
     budgetLineId: String(formData.get("budgetLineId") ?? ""),
@@ -107,5 +99,9 @@ export async function createTransaction(formData: FormData) {
   revalidatePath(`/app/${formData.get("year")}/tracking`);
   revalidatePath(`/app/${formData.get("year")}`);
 
-  return { success: true };
+  return { success: true, transactionType: transactionType };
+} catch (error) {
+  console.error("Failed to create transaction:", error);
+  return { error: error instanceof Error ? error.message : "Failed to create transaction." };
+}
 }
