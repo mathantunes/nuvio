@@ -6,20 +6,19 @@ import { db } from "@/db/client";
 import { transfers, accounts, fxRates } from "@/db/schema";
 import { AuthService } from "@/lib/auth-service";
 import { eq, and, desc, gte, lte } from "drizzle-orm";
-import { numeric } from "drizzle-orm/pg-core";
 
 const createTransferSchema = z.object({
-  sourceAccountId: z.uuid(),
+  sourceAccountId: z.string().uuid(),
   sourceAmount: z.string().transform(Number).pipe(z.number().positive()),
   sourceCurrencyCode: z.string().length(3).regex(/^[A-Z]{3}$/),
-  targetAccountId: z.uuid(),
+  targetAccountId: z.string().uuid(),
   targetAmount: z.string().transform(Number).pipe(z.number().positive()),
   targetCurrencyCode: z.string().length(3).regex(/^[A-Z]{3}$/),
   fxRate: z.string().transform(Number).pipe(z.number().positive()).optional(),
   feeAmount: z.string().transform(Number).pipe(z.number().min(0)).default(0),
   taxAmount: z.string().transform(Number).pipe(z.number().min(0)).default(0),
   note: z.string().max(500).optional(),
-  occurredAt: z.iso.datetime(),
+  occurredAt: z.string().datetime(),
 });
 
 export async function createTransfer(formData: FormData) {

@@ -9,8 +9,8 @@ import { AuthService } from "@/lib/auth-service";
 import { and, eq } from "drizzle-orm";
 
 const createTransactionSchema = z.object({
-  budgetLineId: z.uuid(),
-  accountId: z.uuid(),
+  budgetLineId: z.string().uuid(),
+  accountId: z.string().uuid(),
   amount: z
     .string()
     .transform((val) => parseFloat(val))
@@ -25,9 +25,9 @@ const createTransactionSchema = z.object({
 });
 
 const updateTransactionSchema = z.object({
-  transactionId: z.uuid(),
-  budgetLineId: z.uuid().optional(),
-  accountId: z.uuid().optional(),
+  transactionId: z.string().uuid(),
+  budgetLineId: z.string().uuid().optional(),
+  accountId: z.string().uuid().optional(),
   amount: z
     .string()
     .transform((val) => parseFloat(val))
