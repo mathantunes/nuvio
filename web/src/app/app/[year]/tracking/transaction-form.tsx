@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { createTransaction } from "./transactions.actions";
+import { createTransaction, updateTransaction } from "./transactions.actions";
 import { formatAmount } from "../planning/currency-format";
 
 type Account = {
@@ -10,12 +10,26 @@ type Account = {
   currencyCode: string;
 };
 
+type Transaction = {
+  id: string;
+  budgetLineId: string | null;
+  amount: string;
+  currencyCode: string;
+  occurredAt: Date | string;
+  description: string | null;
+  account: {
+    id: string;
+    name: string;
+  };
+};
+
 type Props = {
   budgetLineId: string;
   year: number;
   expectedAmount: string;
   expectedCurrency: string;
   accounts: Account[];
+  transaction?: Transaction | null;
   onSuccess?: () => void;
 };
 
@@ -25,14 +39,25 @@ export function TransactionForm({
   expectedAmount,
   expectedCurrency,
   accounts,
+  transaction,
   onSuccess,
 }: Props) {
-  const [accountId, setAccountId] = useState(accounts[0]?.id ?? "");
-  const [amount, setAmount] = useState("");
-  const [occurredAt, setOccurredAt] = useState(
-    new Date().toISOString().split("T")[0]
+  const isEditMode = !!transaction;
+  
+  const [accountId, setAccountId] = useState(
+    transaction?.account.id ?? accounts[0]?.id ?? ""
   );
-  const [description, setDescription] = useState("");
+  const [amount, setAmount] = useState(
+    transaction?.amount ?? ""
+  );
+  const [occurredAt, setOccurredAt] = useState(
+    transaction?.occurredAt 
+      ? new Date(transaction.occurredAt).toISOString().split("T")[0]
+      : new Date().toISOString().split("T")[0]
+  );
+  const [description, setDescription] = useState(
+    transaction?.description ?? ""
+  );
   const [sameAsPlanned, setSameAsPlanned] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +71,11 @@ export function TransactionForm({
     const formData = new FormData(event.currentTarget);
     formData.set("budgetLineId", budgetLineId);
     formData.set("year", String(year));
+    
+    if (isEditMode) {
+      formData.set("transactionId", transaction.id);
+    }
+    
     if (sameAsPlanned) {
       formData.set("amount", expectedAmount);
     }
@@ -54,18 +84,22 @@ export function TransactionForm({
     }
 
     startTransition(async () => {
-      const result = await createTransaction(formData);
+      const result = isEditMode 
+        ? await updateTransaction(formData)
+        : await createTransaction(formData);
 
       if (result?.error) {
         setError(result.error);
         return;
       }
 
-      // Reset form on success
-      setAmount("");
-      setDescription("");
-      setSameAsPlanned(false);
-      setOccurredAt(new Date().toISOString().split("T")[0]);
+      // Reset form on success (only for create mode)
+      if (!isEditMode) {
+        setAmount("");
+        setDescription("");
+        setSameAsPlanned(false);
+        setOccurredAt(new Date().toISOString().split("T")[0]);
+      }
 
       onSuccess?.();
     });
@@ -73,6 +107,16 @@ export function TransactionForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+          {isEditMode ? "Edit Transaction" : "Add Transaction"}
+        </h3>
+        {isEditMode && (
+          <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono break-all">
+            ID: {transaction.id}
+          </span>
+        )}
+      </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
           <label className="block text-xs font-medium text-zinc-900 dark:text-zinc-50">
@@ -192,7 +236,7 @@ export function TransactionForm({
         disabled={isPending}
         className="inline-flex items-center justify-center rounded-full bg-zinc-900 px-4 py-1.5 text-xs font-medium text-zinc-50 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-400 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200"
       >
-        {isPending ? "Creating…" : "Add transaction"}
+        {isPending ? (isEditMode ? "Updating…" : "Creating…") : (isEditMode ? "Update transaction" : "Add transaction")}
       </button>
     </form>
   );

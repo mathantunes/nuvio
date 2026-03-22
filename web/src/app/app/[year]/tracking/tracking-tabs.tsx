@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useState } from "react";
+import { startTransition, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { TransactionForm } from "./transaction-form";
 import { formatAmount } from "../planning/currency-format";
@@ -68,6 +68,31 @@ export function TrackingTabs({
   const [activeTab, setActiveTab] = useState<"income" | "expense">("expense");
   const [selectedBudgetLine, setSelectedBudgetLine] =
     useState<BudgetLineWithActuals | null>(null);
+  const [editingTransaction, setEditingTransaction] =
+    useState<Transaction | null>(null);
+  const [openPopupId, setOpenPopupId] = useState<string | null>(null);
+
+  // Close popup when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      
+      // Check if click is on any transaction button or popup
+      const isTransactionClick = (target as Element)?.closest?.('[data-transaction-popup]');
+      
+      if (!isTransactionClick) {
+        setOpenPopupId(null);
+      }
+    };
+
+    if (openPopupId) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [openPopupId]);
 
   const allCurrentLines = activeTab === "income" ? incomeLines : expenseLines;
   
@@ -153,6 +178,8 @@ export function TrackingTabs({
         await deleteTransaction(tx.id, year);
       }
       setSelectedBudgetLine(null);
+      setEditingTransaction(null);
+      setOpenPopupId(null);
     });
   };
 
@@ -169,6 +196,8 @@ export function TrackingTabs({
             onChange={(e) => {
               const nextMonth = Number(e.target.value);
               setSelectedBudgetLine(null);
+              setEditingTransaction(null);
+              setOpenPopupId(null);
               router.push(`/app/${year}/tracking/${nextMonth}`);
             }}
             className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 shadow-sm outline-none ring-0 transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
@@ -187,6 +216,8 @@ export function TrackingTabs({
           onClick={() => {
             setActiveTab("expense");
             setSelectedBudgetLine(null);
+            setEditingTransaction(null);
+            setOpenPopupId(null);
           }}
           className={`px-4 py-2 text-sm font-medium transition ${
             activeTab === "expense"
@@ -200,6 +231,8 @@ export function TrackingTabs({
           onClick={() => {
             setActiveTab("income");
             setSelectedBudgetLine(null);
+            setEditingTransaction(null);
+            setOpenPopupId(null);
           }}
           className={`px-4 py-2 text-sm font-medium transition ${
             activeTab === "income"
@@ -256,36 +289,63 @@ export function TrackingTabs({
                         </span>
                       </div>
                       {line.transactions.length > 0 && (
-                        <div className="group relative inline-block">
-                          <div className="cursor-help text-xs text-zinc-600 underline decoration-dotted underline-offset-2 dark:text-zinc-400">
+                        <div className="relative" data-transaction-popup>
+                          <button
+                            onClick={() => setOpenPopupId(openPopupId === line.id ? null : line.id)}
+                            className="text-xs text-zinc-600 underline decoration-dotted underline-offset-2 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-300"
+                          >
                             {line.transactions.length} transaction
                             {line.transactions.length !== 1 ? "s" : ""}
-                          </div>
-                          <div className="pointer-events-none invisible absolute bottom-full left-0 z-50 mb-2 w-72 rounded-lg border border-zinc-200 bg-white shadow-xl dark:border-zinc-700 dark:bg-zinc-800 group-hover:visible group-hover:pointer-events-auto">
-                            <div className="p-3">
-                              <div className="mb-2 text-xs font-semibold text-zinc-900 dark:text-zinc-50">
-                                Transactions
-                              </div>
-                              <div className="space-y-1.5">
+                          </button>
+                          {openPopupId === line.id && (
+                            <div className="absolute bottom-full left-0 z-50 mb-2 w-72 rounded-lg border border-zinc-200 bg-white shadow-xl dark:border-zinc-700 dark:bg-zinc-800" data-transaction-popup>
+                              <div className="p-3">
+                                <div className="mb-2 text-xs font-semibold text-zinc-900 dark:text-zinc-50">
+                                  Transactions
+                                </div>
+                                <div className="space-y-1.5">
                                 {line.transactions.map((tx) => (
                                   <div
                                     key={tx.id}
-                                    className="flex items-center justify-between gap-3 rounded px-2 py-1.5 text-xs"
+                                    className="flex items-center justify-between gap-3 rounded px-2 py-1.5 text-xs group/transaction"
                                   >
-                                    <span className="truncate text-zinc-700 dark:text-zinc-300">
-                                      {tx.account.name}
-                                    </span>
-                                    <span className="shrink-0 font-mono text-zinc-900 dark:text-zinc-50">
-                                      {formatAmount(
-                                        parseFloat(tx.amount),
-                                        tx.currencyCode
+                                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                                      <span className="truncate text-zinc-700 dark:text-zinc-300">
+                                        {tx.account.name}
+                                      </span>
+                                      {tx.description && (
+                                        <span className="truncate text-zinc-500 dark:text-zinc-400 text-[10px]">
+                                          {tx.description}
+                                        </span>
                                       )}
-                                    </span>
+                                    </div>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      <span className="font-mono text-zinc-900 dark:text-zinc-50">
+                                        {formatAmount(
+                                          parseFloat(tx.amount),
+                                          tx.currencyCode
+                                        )}
+                                      </span>
+                                      <button
+                                        onClick={() => {
+                                          setEditingTransaction(tx);
+                                          setSelectedBudgetLine(line);
+                                          setOpenPopupId(null);
+                                        }}
+                                        className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                                        title="Edit transaction"
+                                      >
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                      </button>
+                                    </div>
                                   </div>
                                 ))}
+                                </div>
                               </div>
                             </div>
-                          </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -296,10 +356,20 @@ export function TrackingTabs({
                           &nbsp;
                         </div>
                         <button
-                          onClick={() => setSelectedBudgetLine(line)}
+                          onClick={() => {
+                            if (editingTransaction && selectedBudgetLine?.id === line.id) {
+                              // Cancel edit mode
+                              setEditingTransaction(null);
+                              setSelectedBudgetLine(null);
+                            } else {
+                              // Start create mode
+                              setEditingTransaction(null);
+                              setSelectedBudgetLine(line);
+                            }
+                          }}
                           className="text-xs leading-5 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
                         >
-                          {selectedBudgetLine?.id === line.id ? "Cancel" : "Add"}
+                          {editingTransaction && selectedBudgetLine?.id === line.id ? "Cancel" : "Add"}
                         </button>
                       </div>
                       <div className="text-right">
@@ -307,7 +377,10 @@ export function TrackingTabs({
                           &nbsp;
                         </div>
                         <button
-                          onClick={() => clearLine(line)}
+                          onClick={() => {
+                            clearLine(line);
+                            setEditingTransaction(null);
+                          }}
                           className="text-xs leading-5 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
                         >
                           Clear
@@ -384,7 +457,7 @@ export function TrackingTabs({
                   </div>
 
                   {/* Transaction Form */}
-                  {selectedBudgetLine?.id === line.id && (
+                  {(selectedBudgetLine?.id === line.id) && (
                     <div className="mt-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
                       <TransactionForm
                         budgetLineId={line.id}
@@ -392,7 +465,11 @@ export function TrackingTabs({
                         expectedAmount={line.plannedAmount}
                         expectedCurrency={line.currencyCode}
                         accounts={accounts}
-                        onSuccess={() => setSelectedBudgetLine(null)}
+                        transaction={editingTransaction}
+                        onSuccess={() => {
+                          setSelectedBudgetLine(null);
+                          setEditingTransaction(null);
+                        }}
                       />
                     </div>
                   )}
