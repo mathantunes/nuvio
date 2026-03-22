@@ -101,12 +101,18 @@ export default async function BudgetDashboardPage({
     .orderBy(desc(sum(savingsSnapshotLines.amount)))
     .groupBy(accounts.currencyCode);
 
-  // FX transfers for this year (count + unique currency pairs)
+  // FX transfers for this year (detailed data for dashboard)
   const yearTransfers = await db
     .select({
       id: transfers.id,
       sourceCurrencyCode: transfers.sourceCurrencyCode,
       targetCurrencyCode: transfers.targetCurrencyCode,
+      sourceAmount: transfers.sourceAmount,
+      targetAmount: transfers.targetAmount,
+      feeAmount: transfers.feeAmount,
+      taxAmount: transfers.taxAmount,
+      effectiveFxRate: transfers.effectiveFxRate,
+      occurredAt: transfers.occurredAt,
     })
     .from(transfers)
     .where(
@@ -183,10 +189,27 @@ export default async function BudgetDashboardPage({
     if (net !== 0) yearNetActual[c] = net;
   }
 
-  // Transfer currency pairs
+  // Transfer currency pairs and impact calculations
   const transferPairs = new Set(
     yearTransfers.map((t) => `${t.sourceCurrencyCode}→${t.targetCurrencyCode}`)
   );
+
+  // Calculate transfer impacts by currency
+  const transferImpacts: CurrencyTotals = {};
+  const totalFees: CurrencyTotals = {};
+  
+  for (const transfer of yearTransfers) {
+    const sourceAmount = Number(transfer.sourceAmount);
+    const targetAmount = Number(transfer.targetAmount);
+    const fees = Number(transfer.feeAmount) + Number(transfer.taxAmount);
+    
+    // Source currency: money out (negative impact)
+    addTo(transferImpacts, transfer.sourceCurrencyCode, -(sourceAmount + fees));
+    addTo(totalFees, transfer.sourceCurrencyCode, fees);
+    
+    // Target currency: money in (positive impact)
+    addTo(transferImpacts, transfer.targetCurrencyCode, targetAmount);
+  }
 
   return (
     <div className="space-y-6">
@@ -308,18 +331,105 @@ export default async function BudgetDashboardPage({
       {/* Net Balance + Savings + Transfers */}
       <div className="grid gap-3">
         <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">FX Transfers</p>
+            <a
+              href={`/app/${year}/fx`}
+              className="text-xs text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50 underline"
+            >
+              Manage →
+            </a>
+          </div>
+          {yearTransfers.length > 0 ? (
+            <div className="mt-3 space-y-2">
+              {/* Individual transfer lines */}
+              <div className="space-y-1 max-h-32 overflow-y-auto">
+                {yearTransfers.map((transfer) => {
+                  const totalFees = Number(transfer.feeAmount) + Number(transfer.taxAmount);
+                  return (
+                    <div key={transfer.id} className="flex items-center gap-2 text-xs">
+                      <span className="font-mono text-zinc-900 dark:text-zinc-50">
+                        {formatCurrency(Number(transfer.sourceAmount), transfer.sourceCurrencyCode)}
+                      </span>
+                      <span className="text-zinc-400 dark:text-zinc-600">→</span>
+                      <span className="font-mono text-emerald-600 dark:text-emerald-400">
+                        +{formatCurrency(Number(transfer.targetAmount), transfer.targetCurrencyCode)}
+                      </span>
+                      {totalFees > 0 && (
+                        <span className="text-zinc-500 dark:text-zinc-400">
+                          (fees: {formatCurrency(totalFees, transfer.sourceCurrencyCode)})
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Net impact by currency */}
+              <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700">
+                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Net Transfer Impact</p>
+                <div className="space-y-1">
+                  {Object.entries(transferImpacts).map(([currency, impact]) => (
+                    <div key={currency} className="flex items-center justify-between">
+                      <span className="text-xs text-zinc-600 dark:text-zinc-400">{currency}</span>
+                      <span className={`text-xs font-mono font-semibold ${
+                        impact > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
+                      }`}>
+                        {impact > 0 ? "+" : ""}{formatCurrency(impact, currency)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-1">
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">No FX transfers this year.</p>
+              <a
+                href={`/app/${year}/fx`}
+                className="mt-1 inline-flex items-center text-xs text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50 underline"
+              >
+                Create first transfer →
+              </a>
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
           <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Year snapshot</p>
           {allSavingsLines.length > 0 ? (
             <div className="mt-1 space-y-1">
-              {allSavingsLines.map(({ currencyCode, amount }) => <div key={currencyCode} className={`grid grid-cols-${Object.keys(allSavingsLines).length}`}>
-                <div className="text-sm font-semibold font-mono text-zinc-900 dark:text-zinc-50">
-                  {formatCurrency(Number(amount), currencyCode!)}
-                </div>
-                <div className={`text-sm font-semibold font-mono ${yearNetActual[currencyCode!] > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
-                  }`}>
-                  {yearNetActual[currencyCode!] > 0 ? "+" : ""}{formatCurrency(yearNetActual[currencyCode!] ?? 0, currencyCode!)}
-                </div>
-              </div>)}
+              {/* Column headers */}
+              <div className="grid grid-cols-4 gap-4 text-xs mb-2">
+                <div className="text-zinc-500 dark:text-zinc-400">Start</div>
+                <div className="text-zinc-500 dark:text-zinc-400">Income</div>
+                <div className="text-zinc-500 dark:text-zinc-400">FX</div>
+                <div className="text-zinc-500 dark:text-zinc-400">Final</div>
+              </div>
+              {/* Currency rows */}
+              {allSavingsLines.map(({ currencyCode, amount }) => {
+                const startingBalance = Number(amount);
+                const netIncome = yearNetActual[currencyCode!] ?? 0;
+                const transferImpact = transferImpacts[currencyCode!] ?? 0;
+                const finalBalance = startingBalance + netIncome + transferImpact;
+                
+                return (
+                  <div key={currencyCode} className="grid grid-cols-4 gap-4 text-xs">
+                    <div className="font-mono text-zinc-900 dark:text-zinc-50">
+                      {formatCurrency(startingBalance, currencyCode!)}
+                    </div>
+                    <div className={`font-mono ${netIncome > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                      {netIncome > 0 ? "+" : ""}{formatCurrency(netIncome, currencyCode!)}
+                    </div>
+                    <div className={`font-mono ${transferImpact > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                      {transferImpact > 0 ? "+" : ""}{formatCurrency(transferImpact, currencyCode!)}
+                    </div>
+                    <div className={`font-mono font-semibold ${finalBalance > startingBalance ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                      {formatCurrency(finalBalance, currencyCode!)}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
@@ -328,27 +438,6 @@ export default async function BudgetDashboardPage({
                 Add →
               </a>
             </p>
-          )}
-        </div>
-
-        <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-          <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">FX Transfers</p>
-          {yearTransfers.length > 0 ? (
-            <div className="mt-1 space-y-1">
-              <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{yearTransfers.length}</p>
-              <div className="flex flex-wrap gap-1">
-                {Array.from(transferPairs).map((pair) => (
-                  <span
-                    key={pair}
-                    className="inline-flex items-center rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
-                  >
-                    {pair}
-                  </span>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">No FX transfers this year.</p>
           )}
         </div>
       </div>
