@@ -402,7 +402,7 @@ export default async function BudgetDashboardPage({
               {/* Column headers - responsive */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-xs mb-2">
                 <div className="text-zinc-500 dark:text-zinc-400">Start</div>
-                <div className="text-zinc-500 dark:text-zinc-400">Income</div>
+                <div className="text-zinc-500 dark:text-zinc-400">Savings</div>
                 <div className="hidden sm:block text-zinc-500 dark:text-zinc-400">FX</div>
                 <div className="text-zinc-500 dark:text-zinc-400">Final</div>
               </div>
