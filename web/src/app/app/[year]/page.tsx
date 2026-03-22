@@ -399,14 +399,14 @@ export default async function BudgetDashboardPage({
           <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Year snapshot</p>
           {allSavingsLines.length > 0 ? (
             <div className="mt-1 space-y-1">
-              {/* Column headers */}
-              <div className="grid grid-cols-4 gap-4 text-xs mb-2">
+              {/* Column headers - responsive */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-xs mb-2">
                 <div className="text-zinc-500 dark:text-zinc-400">Start</div>
                 <div className="text-zinc-500 dark:text-zinc-400">Income</div>
-                <div className="text-zinc-500 dark:text-zinc-400">FX</div>
+                <div className="hidden sm:block text-zinc-500 dark:text-zinc-400">FX</div>
                 <div className="text-zinc-500 dark:text-zinc-400">Final</div>
               </div>
-              {/* Currency rows */}
+              {/* Currency rows - responsive */}
               {allSavingsLines.map(({ currencyCode, amount }) => {
                 const startingBalance = Number(amount);
                 const netIncome = yearNetActual[currencyCode!] ?? 0;
@@ -414,18 +414,40 @@ export default async function BudgetDashboardPage({
                 const finalBalance = startingBalance + netIncome + transferImpact;
                 
                 return (
-                  <div key={currencyCode} className="grid grid-cols-4 gap-4 text-xs">
-                    <div className="font-mono text-zinc-900 dark:text-zinc-50">
-                      {formatCurrency(startingBalance, currencyCode!)}
+                  <div key={currencyCode} className="space-y-1 sm:space-y-0">
+                    {/* Mobile layout - stacked */}
+                    <div className="sm:hidden grid grid-cols-2 gap-2 text-xs">
+                      <div className="text-zinc-500 dark:text-zinc-400">Start:</div>
+                      <div className="font-mono text-zinc-900 dark:text-zinc-50 text-right">
+                        {formatCurrency(startingBalance, currencyCode!)}
+                      </div>
+                      <div className="text-zinc-500 dark:text-zinc-400">Income:</div>
+                      <div className={`font-mono text-right ${netIncome > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                        {netIncome > 0 ? "+" : ""}{formatCurrency(netIncome, currencyCode!)}
+                      </div>
+                      <div className="text-zinc-500 dark:text-zinc-400">FX:</div>
+                      <div className={`font-mono text-right ${transferImpact > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                        {transferImpact > 0 ? "+" : ""}{formatCurrency(transferImpact, currencyCode!)}
+                      </div>
+                      <div className="text-zinc-500 dark:text-zinc-400">Final:</div>
+                      <div className={`font-mono font-semibold text-right ${finalBalance > startingBalance ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                        {formatCurrency(finalBalance, currencyCode!)}
+                      </div>
                     </div>
-                    <div className={`font-mono ${netIncome > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                      {netIncome > 0 ? "+" : ""}{formatCurrency(netIncome, currencyCode!)}
-                    </div>
-                    <div className={`font-mono ${transferImpact > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                      {transferImpact > 0 ? "+" : ""}{formatCurrency(transferImpact, currencyCode!)}
-                    </div>
-                    <div className={`font-mono font-semibold ${finalBalance > startingBalance ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                      {formatCurrency(finalBalance, currencyCode!)}
+                    {/* Desktop layout - horizontal */}
+                    <div className="hidden sm:grid grid-cols-4 gap-4 text-xs">
+                      <div className="font-mono text-zinc-900 dark:text-zinc-50">
+                        {formatCurrency(startingBalance, currencyCode!)}
+                      </div>
+                      <div className={`font-mono ${netIncome > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                        {netIncome > 0 ? "+" : ""}{formatCurrency(netIncome, currencyCode!)}
+                      </div>
+                      <div className={`font-mono ${transferImpact > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                        {transferImpact > 0 ? "+" : ""}{formatCurrency(transferImpact, currencyCode!)}
+                      </div>
+                      <div className={`font-mono font-semibold ${finalBalance > startingBalance ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                        {formatCurrency(finalBalance, currencyCode!)}
+                      </div>
                     </div>
                   </div>
                 );

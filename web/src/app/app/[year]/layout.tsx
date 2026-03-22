@@ -6,6 +6,7 @@ import { budgets } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getMessages } from "@/i18n";
 import { AuthService } from "@/lib/auth-service";
+import { LayoutContent } from "./layout-content";
 
 type Props = {
   children: React.ReactNode;
@@ -32,8 +33,8 @@ export default async function BudgetYearLayout({ children, params }: Props) {
   const messages = getMessages("en");
 
   return (
-    <main className="flex min-h-screen bg-zinc-50 text-left dark:bg-black">
-      <aside className="hidden w-48 border-r border-zinc-200 bg-white px-4 py-6 text-sm dark:border-zinc-800 dark:bg-zinc-950 sm:block">
+    <main className="flex h-screen bg-zinc-50 text-left dark:bg-black">
+      <aside className="hidden w-48 shrink-0 border-r border-zinc-200 bg-white px-4 py-6 text-sm dark:border-zinc-800 dark:bg-zinc-950 sm:block">
         <div className="mb-6 space-y-1">
           <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
             {messages.common.appName}
@@ -81,14 +82,16 @@ export default async function BudgetYearLayout({ children, params }: Props) {
           </Link>
         </nav>
       </aside>
-      <section className="flex flex-1 flex-col bg-zinc-50 px-4 py-8 dark:bg-black sm:px-8">
-        <div className="mb-4 flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
-          <Link href="/app" className="hover:underline">
-            ← All budgets
-          </Link>
-          <span>Year {budget.year}</span>
-        </div>
-        {children}
+      <section className="flex flex-1 flex-col overflow-y-auto bg-zinc-50 px-4 py-8 dark:bg-black sm:px-8">
+        <LayoutContent budgetYear={numericYear}>
+          <div className="mb-4 hidden sm:flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
+            <Link href="/app" className="hover:underline">
+              ← All budgets
+            </Link>
+            <span>Year {budget.year}</span>
+          </div>
+          {children}
+        </LayoutContent>
       </section>
     </main>
   );
