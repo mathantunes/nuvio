@@ -176,35 +176,42 @@ function MonthlyProgressChart({ currency, currentMonthIdx }: { currency: GrowthD
       
       <div className="space-y-2">
         {ytdMonths.map((month) => (
-          <div key={month.month} className="flex items-center gap-3">
-            <div className="w-16 text-xs text-zinc-500 dark:text-zinc-400">
-              {month.monthName}
+          <div key={month.month} className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-zinc-500 dark:text-zinc-400 w-12">
+                {month.monthName}
+              </span>
+              <div className="flex items-center gap-3">
+                {month.transferImpact !== 0 && (
+                  <span className={`font-medium ${
+                    month.transferImpact >= 0 ? 'text-purple-600 dark:text-purple-400' : 'text-red-600 dark:text-red-400'
+                  }`}>
+                    FX {month.transferImpact >= 0 ? '+' : ''}{formatCurrency(month.transferImpact, currency.currency)}
+                  </span>
+                )}
+                <span className="font-medium text-zinc-900 dark:text-zinc-50">
+                  {formatCurrency(month.endingBalance, currency.currency)}
+                </span>
+              </div>
             </div>
             
-            <div className="flex-1 relative">
-              <div className="h-6 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+            <div className="relative">
+              <div className="h-px bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-linear-to-r from-blue-500 to-emerald-500 rounded-full transition-all duration-300"
+                  className="h-full bg-zinc-300 dark:bg-zinc-600 rounded-full transition-all duration-300"
                   style={{ width: `${(month.endingBalance / maxBalance) * 100}%` }}
                 />
               </div>
-              
-              <div className="absolute inset-0 flex items-center justify-between px-2">
-                <span className="text-xs font-medium text-white mix-blend-difference">
-                  {formatCurrency(month.endingBalance, currency.currency)}
-                </span>
-                {month.transferImpact !== 0 && (
-                  <span className="text-xs text-purple-300 mix-blend-difference">
-                    FX: {month.transferImpact >= 0 ? '+' : ''}{formatCurrency(month.transferImpact, currency.currency)}
-                  </span>
-                )}
-              </div>
+              <div 
+                className="absolute w-1.5 h-1.5 bg-zinc-400 dark:bg-zinc-500 rounded-full"
+                style={{ left: `${(month.endingBalance / maxBalance) * 100}%`, top: '50%', transform: 'translate(-50%, -50%)' }}
+              />
             </div>
           </div>
         ))}
       </div>
       
-      <div className="mt-3 grid grid-cols-3 gap-4 text-xs">
+      <div className="mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-800 grid grid-cols-3 gap-4 text-xs">
         <div>
           <span className="text-zinc-500 dark:text-zinc-400">Start: </span>
           <span className="font-medium text-zinc-900 dark:text-zinc-50">
