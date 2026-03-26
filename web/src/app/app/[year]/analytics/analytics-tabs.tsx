@@ -13,29 +13,25 @@ export function AnalyticsTabs({ savingsTab, growthTab }: AnalyticsTabsProps) {
   return (
     <div className="space-y-6">
       {/* Tab Navigation */}
-      <div className="border-b border-zinc-200 dark:border-zinc-800">
-        <nav className="flex space-x-8" aria-label="Tabs">
-          <button
-            onClick={() => setActiveTab('savings')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-              activeTab === 'savings'
-                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-zinc-500 hover:text-zinc-700 hover:border-zinc-300 dark:text-zinc-400 dark:hover:text-zinc-300'
+      <div className="flex gap-2 border-b border-zinc-200 dark:border-zinc-800">
+        <button
+          onClick={() => setActiveTab('savings')}
+          className={`px-4 py-2 text-sm font-medium transition ${activeTab === 'savings'
+            ? "border-b-2 border-zinc-900 text-zinc-900 dark:border-zinc-50 dark:text-zinc-50"
+            : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
             }`}
-          >
-            Savings
-          </button>
-          <button
-            onClick={() => setActiveTab('growth')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-              activeTab === 'growth'
-                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-zinc-500 hover:text-zinc-700 hover:border-zinc-300 dark:text-zinc-400 dark:hover:text-zinc-300'
+        >
+          Savings
+        </button>
+        <button
+          onClick={() => setActiveTab('growth')}
+          className={`px-4 py-2 text-sm font-medium transition ${activeTab === 'growth'
+            ? "border-b-2 border-zinc-900 text-zinc-900 dark:border-zinc-50 dark:text-zinc-50"
+            : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
             }`}
-          >
-            Growth
-          </button>
-        </nav>
+        >
+          Growth
+        </button>
       </div>
 
       {/* Tab Content */}
