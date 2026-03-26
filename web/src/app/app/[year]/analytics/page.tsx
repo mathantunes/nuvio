@@ -1,13 +1,10 @@
 import { redirect } from "next/navigation";
-import React from "react";
 import { AuthService } from "@/lib/auth-service";
-import { 
-  fetchDashboardData, 
-  calculateSavingsData, 
-  getYtdTotals,
-  getYearlyTotals,
-  type CurrencyTotals 
+import {
+  fetchDashboardData,
+  getYtdTotals
 } from "@/lib/dashboard-computations";
+import { calculateGrowthAnalytics } from "@/lib/growth-computations";
 import { AnalyticsTabs } from "./analytics-tabs";
 import { SavingsTab } from "./savings-tab";
 import { GrowthTab } from "./growth-tab";
@@ -25,7 +22,6 @@ export default async function AnalyticsPage({
   try {
     const data = await fetchDashboardData(year, user.id);
     const ytdTotals = getYtdTotals(data);
-    const yearlyTotals = getYearlyTotals(data);
 
     // Simple monthly deviations - calculate directly from dashboard data
     const monthlyDeviations = data.monthlyData
@@ -43,7 +39,7 @@ export default async function AnalyticsPage({
           const actualIncome = Number(month.actualIncome[currency] || 0);
           const plannedExpenses = Number(month.plannedExpenses[currency] || 0);
           const actualExpenses = Number(month.actualExpenses[currency] || 0);
-          
+
           const plannedNet = plannedIncome - plannedExpenses;
           const actualNet = actualIncome - actualExpenses;
           const deviation = actualNet - plannedNet;
@@ -78,9 +74,9 @@ export default async function AnalyticsPage({
     }, {} as Record<number, { monthName: string; currencies: typeof monthlyDeviations }>);
 
     // Find months with biggest deviations
-    const biggestPositiveDeviation = monthlyDeviations.reduce((max, curr) => 
+    const biggestPositiveDeviation = monthlyDeviations.reduce((max, curr) =>
       curr.deviation > max.deviation ? curr : max, monthlyDeviations[0] || { deviation: 0 });
-    const biggestNegativeDeviation = monthlyDeviations.reduce((min, curr) => 
+    const biggestNegativeDeviation = monthlyDeviations.reduce((min, curr) =>
       curr.deviation < min.deviation ? curr : min, monthlyDeviations[0] || { deviation: 0 });
 
     // Calculate savings health per currency
@@ -100,8 +96,8 @@ export default async function AnalyticsPage({
 
       const plannedSavings = plannedIncome - plannedExpenses;
       const actualSavings = actualIncome - actualExpenses;
-      const savingsRate = plannedSavings > 0 
-        ? (actualSavings / plannedSavings) * 100 
+      const savingsRate = plannedSavings > 0
+        ? (actualSavings / plannedSavings) * 100
         : 0;
 
       savingsHealthByCurrency.push({
@@ -112,6 +108,16 @@ export default async function AnalyticsPage({
         onTrack: savingsRate >= 95
       });
     }
+
+    // Calculate growth analytics
+    const growthAnalytics = calculateGrowthAnalytics(
+      data.allSavingsLines,
+      data.yearNetActual,
+      data.transferImpacts,
+      data.totalFees,
+      data.yearTransfers,
+      data.monthlyData
+    );
 
     return (
       <div className="space-y-6">
@@ -130,7 +136,12 @@ export default async function AnalyticsPage({
               currentMonthIdx={data.currentMonthIdx}
             />
           }
-          growthTab={<GrowthTab />}
+          growthTab={
+            <GrowthTab
+              growthAnalytics={growthAnalytics}
+              currentMonthIdx={data.currentMonthIdx}
+            />
+          }
         />
       </div>
     );
