@@ -1,0 +1,1 @@
+ALTER TABLE "accounts" ADD COLUMN "liquidity_type" text DEFAULT 'liquid' NOT NULL;
