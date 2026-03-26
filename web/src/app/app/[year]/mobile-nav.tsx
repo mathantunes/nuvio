@@ -11,14 +11,29 @@ type MobileNavProps = {
 export function MobileNav({ year, currentPath }: MobileNavProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const navItems = [
-    { href: `/app/${year}`, label: "Dashboard" },
-    { href: `/app/${year}/accounts`, label: "Accounts" },
-    { href: `/app/${year}/fx`, label: "FX Transfers" },
-    { href: `/app/${year}/savings`, label: "Savings" },
-    { href: `/app/${year}/analytics`, label: "Analytics" },
-    { href: `/app/${year}/planning`, label: "Planning" },
-    { href: `/app/${year}/tracking`, label: "Tracking" },
+  const navGroups = [
+    {
+      title: "Core",
+      items: [
+        { href: `/app/${year}`, label: "Dashboard" },
+        { href: `/app/${year}/accounts`, label: "Accounts" },
+        { href: `/app/${year}/fx`, label: "FX Transfers" },
+      ],
+    },
+    {
+      title: "Planning",
+      items: [
+        { href: `/app/${year}/savings`, label: "Savings" },
+        { href: `/app/${year}/planning`, label: "Planning" },
+      ],
+    },
+    {
+      title: "Follow Up",
+      items: [
+        { href: `/app/${year}/analytics`, label: "Analytics" },
+        { href: `/app/${year}/tracking`, label: "Tracking" },
+      ],
+    },
   ];
 
   return (
@@ -71,20 +86,29 @@ export function MobileNav({ year, currentPath }: MobileNavProps) {
                 </button>
               </div>
             </div>
-            <nav className="p-4 space-y-1">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setIsOpen(false)}
-                  className={`block rounded-md px-3 py-2 text-sm font-medium transition ${
-                    currentPath === item.href
-                      ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
-                      : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
-                  }`}
-                >
-                  {item.label}
-                </Link>
+            <nav className="p-4 space-y-4">
+              {navGroups.map((group) => (
+                <div key={group.title}>
+                  <p className="px-3 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400 mb-2">
+                    {group.title}
+                  </p>
+                  <div className="space-y-1">
+                    {group.items.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setIsOpen(false)}
+                        className={`block rounded-md px-3 py-2 text-sm font-medium transition ${
+                          currentPath === item.href
+                            ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
+                            : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
+                        }`}
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               ))}
             </nav>
           </div>
