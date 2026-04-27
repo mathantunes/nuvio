@@ -201,5 +201,18 @@ export const savingsSnapshotLines = pgTable("savings_snapshot_lines", {
     .defaultNow(),
 });
 
+// USERS: local authentication — replaces Supabase auth.users.
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 
 

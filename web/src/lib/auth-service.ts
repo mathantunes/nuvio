@@ -1,20 +1,15 @@
-import { createClient } from "@/lib/supabase-server";
+import { getSession } from "@/lib/session";
 
 export class AuthService {
   /**
-   * Get the current authenticated user
-   * @returns The user object or throws if not authenticated
+   * Get the current authenticated user from the iron-session cookie.
+   * Throws if the user is not authenticated.
    */
   static async getCurrentUser() {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+    const session = await getSession();
+    if (!session.userId) {
       throw new Error("User not authenticated");
     }
-
-    return user;
+    return { id: session.userId, email: session.email };
   }
 }

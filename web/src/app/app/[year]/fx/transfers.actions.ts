@@ -15,8 +15,8 @@ const createTransferSchema = z.object({
   targetAmount: z.string().transform(Number).pipe(z.number().positive()),
   targetCurrencyCode: z.string().length(3).regex(/^[A-Z]{3}$/),
   fxRate: z.string().transform(Number).pipe(z.number().positive()).optional(),
-  feeAmount: z.string().transform(Number).pipe(z.number().min(0)).default(0),
-  taxAmount: z.string().transform(Number).pipe(z.number().min(0)).default(0),
+  feeAmount: z.string().transform(Number).pipe(z.number().min(0)).default("0"),
+  taxAmount: z.string().transform(Number).pipe(z.number().min(0)).default("0"),
   note: z.string().max(500).optional(),
   occurredAt: z.string().datetime(),
 });

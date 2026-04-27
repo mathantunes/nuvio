@@ -29,6 +29,13 @@
       "when": 1774540051430,
       "tag": "0003_amazing_justin_hammer",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1777300850063,
+      "tag": "0004_whole_franklin_richards",
+      "breakpoints": true
     }
   ]
 }

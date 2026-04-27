@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { createBrowserSupabaseClient } from "@/lib/supabase-browser";
+import { useRouter } from "next/navigation";
 import { getMessages } from "@/i18n";
 
 export default function LoginPage() {
   const messages = getMessages("en");
+  const router = useRouter();
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "submitting" | "sent" | "error">("idle");
+  const [password, setPassword] = useState("");
+  const [status, setStatus] = useState<"idle" | "submitting" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -15,21 +17,20 @@ export default function LoginPage() {
     setStatus("submitting");
     setError(null);
 
-    const supabase = createBrowserSupabaseClient();
-    const { error: signInError } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
     });
 
-    if (signInError) {
-      setError(signInError.message);
+    if (!res.ok) {
+      const data = await res.json();
+      setError(data.error ?? "Login failed");
       setStatus("error");
       return;
     }
 
-    setStatus("sent");
+    router.push("/app");
   };
 
   return (
@@ -40,7 +41,7 @@ export default function LoginPage() {
             {messages.auth.loginTitle}
           </h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            {messages.auth.loginSubtitle}
+            Sign in with your email and password.
           </p>
         </header>
 
@@ -57,29 +58,42 @@ export default function LoginPage() {
               type="email"
               required
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
               className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none ring-0 transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
               placeholder={messages.auth.emailPlaceholder}
               autoComplete="email"
             />
           </div>
 
-          {error ? (
+          <div className="space-y-2">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-zinc-900 dark:text-zinc-50"
+            >
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none ring-0 transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+              placeholder="••••••••"
+              autoComplete="current-password"
+            />
+          </div>
+
+          {error && (
             <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-          ) : status === "sent" ? (
-            <p className="text-sm text-emerald-700 dark:text-emerald-400">
-              {messages.auth.magicLinkSent}
-            </p>
-          ) : null}
+          )}
 
           <button
             type="submit"
             disabled={status === "submitting"}
             className="flex w-full items-center justify-center rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-50 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-400 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200"
           >
-            {status === "submitting"
-              ? messages.auth.sendingMagicLink
-              : messages.auth.sendMagicLink}
+            {status === "submitting" ? "Signing in…" : "Sign in"}
           </button>
         </form>
 
