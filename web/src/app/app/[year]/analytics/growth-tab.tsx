@@ -1,4 +1,17 @@
+"use client";
+
 import React from "react";
+import {
+  ComposedChart,
+  Bar,
+  Line,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 import { formatCurrency } from "../planning/currency-format";
 import { GrowthAnalytics, GrowthData } from "@/lib/growth-computations";
 
@@ -166,51 +179,79 @@ function CurrencyGrowthCard({ currency }: { currency: GrowthData }) {
   );
 }
 
-function MonthlyProgressChart({ currency, currentMonthIdx }: { currency: GrowthData; currentMonthIdx: number }) {
-  const ytdMonths = currency.monthlyBreakdown.filter(month => month.month <= currentMonthIdx + 1);
-  const maxBalance = Math.max(...ytdMonths.map(m => m.endingBalance), 1);
-  
+function MonthlyProgressChart({
+  currency,
+  currentMonthIdx,
+}: {
+  currency: GrowthData;
+  currentMonthIdx: number;
+}) {
+  const ytdMonths = currency.monthlyBreakdown.filter(
+    (m) => m.month <= currentMonthIdx + 1
+  );
+
+  const data = ytdMonths.map((m) => ({
+    name: m.monthName,
+    Income: m.income,
+    Expenses: m.expenses,
+    Balance: m.endingBalance,
+    transferImpact: m.transferImpact,
+  }));
+
+  const formatYAxis = (v: number) =>
+    Math.abs(v) >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v);
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (!active || !payload?.length) return null;
+    const entry = ytdMonths.find((m) => m.monthName === label);
+    return (
+      <div className="rounded-lg border border-zinc-200 bg-white p-3 shadow-sm text-xs dark:border-zinc-700 dark:bg-zinc-900 space-y-1">
+        <p className="font-semibold text-zinc-900 dark:text-zinc-50">{label}</p>
+        {payload.map((p: any) => (
+          <p key={p.dataKey} style={{ color: p.color ?? p.stroke }}>
+            {p.name}: {formatCurrency(p.value, currency.currency)}
+          </p>
+        ))}
+        {entry && entry.transferImpact !== 0 && (
+          <p className={entry.transferImpact >= 0 ? "text-purple-500" : "text-red-400"}>
+            FX impact: {entry.transferImpact >= 0 ? "+" : ""}
+            {formatCurrency(entry.transferImpact, currency.currency)}
+          </p>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div>
-      <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-50 mb-3">{currency.currency} Progress</h4>
-      
-      <div className="space-y-2">
-        {ytdMonths.map((month) => (
-          <div key={month.month} className="space-y-1">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-zinc-500 dark:text-zinc-400 w-12">
-                {month.monthName}
-              </span>
-              <div className="flex items-center gap-3">
-                {month.transferImpact !== 0 && (
-                  <span className={`font-medium ${
-                    month.transferImpact >= 0 ? 'text-purple-600 dark:text-purple-400' : 'text-red-600 dark:text-red-400'
-                  }`}>
-                    FX {month.transferImpact >= 0 ? '+' : ''}{formatCurrency(month.transferImpact, currency.currency)}
-                  </span>
-                )}
-                <span className="font-medium text-zinc-900 dark:text-zinc-50">
-                  {formatCurrency(month.endingBalance, currency.currency)}
-                </span>
-              </div>
-            </div>
-            
-            <div className="relative">
-              <div className="h-px bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-zinc-300 dark:bg-zinc-600 rounded-full transition-all duration-300"
-                  style={{ width: `${(month.endingBalance / maxBalance) * 100}%` }}
-                />
-              </div>
-              <div 
-                className="absolute w-1.5 h-1.5 bg-zinc-400 dark:bg-zinc-500 rounded-full"
-                style={{ left: `${(month.endingBalance / maxBalance) * 100}%`, top: '50%', transform: 'translate(-50%, -50%)' }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-      
+      <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-50 mb-3">
+        {currency.currency} Progress
+      </h4>
+
+      <ResponsiveContainer width="100%" height={240}>
+        <ComposedChart data={data} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
+          <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+          <YAxis tickFormatter={formatYAxis} tick={{ fontSize: 11 }} width={48} />
+          <Tooltip content={<CustomTooltip />} />
+          <Legend wrapperStyle={{ fontSize: 12 }} />
+
+          <Bar dataKey="Income" name="Income" fill="#10b981" radius={[3, 3, 0, 0]} opacity={0.85} />
+          <Bar dataKey="Expenses" name="Expenses" fill="#f87171" radius={[3, 3, 0, 0]} opacity={0.85} />
+
+          <Area
+            type="monotone"
+            dataKey="Balance"
+            name="Balance"
+            stroke="#6366f1"
+            fill="#6366f1"
+            fillOpacity={0.08}
+            strokeWidth={2}
+            dot={{ r: 3, fill: "#6366f1" }}
+            activeDot={{ r: 5 }}
+          />
+        </ComposedChart>
+      </ResponsiveContainer>
+
       <div className="mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-800 grid grid-cols-3 gap-4 text-xs">
         <div>
           <span className="text-zinc-500 dark:text-zinc-400">Start: </span>

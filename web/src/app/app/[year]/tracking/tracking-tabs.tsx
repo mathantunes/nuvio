@@ -556,6 +556,7 @@ export function TrackingTabs({
                       <TransactionForm
                         budgetLineId={line.id}
                         year={year}
+                        month={selectedMonth}
                         expectedAmount={line.plannedAmount}
                         expectedCurrency={line.currencyCode}
                         accounts={accounts}

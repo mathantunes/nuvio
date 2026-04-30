@@ -26,6 +26,7 @@ type Transaction = {
 type Props = {
   budgetLineId: string;
   year: number;
+  month: number;
   expectedAmount: string;
   expectedCurrency: string;
   accounts: Account[];
@@ -36,6 +37,7 @@ type Props = {
 export function TransactionForm({
   budgetLineId,
   year,
+  month,
   expectedAmount,
   expectedCurrency,
   accounts,
@@ -43,6 +45,14 @@ export function TransactionForm({
   onSuccess,
 }: Props) {
   const isEditMode = !!transaction;
+
+  // Default date: today if we're in the budget line's month, otherwise the 1st of that month.
+  function defaultDateForMonth() {
+    const now = new Date();
+    const isCurrentMonth = now.getFullYear() === year && now.getMonth() + 1 === month;
+    if (isCurrentMonth) return now.toISOString().split("T")[0];
+    return new Date(year, month - 1, 1).toISOString().split("T")[0];
+  }
   
   const [accountId, setAccountId] = useState(
     transaction?.account.id ?? accounts[0]?.id ?? ""
@@ -51,9 +61,9 @@ export function TransactionForm({
     transaction?.amount ?? ""
   );
   const [occurredAt, setOccurredAt] = useState(
-    transaction?.occurredAt 
+    transaction?.occurredAt
       ? new Date(transaction.occurredAt).toISOString().split("T")[0]
-      : new Date().toISOString().split("T")[0]
+      : defaultDateForMonth()
   );
   const [description, setDescription] = useState(
     transaction?.description ?? ""
@@ -98,7 +108,7 @@ export function TransactionForm({
         setAmount("");
         setDescription("");
         setSameAsPlanned(false);
-        setOccurredAt(new Date().toISOString().split("T")[0]);
+        setOccurredAt(defaultDateForMonth());
       }
 
       onSuccess?.();

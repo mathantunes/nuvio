@@ -94,6 +94,12 @@ export default async function BudgetYearLayout({ children, params }: Props) {
             </p>
             <div className="space-y-1">
               <Link
+                href={`/app/${budget.year}/variance`}
+                className="block rounded-md px-2 py-1 text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800"
+              >
+                Budget vs Actual
+              </Link>
+              <Link
                 href={`/app/${budget.year}/analytics`}
                 className="block rounded-md px-2 py-1 text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800"
               >
