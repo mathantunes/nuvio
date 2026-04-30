@@ -127,7 +127,7 @@ export default async function BudgetTrackingMonthPage({ params }: Props) {
         </p>
       </header>
 
-      <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-left dark:border-zinc-700 dark:bg-zinc-950">
+      <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-left dark:border-zinc-800 dark:bg-zinc-950">
         <TrackingTabs
           budgetId={budget.id}
           year={year}

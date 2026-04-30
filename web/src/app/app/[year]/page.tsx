@@ -109,7 +109,7 @@ export default async function BudgetDashboardPage({
                 })}
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-zinc-300 font-semibold text-zinc-900 dark:border-zinc-700 dark:text-zinc-50">
+                <tr className="border-t-2 border-zinc-300 font-semibold text-zinc-900 dark:border-zinc-800 dark:text-zinc-50">
                   <td className="py-2 pr-3">Total</td>
                   <td className="py-2 px-2 text-right">
                     <div className={`grid grid-rows-${Object.keys(data.yearIncomePlanned).length} items-start`}>
@@ -159,11 +159,11 @@ export default async function BudgetDashboardPage({
                     const totalFees = Number(transfer.feeAmount || 0) + Number(transfer.taxAmount || 0);
                     return (
                       <div key={transfer.id} className="flex items-center gap-2 text-xs">
-                        <span className="font-mono text-zinc-900 dark:text-zinc-50">
+                        <span className="tabular-nums text-zinc-900 dark:text-zinc-50">
                           {formatCurrency(Number(transfer.sourceAmount), transfer.sourceCurrencyCode)}
                         </span>
                         <span className="text-zinc-400 dark:text-zinc-600">→</span>
-                        <span className="font-mono text-emerald-600 dark:text-emerald-400">
+                        <span className="tabular-nums text-emerald-600 dark:text-emerald-400">
                           +{formatCurrency(Number(transfer.targetAmount), transfer.targetCurrencyCode)}
                         </span>
                         {totalFees > 0 && (
@@ -177,13 +177,13 @@ export default async function BudgetDashboardPage({
                 </div>
 
                 {/* Net impact by currency */}
-                <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700">
+                <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800">
                   <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Net Transfer Impact</p>
                   <div className="space-y-1">
                     {Object.entries(data.transferImpacts).map(([currency, impact]) => (
                       <div key={currency} className="flex items-center justify-between">
                         <span className="text-xs text-zinc-600 dark:text-zinc-400">{currency}</span>
-                        <span className={`text-xs font-mono font-semibold ${
+                        <span className={`text-xs tabular-nums font-semibold ${
                           impact > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
                         }`}>
                           {impact > 0 ? "+" : ""}{formatCurrency(impact, currency)}
@@ -231,34 +231,34 @@ export default async function BudgetDashboardPage({
                       {/* Mobile layout - stacked */}
                       <div className="sm:hidden grid grid-cols-2 gap-2 text-xs">
                         <div className="text-zinc-500 dark:text-zinc-400">Start:</div>
-                        <div className="font-mono text-zinc-900 dark:text-zinc-50 text-right">
+                        <div className="tabular-nums text-zinc-900 dark:text-zinc-50 text-right">
                           {formatCurrency(savingsData.startingBalance, currencyCode!)}
                         </div>
                         <div className="text-zinc-500 dark:text-zinc-400">Income:</div>
-                        <div className={`font-mono text-right ${savingsData.netIncome > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                        <div className={`tabular-nums text-right ${savingsData.netIncome > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                           {savingsData.netIncome > 0 ? "+" : ""}{formatCurrency(savingsData.netIncome, currencyCode!)}
                         </div>
                         <div className="text-zinc-500 dark:text-zinc-400">FX:</div>
-                        <div className={`font-mono text-right ${savingsData.transferImpact > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                        <div className={`tabular-nums text-right ${savingsData.transferImpact > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                           {savingsData.transferImpact > 0 ? "+" : ""}{formatCurrency(savingsData.transferImpact, currencyCode!)}
                         </div>
                         <div className="text-zinc-500 dark:text-zinc-400">Final:</div>
-                        <div className={`font-mono font-semibold text-right ${savingsData.finalBalance > savingsData.startingBalance ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                        <div className={`tabular-nums font-semibold text-right ${savingsData.finalBalance > savingsData.startingBalance ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                           {formatCurrency(savingsData.finalBalance, currencyCode!)}
                         </div>
                       </div>
                       {/* Desktop layout - horizontal */}
                       <div className="hidden sm:grid grid-cols-4 gap-4 text-xs">
-                        <div className="font-mono text-zinc-900 dark:text-zinc-50">
+                        <div className="tabular-nums text-zinc-900 dark:text-zinc-50">
                           {formatCurrency(savingsData.startingBalance, currencyCode!)}
                         </div>
-                        <div className={`font-mono ${savingsData.netIncome > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                        <div className={`tabular-nums ${savingsData.netIncome > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                           {savingsData.netIncome > 0 ? "+" : ""}{formatCurrency(savingsData.netIncome, currencyCode!)}
                         </div>
-                        <div className={`font-mono ${savingsData.transferImpact > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                        <div className={`tabular-nums ${savingsData.transferImpact > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                           {savingsData.transferImpact > 0 ? "+" : ""}{formatCurrency(savingsData.transferImpact, currencyCode!)}
                         </div>
-                        <div className={`font-mono font-semibold ${savingsData.finalBalance > savingsData.startingBalance ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                        <div className={`tabular-nums font-semibold ${savingsData.finalBalance > savingsData.startingBalance ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                           {formatCurrency(savingsData.finalBalance, currencyCode!)}
                         </div>
                       </div>
@@ -327,7 +327,7 @@ function MultiCurrencyCard({
                   <div className="text-[11px] text-zinc-400 dark:text-zinc-600">
                     plan {planned > 0 ? formatCurrency(planned, currency) : "—"}
                   </div>
-                  <div className={`text-sm font-bold font-mono ${actual > 0
+                  <div className={`text-sm font-bold tabular-nums ${actual > 0
                     ? positiveWhenActualHigher
                       ? actual >= planned && planned > 0
                         ? "text-emerald-600 dark:text-emerald-400"

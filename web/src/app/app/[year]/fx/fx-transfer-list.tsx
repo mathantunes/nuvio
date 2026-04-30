@@ -71,7 +71,7 @@ export function FxTransferList({ transfers, onUpdate }: Props) {
           return (
             <div
               key={transfer.id}
-              className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900"
+              className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-900"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 space-y-2">
@@ -89,7 +89,7 @@ export function FxTransferList({ transfers, onUpdate }: Props) {
                   {/* Amounts */}
                   <div className="flex items-center gap-3 text-xs">
                     <div>
-                      <span className="font-mono text-zinc-900 dark:text-zinc-50">
+                      <span className="tabular-nums text-zinc-900 dark:text-zinc-50">
                         {formatCurrency(parseFloat(transfer.sourceAmount), transfer.sourceCurrencyCode)}
                       </span>
                       {totalCosts > 0 && (
@@ -100,7 +100,7 @@ export function FxTransferList({ transfers, onUpdate }: Props) {
                     </div>
                     <span className="text-zinc-400 dark:text-zinc-600">→</span>
                     <div>
-                      <span className="font-mono text-zinc-900 dark:text-zinc-50">
+                      <span className="tabular-nums text-zinc-900 dark:text-zinc-50">
                         {formatCurrency(parseFloat(transfer.targetAmount), transfer.targetCurrencyCode)}
                       </span>
                     </div>
@@ -139,7 +139,7 @@ export function FxTransferList({ transfers, onUpdate }: Props) {
                 <button
                   onClick={() => handleDelete(transfer.id)}
                   disabled={isPending}
-                  className="shrink-0 rounded p-1 text-zinc-400 transition hover:bg-zinc-200 hover:text-red-600 dark:hover:bg-zinc-700 dark:hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="shrink-0 rounded-lg p-1.5 text-zinc-400 transition hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950 dark:hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
                   title="Delete transfer"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -150,7 +150,7 @@ export function FxTransferList({ transfers, onUpdate }: Props) {
 
               {/* Cost Impact Indicator */}
               {!isSameCurrency && transfer.fxRate && transfer.effectiveFxRate && (
-                <div className="mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-700">
+                <div className="mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
                   <div className="flex items-center gap-2 text-xs">
                     <span className="text-zinc-600 dark:text-zinc-400">Cost impact:</span>
                     <span className={`font-medium ${

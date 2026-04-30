@@ -39,7 +39,7 @@ export default async function FxPage({
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Transfer Form */}
         <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
-          <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+          <h2 className="mb-4 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
             Create Transfer
           </h2>
           <FxTransferForm />
@@ -47,7 +47,7 @@ export default async function FxPage({
 
         {/* Recent Transfers */}
         <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
-          <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+          <h2 className="mb-4 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
             Recent Transfers
           </h2>
           <FxTransferList transfers={transfers} />

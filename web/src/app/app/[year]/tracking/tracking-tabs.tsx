@@ -244,7 +244,7 @@ export function TrackingTabs({
       </div>
 
       {/* Month Header */}
-      <div className="rounded-lg border-zinc-200 bg-zinc-50 p-4 text-left dark:border-zinc-700 dark:bg-zinc-950">
+      <div className="rounded-lg border-zinc-200 bg-zinc-50 p-4 text-left dark:border-zinc-800 dark:bg-zinc-950">
         <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
           {fullMonthNames[selectedMonth - 1]} {year}
         </h2>
@@ -296,7 +296,7 @@ export function TrackingTabs({
                             {line.transactions.length !== 1 ? "s" : ""}
                           </button>
                           {openPopupId === line.id && (
-                            <div className="absolute bottom-full left-0 z-50 mb-2 w-72 rounded-lg border border-zinc-200 bg-white shadow-xl dark:border-zinc-700 dark:bg-zinc-800" data-transaction-popup>
+                            <div className="absolute bottom-full left-0 z-50 mb-2 w-72 rounded-lg border border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-800" data-transaction-popup>
                               <div className="p-3">
                                 <div className="mb-2 text-xs font-semibold text-zinc-900 dark:text-zinc-50">
                                   Transactions
@@ -318,7 +318,7 @@ export function TrackingTabs({
                                         )}
                                       </div>
                                       <div className="flex items-center gap-2 shrink-0">
-                                        <span className="font-mono text-zinc-900 dark:text-zinc-50">
+                                        <span className="tabular-nums text-zinc-900 dark:text-zinc-50">
                                           {formatAmount(
                                             parseFloat(tx.amount),
                                             tx.currencyCode
@@ -392,7 +392,7 @@ export function TrackingTabs({
                           <div className="text-[11px] leading-4 text-zinc-500 dark:text-zinc-400">
                             Expected
                           </div>
-                          <div className="text-sm leading-5 font-mono text-zinc-700 dark:text-zinc-300">
+                          <div className="text-sm leading-5 tabular-nums text-zinc-700 dark:text-zinc-300">
                             {formatAmount(expected, line.currencyCode)}
                           </div>
                         </div>
@@ -402,7 +402,7 @@ export function TrackingTabs({
                           <div className="text-[11px] leading-4 text-zinc-500 dark:text-zinc-400">
                             Actual
                           </div>
-                          <div className="text-sm leading-5 font-mono text-zinc-700 dark:text-zinc-300">
+                          <div className="text-sm leading-5 tabular-nums text-zinc-700 dark:text-zinc-300">
                             {actual > 0
                               ? formatAmount(actual, line.actualCurrency)
                               : "—"}
@@ -417,7 +417,7 @@ export function TrackingTabs({
                           {actual > 0 && percentage !== null ? (
                             <div className="inline-flex items-center justify-end gap-1 text-sm leading-5 font-semibold">
                               {isOver ? (
-                                <span className={`${activeTab === "income" ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                                <span className={`${activeTab === "income" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                                   ↑
                                 </span>
                               ) : isUnder ? (
@@ -432,7 +432,7 @@ export function TrackingTabs({
                               <span
                                 className={
                                   isOver
-                                    ? `${activeTab === "income" ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`
+                                    ? `${activeTab === "income" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`
                                     : isUnder
                                       ? `${activeTab === "income" ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`
                                       : "text-zinc-700 dark:text-zinc-300"
@@ -492,7 +492,7 @@ export function TrackingTabs({
                         <div className="text-[11px] leading-4 text-zinc-500 dark:text-zinc-400">
                           Expected
                         </div>
-                        <div className="text-sm leading-5 font-mono text-zinc-700 dark:text-zinc-300">
+                        <div className="text-sm leading-5 tabular-nums text-zinc-700 dark:text-zinc-300">
                           {formatAmount(expected, line.currencyCode)}
                         </div>
                       </div>
@@ -500,7 +500,7 @@ export function TrackingTabs({
                         <div className="text-[11px] leading-4 text-zinc-500 dark:text-zinc-400">
                           Actual
                         </div>
-                        <div className="text-sm leading-5 font-mono text-zinc-700 dark:text-zinc-300">
+                        <div className="text-sm leading-5 tabular-nums text-zinc-700 dark:text-zinc-300">
                           {actual > 0
                             ? formatAmount(actual, line.actualCurrency)
                             : "—"}
@@ -513,7 +513,7 @@ export function TrackingTabs({
                         {actual > 0 && percentage !== null ? (
                           <div className="inline-flex items-center gap-1 text-sm leading-5 font-semibold">
                             {isOver ? (
-                              <span className={`${activeTab === "income" ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                              <span className={`${activeTab === "income" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                                 ↑
                               </span>
                             ) : isUnder ? (
@@ -528,7 +528,7 @@ export function TrackingTabs({
                             <span
                               className={
                                 isOver
-                                  ? `${activeTab === "income" ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`
+                                  ? `${activeTab === "income" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`
                                   : isUnder
                                     ? `${activeTab === "income" ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`
                                     : "text-zinc-700 dark:text-zinc-300"

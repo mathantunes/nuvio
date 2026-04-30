@@ -41,7 +41,7 @@ export default async function BudgetAccountsPage({ params }: Props) {
         </p>
       </header>
 
-      <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-left dark:border-zinc-700 dark:bg-zinc-950">
+      <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-left dark:border-zinc-800 dark:bg-zinc-950">
         {userAccounts.length === 0 ? (
           <p className="text-xs text-zinc-600 dark:text-zinc-400">
             You don&apos;t have any accounts yet. Create your first one below.

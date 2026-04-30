@@ -34,7 +34,7 @@ export default async function AppHomePage() {
         </header>
 
         <section className="space-y-4 text-left">
-          <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-950">
+          <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950">
             {userBudgets.length === 0 ? (
               <p className="text-xs text-zinc-600 dark:text-zinc-400">
                 {messages.app.budgetsEmptyState}
@@ -60,7 +60,7 @@ export default async function AppHomePage() {
             )}
           </div>
 
-          <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-950">
+          <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950">
             <div className="flex items-center justify-between gap-2">
               <div>
                 <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">

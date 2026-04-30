@@ -156,12 +156,12 @@ export function PlanningTabs({
                 {monthNames.map((month, idx) => (
                   <th
                     key={idx}
-                    className="text-left py-2 px-1 font-semibold text-zinc-600 dark:text-zinc-400"
+                    className="text-left py-2 px-2 font-semibold text-zinc-600 dark:text-zinc-400"
                   >
                     {month}
                   </th>
                 ))}
-                <th className="text-left py-2 px-1 font-semibold text-zinc-900 dark:text-zinc-50">
+                <th className="text-left py-2 px-2 font-semibold text-zinc-900 dark:text-zinc-50">
                   Total
                 </th>
               </tr>
@@ -179,7 +179,7 @@ export function PlanningTabs({
                       rows.push(
                         <tr
                           key={`total-${currentCurrency}`}
-                          className="border-t-2 border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800"
+                          className="border-t-2 border-zinc-300 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800"
                         >
                           <td className="py-2 px-2 font-semibold text-zinc-900 dark:text-zinc-50">
                             Total ({currentCurrency})
@@ -189,7 +189,7 @@ export function PlanningTabs({
                             return (
                               <td
                                 key={month}
-                                className="text-left py-2 px-1 font-mono font-semibold text-zinc-900 dark:text-zinc-50 text-[11px]"
+                                className="text-left py-2 px-2 tabular-nums font-semibold text-zinc-900 dark:text-zinc-50 text-[11px]"
                               >
                                 {monthTotal > 0
                                   ? formatAmount(monthTotal, currentCurrency)
@@ -197,7 +197,7 @@ export function PlanningTabs({
                               </td>
                             );
                           })}
-                          <td className="text-left py-2 px-1 font-mono font-semibold text-zinc-900 dark:text-zinc-50 text-[11px]">
+                          <td className="text-left py-2 px-2 tabular-nums font-semibold text-zinc-900 dark:text-zinc-50 text-[11px]">
                             {formatAmount(currencyTotal.yearlyTotal, currentCurrency)}
                           </td>
                         </tr>
@@ -226,12 +226,12 @@ export function PlanningTabs({
                         return (
                           <td
                             key={month}
-                            className="text-left py-2 px-1 text-zinc-700 dark:text-zinc-300"
+                            className="text-left py-2 px-2 text-zinc-700 dark:text-zinc-300"
                           >
                             {line ? (
                               <button
                                 onClick={() => setEditingLine(line)}
-                                className="hover:underline font-mono text-[11px]"
+                                className="hover:underline tabular-nums text-[11px]"
                                 title={`Edit ${group.categoryName} - ${monthNames[month - 1]}`}
                               >
                                 {formatAmount(
@@ -245,7 +245,7 @@ export function PlanningTabs({
                           </td>
                         );
                       })}
-                      <td className="text-left py-2 px-1 font-mono text-[11px] text-zinc-700 dark:text-zinc-300">
+                      <td className="text-left py-2 px-2 tabular-nums text-[11px] text-zinc-700 dark:text-zinc-300">
                         {formatAmount(group.total, group.currencyCode)}
                       </td>
                     </tr>
@@ -260,7 +260,7 @@ export function PlanningTabs({
                       rows.push(
                         <tr
                           key={`total-${currentCurrency}`}
-                          className="border-t-2 border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800"
+                          className="border-t-2 border-zinc-300 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800"
                         >
                           <td className="py-2 px-2 font-semibold text-zinc-900 dark:text-zinc-50">
                             Total ({currentCurrency})
@@ -270,7 +270,7 @@ export function PlanningTabs({
                             return (
                               <td
                                 key={month}
-                                className="text-left py-2 px-1 font-mono font-semibold text-zinc-900 dark:text-zinc-50 text-[11px]"
+                                className="text-left py-2 px-2 tabular-nums font-semibold text-zinc-900 dark:text-zinc-50 text-[11px]"
                               >
                                 {monthTotal > 0
                                   ? formatAmount(monthTotal, currentCurrency)
@@ -278,7 +278,7 @@ export function PlanningTabs({
                               </td>
                             );
                           })}
-                          <td className="text-left py-2 px-1 font-mono font-semibold text-zinc-900 dark:text-zinc-50 text-[11px]">
+                          <td className="text-left py-2 px-2 tabular-nums font-semibold text-zinc-900 dark:text-zinc-50 text-[11px]">
                             {formatAmount(currencyTotal.yearlyTotal, currentCurrency)}
                           </td>
                         </tr>

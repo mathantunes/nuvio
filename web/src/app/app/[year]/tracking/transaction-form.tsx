@@ -106,13 +106,13 @@ export function TransactionForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
+    <form onSubmit={handleSubmit} className="space-y-3 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
           {isEditMode ? "Edit Transaction" : "Add Transaction"}
         </h3>
         {isEditMode && (
-          <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono break-all">
+          <span className="text-xs text-zinc-500 dark:text-zinc-400 tabular-nums break-all">
             ID: {transaction.id}
           </span>
         )}
@@ -159,10 +159,10 @@ export function TransactionForm({
           </label>
           {sameAsPlanned ? (
             <div className="flex items-center gap-2">
-              <span className="flex-1 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-mono text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+              <span className="flex-1 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs tabular-nums text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
                 {formatAmount(parseFloat(expectedAmount), expectedCurrency)}
               </span>
-              <span className="text-xs font-mono text-zinc-500 dark:text-zinc-400 uppercase">
+              <span className="text-xs tabular-nums text-zinc-500 dark:text-zinc-400 uppercase">
                 {selectedAccount?.currencyCode ?? expectedCurrency}
               </span>
             </div>
@@ -179,7 +179,7 @@ export function TransactionForm({
                 className="block flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 shadow-sm outline-none ring-0 transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
                 placeholder="0.00"
               />
-              <span className="text-xs font-mono text-zinc-500 dark:text-zinc-400 uppercase">
+              <span className="text-xs tabular-nums text-zinc-500 dark:text-zinc-400 uppercase">
                 {selectedAccount?.currencyCode ?? "USD"}
               </span>
             </div>
@@ -203,10 +203,10 @@ export function TransactionForm({
             Expected
           </label>
           <div className="flex items-center gap-2">
-            <span className="flex-1 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-mono text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+            <span className="flex-1 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs tabular-nums text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
               {formatAmount(parseFloat(expectedAmount), expectedCurrency)}
             </span>
-            <span className="text-xs font-mono text-zinc-500 dark:text-zinc-400 uppercase">
+            <span className="text-xs tabular-nums text-zinc-500 dark:text-zinc-400 uppercase">
               {expectedCurrency}
             </span>
           </div>
@@ -234,7 +234,7 @@ export function TransactionForm({
       <button
         type="submit"
         disabled={isPending}
-        className="inline-flex items-center justify-center rounded-full bg-zinc-900 px-4 py-1.5 text-xs font-medium text-zinc-50 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-400 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200"
+        className="inline-flex items-center justify-center rounded-full bg-zinc-900 px-4 py-2 text-xs font-medium text-zinc-50 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-400 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200"
       >
         {isPending ? (isEditMode ? "Updating…" : "Creating…") : (isEditMode ? "Update transaction" : "Add transaction")}
       </button>
