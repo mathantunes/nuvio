@@ -64,6 +64,39 @@ export async function recordFlow(formData: FormData) {
   revalidatePath(`/app/${year}/portfolio`);
 }
 
+export async function deleteValuation(formData: FormData) {
+  const user = await AuthService.getCurrentUser();
+  const valuationId = formData.get("valuationId") as string;
+  const year = formData.get("year") as string;
+
+  const [val] = await db
+    .select()
+    .from(investmentValuations)
+    .where(eq(investmentValuations.id, valuationId));
+  if (!val || val.userId !== user.id) throw new Error("Not found");
+
+  await db.delete(investmentValuations).where(eq(investmentValuations.id, valuationId));
+
+  revalidatePath(`/app/${year}/portfolio`);
+  revalidatePath(`/app/${year}`);
+}
+
+export async function deleteFlow(formData: FormData) {
+  const user = await AuthService.getCurrentUser();
+  const flowId = formData.get("flowId") as string;
+  const year = formData.get("year") as string;
+
+  const [flow] = await db
+    .select()
+    .from(investmentFlows)
+    .where(eq(investmentFlows.id, flowId));
+  if (!flow || flow.userId !== user.id) throw new Error("Not found");
+
+  await db.delete(investmentFlows).where(eq(investmentFlows.id, flowId));
+
+  revalidatePath(`/app/${year}/portfolio`);
+}
+
 export async function createPosition(formData: FormData) {
   const user = await AuthService.getCurrentUser();
   const name = formData.get("name") as string;

@@ -2,15 +2,24 @@ import { CurrencyTotals, addTo } from "./dashboard-computations";
 
 export interface GrowthData {
   currency: string;
+  // Cash-only figures (used for monthly chart)
   startingBalance: number;
   ytdIncome: number;
   ytdExpenses: number;
-  netSavings: number; // income - expenses
-  transferImpact: number; // net effect of all transfers
-  totalFees: number; // fees from transfers
-  currentBalance: number; // starting + netSavings + transferImpact
-  growthRate: number; // percentage growth from starting balance
+  netSavings: number;
+  transferImpact: number;
+  totalFees: number;
+  currentBalance: number;
+  growthRate: number;
   monthlyBreakdown: MonthlyGrowthData[];
+  // Portfolio / investment figures per currency
+  portfolioYearStartValue: number;
+  portfolioCurrentValue: number;
+  portfolioTotalReturn: number;
+  // Combined wealth (cash + portfolio)
+  wealthStartingBalance: number;
+  wealthCurrentBalance: number;
+  wealthGrowthRate: number;
 }
 
 export interface MonthlyGrowthData {
@@ -66,9 +75,12 @@ export function calculateGrowthAnalytics(
     actualIncome: CurrencyTotals;
     plannedExpenses: CurrencyTotals;
     actualExpenses: CurrencyTotals;
-  }>
+  }>,
+  portfolioYearStart: Record<string, number> = {},
+  portfolioLatest: Record<string, number> = {},
+  portfolioTotalReturn: Record<string, number> = {},
 ): GrowthAnalytics {
-  // Get all unique currencies from savings, income/expenses, and transfers
+  // Get all unique currencies from savings, income/expenses, transfers, and portfolio
   const allCurrencies = new Set<string>();
   
   // Add currencies from starting savings
@@ -84,6 +96,10 @@ export function calculateGrowthAnalytics(
     allCurrencies.add(transfer.sourceCurrencyCode);
     allCurrencies.add(transfer.targetCurrencyCode);
   });
+
+  // Add currencies from portfolio positions
+  Object.keys(portfolioYearStart).forEach(c => allCurrencies.add(c));
+  Object.keys(portfolioLatest).forEach(c => allCurrencies.add(c));
 
   // Calculate growth data for each currency
   const byCurrency: GrowthData[] = Array.from(allCurrencies).map(currency => {
@@ -150,6 +166,16 @@ export function calculateGrowthAnalytics(
       runningBalance = endingBalance;
     });
 
+    const portYearStart   = portfolioYearStart[currency]   ?? 0;
+    const portCurrent     = portfolioLatest[currency]       ?? 0;
+    const portTotalReturn = portfolioTotalReturn[currency]  ?? 0;
+
+    const wealthStartingBalance = startingBalance + portYearStart;
+    const wealthCurrentBalance  = currentBalance  + portCurrent;
+    const wealthGrowthRate = wealthStartingBalance !== 0
+      ? ((wealthCurrentBalance - wealthStartingBalance) / Math.abs(wealthStartingBalance)) * 100
+      : (wealthCurrentBalance !== 0 ? 100 : 0);
+
     return {
       currency,
       startingBalance,
@@ -160,7 +186,13 @@ export function calculateGrowthAnalytics(
       totalFees: fees,
       currentBalance,
       growthRate,
-      monthlyBreakdown
+      monthlyBreakdown,
+      portfolioYearStartValue: portYearStart,
+      portfolioCurrentValue: portCurrent,
+      portfolioTotalReturn: portTotalReturn,
+      wealthStartingBalance,
+      wealthCurrentBalance,
+      wealthGrowthRate,
     };
   });
 

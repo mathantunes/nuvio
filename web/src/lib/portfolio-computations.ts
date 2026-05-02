@@ -202,7 +202,8 @@ export async function fetchPortfolioData(
   for (const s of summaries) {
     totalValueByCurrency[s.currencyCode]     = (totalValueByCurrency[s.currencyCode]     ?? 0) + s.latestValue;
     yearStartValueByCurrency[s.currencyCode] = (yearStartValueByCurrency[s.currencyCode] ?? 0) + s.yearStartValue;
-    totalReturnByCurrency[s.currencyCode]    = (totalReturnByCurrency[s.currencyCode]    ?? 0) + s.totalReturn;
+    // Use marketReturn (true economic return) for currency-level aggregation
+    totalReturnByCurrency[s.currencyCode]    = (totalReturnByCurrency[s.currencyCode]    ?? 0) + s.marketReturn;
   }
 
   const byKind: Record<InvestmentKind, PositionSummary[]> = {

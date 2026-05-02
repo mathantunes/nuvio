@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { formatCurrency } from "../planning/currency-format";
-import { recordValuation, recordFlow } from "./portfolio.actions";
+import { recordValuation, recordFlow, deleteValuation, deleteFlow } from "./portfolio.actions";
 import type { PositionSummary } from "@/lib/portfolio-computations";
 
 const todayISO = () => new Date().toISOString().split("T")[0];
@@ -36,6 +36,7 @@ function PositionCard({
 }) {
   const [showValForm, setShowValForm] = useState(false);
   const [showFlowForm, setShowFlowForm] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const valFormRef  = useRef<HTMLFormElement>(null);
   const flowFormRef = useRef<HTMLFormElement>(null);
 
@@ -100,13 +101,6 @@ function PositionCard({
           </div>
           <div>
             <p className="text-zinc-500 dark:text-zinc-400">Total return</p>
-            <p className={`font-semibold tabular-nums ${position.totalReturn >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
-              {position.totalReturn >= 0 ? "+" : ""}
-              {formatCurrency(position.totalReturn, position.currencyCode)}
-            </p>
-          </div>
-          <div>
-            <p className="text-zinc-500 dark:text-zinc-400">Market gain</p>
             <div className="flex items-center gap-1.5">
               <p className={`font-semibold tabular-nums ${position.marketReturn >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
                 {position.marketReturn >= 0 ? "+" : ""}
@@ -115,25 +109,86 @@ function PositionCard({
               <ReturnBadge value={position.marketReturn} pct={position.marketReturnPct} />
             </div>
           </div>
+          <div>
+            <p className="text-zinc-500 dark:text-zinc-400">Portfolio value Δ</p>
+            <p className={`text-xs tabular-nums ${position.totalReturn >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
+              {position.totalReturn >= 0 ? "+" : ""}
+              {formatCurrency(position.totalReturn, position.currencyCode)}
+              <span className="text-zinc-400 dark:text-zinc-500 ml-1">(excl. cash flows)</span>
+            </p>
+          </div>
         </div>
       ) : (
         <p className="text-xs text-zinc-400 dark:text-zinc-500">No valuation yet. Record the current market value below.</p>
       )}
 
-      {/* YTD flows summary */}
-      {position.ytdFlows.length > 0 && (
-        <div className="border-t border-zinc-100 dark:border-zinc-900 pt-2 space-y-0.5">
-          <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">YTD flows</p>
-          {position.netDepositsYTD !== 0 && (
-            <p className="text-xs text-zinc-600 dark:text-zinc-300 tabular-nums">
-              Net deposits: {position.netDepositsYTD >= 0 ? "+" : ""}
-              {formatCurrency(position.netDepositsYTD, position.currencyCode)}
-            </p>
-          )}
-          {position.dividendsYTD > 0 && (
-            <p className="text-xs text-zinc-600 dark:text-zinc-300 tabular-nums">
-              Dividends: +{formatCurrency(position.dividendsYTD, position.currencyCode)}
-            </p>
+      {/* History (valuations + flows) */}
+      {(position.valuationHistory.length > 0 || position.ytdFlows.length > 0) && (
+        <div className="border-t border-zinc-100 dark:border-zinc-900 pt-2">
+          <button
+            onClick={() => setShowHistory((v) => !v)}
+            className="text-[11px] text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 underline"
+          >
+            {showHistory ? "Hide history" : `Show history (${position.valuationHistory.length} valuations, ${position.ytdFlows.length} flows)`}
+          </button>
+
+          {showHistory && (
+            <div className="mt-2 space-y-3">
+              {/* Valuations */}
+              {position.valuationHistory.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 mb-1">Valuations</p>
+                  <ul className="space-y-1">
+                    {position.valuationHistory.map((v) => (
+                      <li key={v.id} className="flex items-center justify-between gap-2 text-xs">
+                        <span className="text-zinc-600 dark:text-zinc-300 tabular-nums">
+                          {new Date(v.asOf).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                          {" — "}
+                          <span className="font-medium">{formatCurrency(v.amount, position.currencyCode)}</span>
+                          {v.notes && <span className="text-zinc-400"> · {v.notes}</span>}
+                        </span>
+                        <form action={deleteValuation}>
+                          <input type="hidden" name="valuationId" value={v.id} />
+                          <input type="hidden" name="year" value={year} />
+                          <button type="submit" className="text-[11px] text-red-400 hover:text-red-600 dark:hover:text-red-300">
+                            Delete
+                          </button>
+                        </form>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Flows */}
+              {position.ytdFlows.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 mb-1">Flows (YTD)</p>
+                  <ul className="space-y-1">
+                    {position.ytdFlows.map((f) => (
+                      <li key={f.id} className="flex items-center justify-between gap-2 text-xs">
+                        <span className="text-zinc-600 dark:text-zinc-300 tabular-nums">
+                          {new Date(f.occurredAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                          {" — "}
+                          <span className={`font-medium ${f.flowKind === "withdrawal" ? "text-red-500" : "text-emerald-600"}`}>
+                            {f.flowKind === "withdrawal" ? "−" : "+"}{formatCurrency(f.amount, position.currencyCode)}
+                          </span>
+                          {" "}
+                          <span className="text-zinc-400">{f.notes ?? f.flowKind}</span>
+                        </span>
+                        <form action={deleteFlow}>
+                          <input type="hidden" name="flowId" value={f.id} />
+                          <input type="hidden" name="year" value={year} />
+                          <button type="submit" className="text-[11px] text-red-400 hover:text-red-600 dark:hover:text-red-300">
+                            Delete
+                          </button>
+                        </form>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}

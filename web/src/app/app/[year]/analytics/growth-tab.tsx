@@ -27,7 +27,7 @@ export function GrowthTab({ growthAnalytics, currentMonthIdx }: GrowthTabProps) 
     <div className="space-y-6">
       {/* Net Worth Overview */}
       <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
-        <h2 className="mb-6 text-lg font-semibold text-zinc-900 dark:text-zinc-50">Cash Flow Growth</h2>
+        <h2 className="mb-6 text-lg font-semibold text-zinc-900 dark:text-zinc-50">Wealth Growth</h2>
         
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
           {byCurrency.map((currency) => (
@@ -109,72 +109,124 @@ export function GrowthTab({ growthAnalytics, currentMonthIdx }: GrowthTabProps) 
 }
 
 function CurrencyGrowthCard({ currency }: { currency: GrowthData }) {
-  const isPositiveGrowth = currency.growthRate >= 0;
-  
+  const hasPortfolio = currency.portfolioYearStartValue > 0 || currency.portfolioCurrentValue > 0;
+  const isPositiveWealth = currency.wealthGrowthRate >= 0;
+  const isPositiveCash = currency.growthRate >= 0;
+
   return (
     <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">{currency.currency}</h3>
         <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-          isPositiveGrowth 
-            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' 
+          isPositiveWealth
+            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
             : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
         }`}>
-          {isPositiveGrowth ? '↑' : '↓'} {Math.abs(currency.growthRate).toFixed(1)}%
+          {isPositiveWealth ? '↑' : '↓'} {Math.abs(currency.wealthGrowthRate).toFixed(1)}%
         </div>
       </div>
-      
-      <div className="space-y-3">
+
+      {/* Total wealth summary */}
+      <div className="space-y-2 mb-3">
         <div className="flex justify-between items-center">
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">Starting</span>
+          <span className="text-xs text-zinc-500 dark:text-zinc-400">Total wealth (start)</span>
           <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-            {formatCurrency(currency.startingBalance, currency.currency)}
+            {formatCurrency(currency.wealthStartingBalance, currency.currency)}
           </span>
         </div>
-        
-        <div className="flex justify-between items-center">
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">Income</span>
-          <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
-            +{formatCurrency(currency.ytdIncome, currency.currency)}
-          </span>
-        </div>
-        
-        <div className="flex justify-between items-center">
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">Expenses</span>
-          <span className="text-sm font-medium text-red-600 dark:text-red-400">
-            -{formatCurrency(currency.ytdExpenses, currency.currency)}
-          </span>
-        </div>
-        
-        <div className="flex justify-between items-center">
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">FX Impact</span>
-          <span className={`text-sm font-medium ${
-            currency.transferImpact >= 0 ? 'text-purple-600 dark:text-purple-400' : 'text-red-600 dark:text-red-400'
-          }`}>
-            {currency.transferImpact >= 0 ? '+' : ''}{formatCurrency(currency.transferImpact, currency.currency)}
-          </span>
-        </div>
-        
-        {currency.totalFees > 0 && (
-          <div className="flex justify-between items-center">
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">Fees</span>
-            <span className="text-sm font-medium text-red-600 dark:text-red-400">
-              -{formatCurrency(currency.totalFees, currency.currency)}
-            </span>
-          </div>
-        )}
-        
         <div className="border-t border-zinc-200 dark:border-zinc-800 pt-2">
           <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Current</span>
+            <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Total wealth (now)</span>
             <span className={`text-base font-bold ${
-              isPositiveGrowth ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+              isPositiveWealth ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
             }`}>
+              {formatCurrency(currency.wealthCurrentBalance, currency.currency)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Cash flow breakdown */}
+      <details className="group">
+        <summary className="cursor-pointer text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 mb-2">
+          Cash flow detail {isPositiveCash ? '↑' : '↓'} {Math.abs(currency.growthRate).toFixed(1)}%
+        </summary>
+        <div className="space-y-2 pl-2 border-l-2 border-zinc-100 dark:border-zinc-800 mt-2">
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">Starting cash</span>
+            <span className="text-xs font-medium text-zinc-900 dark:text-zinc-50">
+              {formatCurrency(currency.startingBalance, currency.currency)}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">Income</span>
+            <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+              +{formatCurrency(currency.ytdIncome, currency.currency)}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">Expenses</span>
+            <span className="text-xs font-medium text-red-600 dark:text-red-400">
+              -{formatCurrency(currency.ytdExpenses, currency.currency)}
+            </span>
+          </div>
+          {currency.transferImpact !== 0 && (
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">FX Impact</span>
+              <span className={`text-xs font-medium ${
+                currency.transferImpact >= 0 ? 'text-purple-600 dark:text-purple-400' : 'text-red-600 dark:text-red-400'
+              }`}>
+                {currency.transferImpact >= 0 ? '+' : ''}{formatCurrency(currency.transferImpact, currency.currency)}
+              </span>
+            </div>
+          )}
+          {currency.totalFees > 0 && (
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">Fees</span>
+              <span className="text-xs font-medium text-red-600 dark:text-red-400">
+                -{formatCurrency(currency.totalFees, currency.currency)}
+              </span>
+            </div>
+          )}
+          <div className="flex justify-between items-center pt-1 border-t border-zinc-100 dark:border-zinc-800">
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">Current cash</span>
+            <span className="text-xs font-medium text-zinc-900 dark:text-zinc-50">
               {formatCurrency(currency.currentBalance, currency.currency)}
             </span>
           </div>
         </div>
-      </div>
+      </details>
+
+      {/* Portfolio breakdown */}
+      {hasPortfolio && (
+        <details className="group mt-2">
+          <summary className="cursor-pointer text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 mb-2">
+            Portfolio detail
+          </summary>
+          <div className="space-y-2 pl-2 border-l-2 border-indigo-100 dark:border-indigo-900 mt-2">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">Portfolio (start)</span>
+              <span className="text-xs font-medium text-zinc-900 dark:text-zinc-50">
+                {formatCurrency(currency.portfolioYearStartValue, currency.currency)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">Total return</span>
+              <span className={`text-xs font-medium ${
+                currency.portfolioTotalReturn >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+              }`}>
+                {currency.portfolioTotalReturn >= 0 ? '+' : ''}{formatCurrency(currency.portfolioTotalReturn, currency.currency)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center pt-1 border-t border-zinc-100 dark:border-zinc-800">
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">Portfolio (now)</span>
+              <span className="text-xs font-medium text-zinc-900 dark:text-zinc-50">
+                {formatCurrency(currency.portfolioCurrentValue, currency.currency)}
+              </span>
+            </div>
+          </div>
+        </details>
+      )}
     </div>
   );
 }
@@ -224,9 +276,12 @@ function MonthlyProgressChart({
 
   return (
     <div>
-      <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-50 mb-3">
-        {currency.currency} Progress
-      </h4>
+      <div className="flex items-center justify-between mb-3">
+        <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+          {currency.currency} Cash Flow Progress
+        </h4>
+        <span className="text-xs text-zinc-400 dark:text-zinc-500 italic">cash only — portfolio excluded</span>
+      </div>
 
       <ResponsiveContainer width="100%" height={240}>
         <ComposedChart data={data} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
