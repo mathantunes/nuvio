@@ -292,11 +292,14 @@ export function getSavingsTimeline(
     // Year-end plan: sum of all 12 months' planned savings
     yearEndPlan[currency] = points.reduce((s, p) => s + p.plannedSavings, 0);
 
-    // Year-end projection: extrapolate avg monthly actual savings over remaining months
-    const pastMonths = currentMonthIdx + 1;
-    const avgMonthlyActual =
-      pastMonths > 0 ? cumulativeActual / pastMonths : 0;
-    yearEndProjection[currency] = avgMonthlyActual * 12;
+    // Year-end projection: actual savings for completed months + planned savings
+    // for future months. This is more accurate than extrapolating an average
+    // because the budget already has month-specific planned amounts.
+    const completedMonths = currentMonthIdx; // e.g. May (idx=4) → Jan-Apr are complete
+    yearEndProjection[currency] = points.reduce((s, p) => {
+      if (p.month <= completedMonths) return s + p.actualSavings;
+      return s + p.plannedSavings;
+    }, 0);
   }
 
   return { byCurrency, yearEndProjection, yearEndPlan };

@@ -316,9 +316,9 @@ export default async function BudgetDashboardPage({
                                 ? formatCurrency(pos.latestValue, pos.currencyCode)
                                 : "—"}
                             </span>
-                            {pos.totalReturnPct !== null && (
-                              <span className={`text-[10px] font-semibold ${pos.totalReturn >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
-                                {pos.totalReturn >= 0 ? "+" : ""}{pos.totalReturnPct.toFixed(1)}%
+                            {pos.marketReturn !== 0 && (
+                              <span className={`text-[10px] font-semibold ${pos.marketReturn >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
+                                {pos.marketReturn >= 0 ? "+" : ""}{formatCurrency(pos.marketReturn, pos.currencyCode)}
                               </span>
                             )}
                           </div>

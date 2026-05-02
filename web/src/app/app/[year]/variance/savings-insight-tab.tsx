@@ -31,9 +31,14 @@ export function SavingsInsightTab({ savingsTimeline, disciplineScores, currentMo
           const projection = savingsTimeline.yearEndProjection[currency];
           const plan = savingsTimeline.yearEndPlan[currency];
           const points = savingsTimeline.byCurrency[currency];
+          // Only completed months (not the current in-progress month)
           const ytdActual = points
-            .filter((p) => p.isPast)
+            .filter((p) => p.month <= currentMonthIdx)
             .reduce((s, p) => s + p.actualSavings, 0);
+          // Cumulative planned for completed months — used for progress bar
+          const cumulativePlannedYTD = points
+            .filter((p) => p.month <= currentMonthIdx)
+            .reduce((s, p) => s + p.plannedSavings, 0);
           const diff = projection - plan;
           const onTrack = diff >= 0;
 
@@ -128,7 +133,7 @@ export function SavingsInsightTab({ savingsTimeline, disciplineScores, currentMo
                   <div className="h-1.5 w-full rounded-full bg-zinc-100 dark:bg-zinc-800">
                     <div
                       className={`h-1.5 rounded-full transition-all ${
-                        ytdActual >= plan * ((currentMonthIdx + 1) / 12)
+                        ytdActual >= cumulativePlannedYTD
                           ? "bg-emerald-500"
                           : "bg-red-400"
                       }`}
@@ -137,14 +142,14 @@ export function SavingsInsightTab({ savingsTimeline, disciplineScores, currentMo
                       }}
                     />
                   </div>
-                  {/* Expected progress marker */}
+                  {/* Expected progress marker — based on cumulative planned, not linear */}
                   <div className="relative h-0">
                     <div
                       className="absolute -top-3 w-0.5 h-3 bg-zinc-400 dark:bg-zinc-500"
                       style={{
-                        left: `${Math.min(((currentMonthIdx + 1) / 12) * 100, 100)}%`,
+                        left: `${Math.min((cumulativePlannedYTD / plan) * 100, 100)}%`,
                       }}
-                      title={`Expected ${Math.round(((currentMonthIdx + 1) / 12) * 100)}% by now`}
+                      title={`Expected ${Math.round((cumulativePlannedYTD / plan) * 100)}% by now`}
                     />
                   </div>
                 </div>
