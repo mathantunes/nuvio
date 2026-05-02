@@ -14,12 +14,19 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { formatCurrency } from "../planning/currency-format";
+import { SavingsInsightTab } from "./savings-insight-tab";
+import { TrendsTab } from "./trends-tab";
+import { GrowthTab } from "../analytics/growth-tab";
 import type {
   MonthlyVarianceData,
   YtdVarianceData,
   CategoryVarianceRow,
   CategoryVarianceSummary,
+  SavingsTimeline,
+  CategoryTrends,
+  MonthlyDisciplineScore,
 } from "@/lib/variance-computations";
+import type { GrowthAnalytics } from "@/lib/growth-computations";
 
 type Props = {
   allMonthlyVariance: MonthlyVarianceData[];
@@ -27,9 +34,13 @@ type Props = {
   currentMonthIdx: number;
   monthNames: string[];
   year: number;
+  savingsTimeline: SavingsTimeline;
+  categoryTrends: CategoryTrends;
+  disciplineScores: MonthlyDisciplineScore[];
+  growthAnalytics: GrowthAnalytics;
 };
 
-type MainTab = "monthly" | "ytd";
+type MainTab = "monthly" | "ytd" | "savings" | "trends" | "growth";
 type KindTab = "expenses" | "income";
 type DisplayMode = "chart" | "table";
 
@@ -45,6 +56,10 @@ export function VarianceTabs({
   currentMonthIdx,
   monthNames,
   year,
+  savingsTimeline,
+  categoryTrends,
+  disciplineScores,
+  growthAnalytics,
 }: Props) {
   const [mainTab, setMainTab] = useState<MainTab>("monthly");
   const [kindTab, setKindTab] = useState<KindTab>("expenses");
@@ -61,83 +76,119 @@ export function VarianceTabs({
       ? ytdVariance.expenses
       : ytdVariance.income;
 
+  const TAB_LABELS: Record<MainTab, string> = {
+    monthly: "Monthly",
+    ytd: "YTD",
+    savings: "Savings",
+    trends: "Trends",
+    growth: "Growth",
+  };
+
   return (
     <div className="space-y-4">
-      {/* Main tab: Monthly / YTD */}
-      <div className="flex gap-2 border-b border-zinc-200 dark:border-zinc-800">
-        {(["monthly", "ytd"] as MainTab[]).map((tab) => (
+      {/* Main tab navigation */}
+      <div className="flex gap-1 border-b border-zinc-200 dark:border-zinc-800 overflow-x-auto">
+        {(["monthly", "ytd", "savings", "trends", "growth"] as MainTab[]).map((tab) => (
           <button
             key={tab}
             onClick={() => setMainTab(tab)}
-            className={`px-4 py-2 text-sm font-medium transition ${
+            className={`px-4 py-2 text-sm font-medium transition whitespace-nowrap ${
               mainTab === tab
                 ? "border-b-2 border-zinc-900 text-zinc-900 dark:border-zinc-50 dark:text-zinc-50"
                 : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
             }`}
           >
-            {tab === "monthly" ? "Monthly" : "YTD"}
+            {TAB_LABELS[tab]}
           </button>
         ))}
       </div>
 
-      {/* Controls row */}
-      <div className="flex flex-wrap items-center gap-3">
-        {/* Month selector — only for Monthly tab */}
-        {mainTab === "monthly" && (
-          <select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(Number(e.target.value))}
-            className="rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-          >
-            {monthNames.map((name, idx) => (
-              <option key={idx} value={idx} disabled={idx > currentMonthIdx}>
-                {name} {idx > currentMonthIdx ? "(future)" : ""}
-              </option>
-            ))}
-          </select>
-        )}
+      {/* Savings tab */}
+      {mainTab === "savings" && (
+        <SavingsInsightTab
+          savingsTimeline={savingsTimeline}
+          disciplineScores={disciplineScores}
+          currentMonthIdx={currentMonthIdx}
+        />
+      )}
 
-        {/* Expenses / Income toggle */}
-        <div className="flex rounded-md border border-zinc-200 dark:border-zinc-700 overflow-hidden text-sm">
-          {(["expenses", "income"] as KindTab[]).map((k) => (
-            <button
-              key={k}
-              onClick={() => setKindTab(k)}
-              className={`px-3 py-1.5 font-medium transition ${
-                kindTab === k
-                  ? "bg-zinc-900 text-zinc-50 dark:bg-zinc-50 dark:text-zinc-900"
-                  : "bg-white text-zinc-600 hover:bg-zinc-50 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
-              }`}
-            >
-              {k.charAt(0).toUpperCase() + k.slice(1)}
-            </button>
-          ))}
-        </div>
+      {/* Trends tab */}
+      {mainTab === "trends" && (
+        <TrendsTab
+          categoryTrends={categoryTrends}
+          disciplineScores={disciplineScores}
+          currentMonthIdx={currentMonthIdx}
+        />
+      )}
 
-        {/* Chart / Table toggle */}
-        <div className="ml-auto flex rounded-md border border-zinc-200 dark:border-zinc-700 overflow-hidden text-sm">
-          {(["chart", "table"] as DisplayMode[]).map((m) => (
-            <button
-              key={m}
-              onClick={() => setDisplayMode(m)}
-              className={`px-3 py-1.5 font-medium transition ${
-                displayMode === m
-                  ? "bg-zinc-900 text-zinc-50 dark:bg-zinc-50 dark:text-zinc-900"
-                  : "bg-white text-zinc-600 hover:bg-zinc-50 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
-              }`}
-            >
-              {m === "chart" ? "📊 Chart" : "📋 Table"}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Growth tab */}
+      {mainTab === "growth" && (
+        <GrowthTab
+          growthAnalytics={growthAnalytics}
+          currentMonthIdx={currentMonthIdx}
+        />
+      )}
 
-      {rows.length === 0 ? (
-        <EmptyState kindTab={kindTab} />
-      ) : displayMode === "chart" ? (
-        <ChartView rows={rows} kindTab={kindTab} />
-      ) : (
-        <TableView rows={rows} kindTab={kindTab} isYtd={mainTab === "ytd"} />
+      {/* Monthly / YTD tabs share controls + chart/table */}
+      {(mainTab === "monthly" || mainTab === "ytd") && (
+        <>
+          {/* Controls row */}
+          <div className="flex flex-wrap items-center gap-3">
+            {mainTab === "monthly" && (
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                className="rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+              >
+                {monthNames.map((name, idx) => (
+                  <option key={idx} value={idx} disabled={idx > currentMonthIdx}>
+                    {name} {idx > currentMonthIdx ? "(future)" : ""}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            <div className="flex rounded-md border border-zinc-200 dark:border-zinc-700 overflow-hidden text-sm">
+              {(["expenses", "income"] as KindTab[]).map((k) => (
+                <button
+                  key={k}
+                  onClick={() => setKindTab(k)}
+                  className={`px-3 py-1.5 font-medium transition ${
+                    kindTab === k
+                      ? "bg-zinc-900 text-zinc-50 dark:bg-zinc-50 dark:text-zinc-900"
+                      : "bg-white text-zinc-600 hover:bg-zinc-50 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                  }`}
+                >
+                  {k.charAt(0).toUpperCase() + k.slice(1)}
+                </button>
+              ))}
+            </div>
+
+            <div className="ml-auto flex rounded-md border border-zinc-200 dark:border-zinc-700 overflow-hidden text-sm">
+              {(["chart", "table"] as DisplayMode[]).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setDisplayMode(m)}
+                  className={`px-3 py-1.5 font-medium transition ${
+                    displayMode === m
+                      ? "bg-zinc-900 text-zinc-50 dark:bg-zinc-50 dark:text-zinc-900"
+                      : "bg-white text-zinc-600 hover:bg-zinc-50 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                  }`}
+                >
+                  {m === "chart" ? "📊 Chart" : "📋 Table"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {rows.length === 0 ? (
+            <EmptyState kindTab={kindTab} />
+          ) : displayMode === "chart" ? (
+            <ChartView rows={rows} kindTab={kindTab} />
+          ) : (
+            <TableView rows={rows} kindTab={kindTab} isYtd={mainTab === "ytd"} />
+          )}
+        </>
       )}
     </div>
   );

@@ -4,7 +4,12 @@ import {
   fetchVarianceData,
   getMonthlyVariance,
   getYtdVariance,
+  getSavingsTimeline,
+  getCategoryTrends,
+  getDisciplineScores,
 } from "@/lib/variance-computations";
+import { fetchDashboardData } from "@/lib/dashboard-computations";
+import { calculateGrowthAnalytics } from "@/lib/growth-computations";
 import { VarianceTabs } from "./variance-tabs";
 
 export default async function VariancePage({
@@ -18,10 +23,11 @@ export default async function VariancePage({
   const user = await AuthService.getCurrentUser();
 
   try {
-    const { rows, currentMonthIdx } = await fetchVarianceData(year, user.id);
+    const [{ rows, currentMonthIdx }, dashboardData] = await Promise.all([
+      fetchVarianceData(year, user.id),
+      fetchDashboardData(year, user.id),
+    ]);
 
-    // Pre-compute all months so the client doesn't need server round-trips
-    // when switching the month selector.
     const monthNames = Array.from({ length: 12 }, (_, i) =>
       new Date(year, i).toLocaleString("en-US", { month: "long" })
     );
@@ -31,6 +37,18 @@ export default async function VariancePage({
     );
 
     const ytdVariance = getYtdVariance(rows, currentMonthIdx);
+    const savingsTimeline = getSavingsTimeline(rows, currentMonthIdx);
+    const categoryTrends = getCategoryTrends(rows, currentMonthIdx);
+    const disciplineScores = getDisciplineScores(rows, currentMonthIdx);
+
+    const growthAnalytics = calculateGrowthAnalytics(
+      dashboardData.allSavingsLines,
+      dashboardData.yearNetActual,
+      dashboardData.transferImpacts,
+      dashboardData.totalFees,
+      dashboardData.yearTransfers,
+      dashboardData.monthlyData
+    );
 
     return (
       <div className="space-y-6">
@@ -39,7 +57,7 @@ export default async function VariancePage({
             Budget vs Actual
           </h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            {year} — planned vs actual spending and income by category
+            {year} — spending, savings, trends and net worth in one view
           </p>
         </header>
 
@@ -49,6 +67,10 @@ export default async function VariancePage({
           currentMonthIdx={currentMonthIdx}
           monthNames={monthNames}
           year={year}
+          savingsTimeline={savingsTimeline}
+          categoryTrends={categoryTrends}
+          disciplineScores={disciplineScores}
+          growthAnalytics={growthAnalytics}
         />
       </div>
     );
