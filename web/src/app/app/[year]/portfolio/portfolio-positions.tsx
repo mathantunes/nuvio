@@ -1,0 +1,266 @@
+"use client";
+
+import { useRef, useState } from "react";
+import { formatCurrency } from "../planning/currency-format";
+import { recordValuation, recordFlow } from "./portfolio.actions";
+import type { PositionSummary } from "@/lib/portfolio-computations";
+
+const todayISO = () => new Date().toISOString().split("T")[0];
+
+const FLOW_KIND_LABELS: Record<string, string> = {
+  deposit:    "Deposit (cash in)",
+  withdrawal: "Withdrawal (cash out)",
+  dividend:   "Dividend (cash paid out)",
+};
+
+function ReturnBadge({ value, pct }: { value: number; pct: number | null }) {
+  const positive = value >= 0;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-xs font-semibold tabular-nums ${
+        positive ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"
+      }`}
+    >
+      {positive ? "↑" : "↓"}
+      {pct !== null ? `${Math.abs(pct).toFixed(1)}%` : "—"}
+    </span>
+  );
+}
+
+function PositionCard({
+  position,
+  year,
+}: {
+  position: PositionSummary;
+  year: number;
+}) {
+  const [showValForm, setShowValForm] = useState(false);
+  const [showFlowForm, setShowFlowForm] = useState(false);
+  const valFormRef  = useRef<HTMLFormElement>(null);
+  const flowFormRef = useRef<HTMLFormElement>(null);
+
+  const hasData = position.latestValuation !== null;
+  const latestDate = position.latestValuation?.asOf
+    ? new Date(position.latestValuation.asOf).toLocaleDateString("en-US", {
+        month: "short", day: "numeric", year: "numeric",
+      })
+    : null;
+
+  async function handleValuation(fd: FormData) {
+    await recordValuation(fd);
+    setShowValForm(false);
+    valFormRef.current?.reset();
+  }
+
+  async function handleFlow(fd: FormData) {
+    await recordFlow(fd);
+    setShowFlowForm(false);
+    flowFormRef.current?.reset();
+  }
+
+  return (
+    <div className="rounded-xl border border-zinc-200 bg-white p-4 space-y-3 dark:border-zinc-800 dark:bg-zinc-950">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+            {position.name}
+          </p>
+          {position.institution && (
+            <p className="text-[11px] text-zinc-400 dark:text-zinc-500">
+              {position.institution}
+            </p>
+          )}
+        </div>
+        <span className="text-[10px] uppercase tracking-widest font-semibold text-zinc-400 dark:text-zinc-500 mt-0.5">
+          {position.currencyCode}
+        </span>
+      </div>
+
+      {/* Value row */}
+      {hasData ? (
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <p className="text-zinc-500 dark:text-zinc-400">Latest value</p>
+            <p className="font-semibold text-zinc-900 dark:text-zinc-50 tabular-nums">
+              {formatCurrency(position.latestValue, position.currencyCode)}
+            </p>
+            {position.isStale && (
+              <p className="text-[10px] text-amber-500 dark:text-amber-400">⚠ Stale — update needed</p>
+            )}
+            {latestDate && !position.isStale && (
+              <p className="text-[10px] text-zinc-400 dark:text-zinc-500">as of {latestDate}</p>
+            )}
+          </div>
+          <div>
+            <p className="text-zinc-500 dark:text-zinc-400">Year start</p>
+            <p className="font-medium text-zinc-700 dark:text-zinc-300 tabular-nums">
+              {formatCurrency(position.yearStartValue, position.currencyCode)}
+            </p>
+          </div>
+          <div>
+            <p className="text-zinc-500 dark:text-zinc-400">Total return</p>
+            <p className={`font-semibold tabular-nums ${position.totalReturn >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
+              {position.totalReturn >= 0 ? "+" : ""}
+              {formatCurrency(position.totalReturn, position.currencyCode)}
+            </p>
+          </div>
+          <div>
+            <p className="text-zinc-500 dark:text-zinc-400">Market gain</p>
+            <div className="flex items-center gap-1.5">
+              <p className={`font-semibold tabular-nums ${position.marketReturn >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
+                {position.marketReturn >= 0 ? "+" : ""}
+                {formatCurrency(position.marketReturn, position.currencyCode)}
+              </p>
+              <ReturnBadge value={position.marketReturn} pct={position.marketReturnPct} />
+            </div>
+          </div>
+        </div>
+      ) : (
+        <p className="text-xs text-zinc-400 dark:text-zinc-500">No valuation yet. Record the current market value below.</p>
+      )}
+
+      {/* YTD flows summary */}
+      {position.ytdFlows.length > 0 && (
+        <div className="border-t border-zinc-100 dark:border-zinc-900 pt-2 space-y-0.5">
+          <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">YTD flows</p>
+          {position.netDepositsYTD !== 0 && (
+            <p className="text-xs text-zinc-600 dark:text-zinc-300 tabular-nums">
+              Net deposits: {position.netDepositsYTD >= 0 ? "+" : ""}
+              {formatCurrency(position.netDepositsYTD, position.currencyCode)}
+            </p>
+          )}
+          {position.dividendsYTD > 0 && (
+            <p className="text-xs text-zinc-600 dark:text-zinc-300 tabular-nums">
+              Dividends: +{formatCurrency(position.dividendsYTD, position.currencyCode)}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="flex gap-2 border-t border-zinc-100 dark:border-zinc-900 pt-2">
+        <button
+          onClick={() => { setShowValForm((v) => !v); setShowFlowForm(false); }}
+          className="text-xs text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50 underline"
+        >
+          {showValForm ? "Cancel" : "Record valuation"}
+        </button>
+        <button
+          onClick={() => { setShowFlowForm((v) => !v); setShowValForm(false); }}
+          className="text-xs text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50 underline"
+        >
+          {showFlowForm ? "Cancel" : "Record flow"}
+        </button>
+      </div>
+
+      {/* Valuation form */}
+      {showValForm && (
+        <form ref={valFormRef} action={handleValuation} className="space-y-2 pt-1">
+          <input type="hidden" name="positionId" value={position.id} />
+          <input type="hidden" name="year" value={year} />
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-300">Market value ({position.currencyCode})</label>
+              <input name="amount" type="number" step="0.01" min="0" required
+                placeholder="0.00"
+                className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 outline-none focus:border-zinc-900 dark:focus:border-zinc-50"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-300">Date</label>
+              <input name="asOf" type="date" required defaultValue={todayISO()}
+                className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 outline-none focus:border-zinc-900 dark:focus:border-zinc-50"
+              />
+            </div>
+          </div>
+          <input name="notes" type="text" placeholder="Notes (optional)"
+            className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 outline-none focus:border-zinc-900 dark:focus:border-zinc-50"
+          />
+          <button type="submit"
+            className="inline-flex items-center rounded-full bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-50 hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200"
+          >
+            Save valuation
+          </button>
+        </form>
+      )}
+
+      {/* Flow form */}
+      {showFlowForm && (
+        <form ref={flowFormRef} action={handleFlow} className="space-y-2 pt-1">
+          <input type="hidden" name="positionId" value={position.id} />
+          <input type="hidden" name="year" value={year} />
+          <div className="space-y-1">
+            <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-300">Flow type</label>
+            <select name="flowKind" required
+              className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 outline-none focus:border-zinc-900 dark:focus:border-zinc-50"
+            >
+              {Object.entries(FLOW_KIND_LABELS).map(([k, label]) => (
+                <option key={k} value={k}>{label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-300">Amount ({position.currencyCode})</label>
+              <input name="amount" type="number" step="0.01" min="0.01" required
+                placeholder="0.00"
+                className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 outline-none focus:border-zinc-900 dark:focus:border-zinc-50"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-300">Date</label>
+              <input name="occurredAt" type="date" required defaultValue={todayISO()}
+                className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 outline-none focus:border-zinc-900 dark:focus:border-zinc-50"
+              />
+            </div>
+          </div>
+          <input name="notes" type="text" placeholder="e.g. Sold Stock X, Dividend Q1"
+            className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 outline-none focus:border-zinc-900 dark:focus:border-zinc-50"
+          />
+          <button type="submit"
+            className="inline-flex items-center rounded-full bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-50 hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200"
+          >
+            Save flow
+          </button>
+        </form>
+      )}
+    </div>
+  );
+}
+
+export function PortfolioPositions({
+  byKind,
+  year,
+}: {
+  byKind: Record<string, PositionSummary[]>;
+  year: number;
+}) {
+  const kindMeta: Record<string, { label: string; emoji: string }> = {
+    invest:  { label: "Investments",   emoji: "📈" },
+    pension: { label: "Pension",       emoji: "🏦" },
+    crypto:  { label: "Crypto",        emoji: "₿"  },
+  };
+
+  return (
+    <div className="space-y-6">
+      {(["invest", "pension", "crypto"] as const).map((kind) => {
+        const positions = byKind[kind] ?? [];
+        if (positions.length === 0) return null;
+        const meta = kindMeta[kind];
+        return (
+          <section key={kind} className="space-y-3">
+            <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+              {meta.emoji} {meta.label}
+            </h2>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {positions.map((pos) => (
+                <PositionCard key={pos.id} position={pos} year={year} />
+              ))}
+            </div>
+          </section>
+        );
+      })}
+    </div>
+  );
+}

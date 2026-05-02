@@ -6,6 +6,7 @@ import {
   getYtdTotals,
   type CurrencyTotals 
 } from "@/lib/dashboard-computations";
+import { fetchPortfolioData } from "@/lib/portfolio-computations";
 import { formatCurrency } from "./planning/currency-format";
 
 export default async function BudgetDashboardPage({
@@ -19,7 +20,10 @@ export default async function BudgetDashboardPage({
   const user = await AuthService.getCurrentUser();
 
   try {
-    const data = await fetchDashboardData(year, user.id);
+    const [data, portfolio] = await Promise.all([
+      fetchDashboardData(year, user.id),
+      fetchPortfolioData(user.id, year),
+    ]);
     const ytdTotals = getYtdTotals(data);
 
     return (
@@ -275,6 +279,57 @@ export default async function BudgetDashboardPage({
               </p>
             )}
           </div>
+
+          {/* Portfolio summary */}
+          {portfolio.positions.length > 0 && (
+            <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Portfolio</p>
+                <a
+                  href={`/app/${year}/portfolio`}
+                  className="text-xs text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50 underline"
+                >
+                  Manage →
+                </a>
+              </div>
+              <div className="space-y-2">
+                {(["invest", "pension", "crypto"] as const).map((kind) => {
+                  const positions = portfolio.byKind[kind];
+                  if (!positions || positions.length === 0) return null;
+                  const kindLabels = { invest: "Investments", pension: "Pension", crypto: "Crypto" };
+                  return (
+                    <div key={kind}>
+                      <p className="text-[10px] uppercase tracking-widest font-semibold text-zinc-400 dark:text-zinc-500 mb-1">
+                        {kindLabels[kind]}
+                      </p>
+                      {positions.map((pos) => (
+                        <div key={pos.id} className="flex items-center justify-between text-xs py-0.5">
+                          <span className="text-zinc-700 dark:text-zinc-300">
+                            {pos.name}
+                            {pos.isStale && (
+                              <span className="ml-1 text-amber-500 dark:text-amber-400">⚠</span>
+                            )}
+                          </span>
+                          <div className="flex items-center gap-2 tabular-nums">
+                            <span className="text-zinc-900 dark:text-zinc-50 font-medium">
+                              {pos.latestValue > 0
+                                ? formatCurrency(pos.latestValue, pos.currencyCode)
+                                : "—"}
+                            </span>
+                            {pos.totalReturnPct !== null && (
+                              <span className={`text-[10px] font-semibold ${pos.totalReturn >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
+                                {pos.totalReturn >= 0 ? "+" : ""}{pos.totalReturnPct.toFixed(1)}%
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );

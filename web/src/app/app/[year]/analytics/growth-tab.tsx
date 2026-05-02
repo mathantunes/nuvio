@@ -27,7 +27,7 @@ export function GrowthTab({ growthAnalytics, currentMonthIdx }: GrowthTabProps) 
     <div className="space-y-6">
       {/* Net Worth Overview */}
       <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
-        <h2 className="mb-6 text-lg font-semibold text-zinc-900 dark:text-zinc-50">Net Worth Growth</h2>
+        <h2 className="mb-6 text-lg font-semibold text-zinc-900 dark:text-zinc-50">Cash Flow Growth</h2>
         
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
           {byCurrency.map((currency) => (

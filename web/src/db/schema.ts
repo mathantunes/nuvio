@@ -201,6 +201,63 @@ export const savingsSnapshotLines = pgTable("savings_snapshot_lines", {
     .defaultNow(),
 });
 
+// ─── INVESTMENT PORTFOLIO ────────────────────────────────────────────────────
+
+/**
+ * Named investment positions — tracked separately from liquid accounts.
+ * kind: 'invest' | 'pension' | 'crypto'
+ */
+export const investmentPositions = pgTable("investment_positions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(),
+  name: text("name").notNull(),
+  currencyCode: text("currency_code").notNull(),
+  /** invest | pension | crypto */
+  kind: text("kind").notNull().default("invest"),
+  institution: text("institution"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * Periodic mark-to-market entries for an investment position.
+ * The user manually enters the current total market value of the position.
+ */
+export const investmentValuations = pgTable("investment_valuations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(),
+  positionId: uuid("position_id").notNull(),
+  /** Total current market value in the position's currency */
+  amount: numeric("amount", { precision: 18, scale: 4 }).notNull(),
+  /** Date of valuation (use UTC midnight) */
+  asOf: timestamp("as_of", { withTimezone: true }).notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * Cash flow events into/out of an investment position.
+ * Used for market-return attribution only — not for driving balance calculations.
+ * flow_kind: 'deposit' | 'withdrawal' | 'dividend'
+ *
+ * Total return = latestValuation - yearStartValuation + dividendsYTD
+ * Market return = latestValuation - yearStartValuation - netDepositsYTD
+ */
+export const investmentFlows = pgTable("investment_flows", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(),
+  positionId: uuid("position_id").notNull(),
+  amount: numeric("amount", { precision: 18, scale: 4 }).notNull(),
+  /** deposit | withdrawal | dividend */
+  flowKind: text("flow_kind").notNull(),
+  occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // USERS: local authentication — replaces Supabase auth.users.
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),

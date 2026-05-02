@@ -81,7 +81,7 @@ export function VarianceTabs({
     ytd: "YTD",
     savings: "Savings",
     trends: "Trends",
-    growth: "Growth",
+    growth: "Cash Flow",
   };
 
   return (
