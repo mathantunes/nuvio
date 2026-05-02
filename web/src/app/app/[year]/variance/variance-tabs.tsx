@@ -30,7 +30,6 @@ import type { GrowthAnalytics } from "@/lib/growth-computations";
 
 type Props = {
   allMonthlyVariance: MonthlyVarianceData[];
-  ytdVariance: YtdVarianceData;
   currentMonthIdx: number;
   monthNames: string[];
   year: number;
@@ -50,9 +49,38 @@ const PIE_COLORS = [
   "#ec4899", "#14b8a6", "#f97316", "#06b6d4", "#84cc16",
 ];
 
+// Aggregate monthly variance data up through `throughMonthIdx` (0-based)
+function computeYtd(
+  allMonthlyVariance: MonthlyVarianceData[],
+  throughMonthIdx: number
+): YtdVarianceData {
+  const map = new Map<string, CategoryVarianceSummary>();
+  for (let i = 0; i <= throughMonthIdx; i++) {
+    const monthData = allMonthlyVariance[i];
+    if (!monthData) continue;
+    for (const row of [...monthData.expenses, ...monthData.income]) {
+      const key = `${row.categoryId}__${row.currencyCode}`;
+      if (!map.has(key)) {
+        map.set(key, { ...row, planned: 0, actual: 0, variance: 0, pct: 0 });
+      }
+      const entry = map.get(key)!;
+      entry.planned += row.planned;
+      entry.actual += row.actual;
+    }
+  }
+  const summaries = Array.from(map.values()).map((s) => ({
+    ...s,
+    variance: s.planned - s.actual,
+    pct: s.planned !== 0 ? (s.actual / s.planned) * 100 : 0,
+  }));
+  return {
+    expenses: summaries.filter((s) => s.categoryKind !== "income"),
+    income: summaries.filter((s) => s.categoryKind === "income"),
+  };
+}
+
 export function VarianceTabs({
   allMonthlyVariance,
-  ytdVariance,
   currentMonthIdx,
   monthNames,
   year,
@@ -64,7 +92,13 @@ export function VarianceTabs({
   const [mainTab, setMainTab] = useState<MainTab>("monthly");
   const [kindTab, setKindTab] = useState<KindTab>("expenses");
   const [displayMode, setDisplayMode] = useState<DisplayMode>("chart");
-  const [selectedMonth, setSelectedMonth] = useState(currentMonthIdx); // 0-based index
+  const [selectedMonth, setSelectedMonth] = useState(currentMonthIdx); // 0-based
+  // Default YTD to last fully-closed month (never the current in-progress month)
+  const lastClosedMonthIdx = Math.max(0, currentMonthIdx - 1);
+  const [ytdMonthIdx, setYtdMonthIdx] = useState(lastClosedMonthIdx); // 0-based
+
+  // Compute YTD dynamically on the client so the user can change the range
+  const ytdVariance = computeYtd(allMonthlyVariance, ytdMonthIdx);
 
   const monthlyData = allMonthlyVariance[selectedMonth];
   const rows: CategoryVarianceRow[] | CategoryVarianceSummary[] =
@@ -146,6 +180,26 @@ export function VarianceTabs({
                   </option>
                 ))}
               </select>
+            )}
+
+            {mainTab === "ytd" && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">Jan →</span>
+                <select
+                  value={ytdMonthIdx}
+                  onChange={(e) => setYtdMonthIdx(Number(e.target.value))}
+                  className="rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                >
+                  {monthNames.map((name, idx) => (
+                    <option key={idx} value={idx} disabled={idx > currentMonthIdx}>
+                      {name}
+                      {idx === lastClosedMonthIdx ? " (last closed)" : ""}
+                      {idx === currentMonthIdx ? " (in progress)" : ""}
+                      {idx > currentMonthIdx ? " (future)" : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
             )}
 
             <div className="flex rounded-md border border-zinc-200 dark:border-zinc-700 overflow-hidden text-sm">

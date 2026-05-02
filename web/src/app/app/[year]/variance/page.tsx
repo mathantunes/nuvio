@@ -3,7 +3,6 @@ import { AuthService } from "@/lib/auth-service";
 import {
   fetchVarianceData,
   getMonthlyVariance,
-  getYtdVariance,
   getSavingsTimeline,
   getCategoryTrends,
   getDisciplineScores,
@@ -38,7 +37,6 @@ export default async function VariancePage({
       getMonthlyVariance(rows, i + 1)
     );
 
-    const ytdVariance = getYtdVariance(rows, currentMonthIdx);
     const savingsTimeline = getSavingsTimeline(rows, currentMonthIdx);
     const categoryTrends = getCategoryTrends(rows, currentMonthIdx);
     const disciplineScores = getDisciplineScores(rows, currentMonthIdx);
@@ -68,7 +66,6 @@ export default async function VariancePage({
 
         <VarianceTabs
           allMonthlyVariance={allMonthlyVariance}
-          ytdVariance={ytdVariance}
           currentMonthIdx={currentMonthIdx}
           monthNames={monthNames}
           year={year}
