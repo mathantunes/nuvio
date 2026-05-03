@@ -13,28 +13,38 @@ export function MobileNav({ year, currentPath }: MobileNavProps) {
 
   const navGroups = [
     {
-      title: "Core",
+      title: "Overview",
       items: [
         { href: `/app/${year}`, label: "Dashboard" },
+      ],
+    },
+    {
+      title: "Setup",
+      items: [
         { href: `/app/${year}/accounts`, label: "Accounts" },
         { href: `/app/${year}/fx`, label: "FX Transfers" },
       ],
     },
     {
-      title: "Planning",
+      title: "Budget",
       items: [
-        { href: `/app/${year}/savings`, label: "Savings" },
         { href: `/app/${year}/planning`, label: "Planning" },
+        { href: `/app/${year}/savings`, label: "Savings" },
+        { href: `/app/${year}/variance`, label: "Budget vs Actual" },
       ],
     },
     {
-      title: "Follow Up",
+      title: "Investments",
       items: [
-        { href: `/app/${year}/variance`, label: "Budget vs Actual" },
         { href: `/app/${year}/portfolio`, label: "Portfolio" },
         { href: `/app/${year}/tracking`, label: "Tracking" },
-        { href: `/app/${year}/loans`, label: "Loans" },
+      ],
+    },
+    {
+      title: "Net Worth",
+      items: [
         { href: `/app/${year}/assets`, label: "Assets" },
+        { href: `/app/${year}/loans`, label: "Loans" },
         { href: `/app/${year}/wealth`, label: "Wealth" },
       ],
     },

@@ -46,87 +46,68 @@ export default async function BudgetYearLayout({ children, params }: Props) {
         <nav className="space-y-4 text-sm">
           <div>
             <p className="px-2 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400 mb-2">
-              Core
+              Overview
             </p>
             <div className="space-y-1">
-              <Link
-                href={`/app/${budget.year}`}
-                className="block rounded-md px-2 py-1 text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800"
-              >
+              <Link href={`/app/${budget.year}`} className="block rounded-md px-2 py-1 text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800">
                 Dashboard
               </Link>
-              <Link
-                href={`/app/${budget.year}/accounts`}
-                className="block rounded-md px-2 py-1 text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800"
-              >
+            </div>
+          </div>
+          <div>
+            <p className="px-2 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400 mb-2">
+              Setup
+            </p>
+            <div className="space-y-1">
+              <Link href={`/app/${budget.year}/accounts`} className="block rounded-md px-2 py-1 text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800">
                 Accounts
               </Link>
-              <Link
-                href={`/app/${budget.year}/fx`}
-                className="block rounded-md px-2 py-1 text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800"
-              >
+              <Link href={`/app/${budget.year}/fx`} className="block rounded-md px-2 py-1 text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800">
                 FX Transfers
               </Link>
             </div>
           </div>
           <div>
             <p className="px-2 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400 mb-2">
-              Planning
+              Budget
             </p>
             <div className="space-y-1">
-              <Link
-                href={`/app/${budget.year}/savings`}
-                className="block rounded-md px-2 py-1 text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800"
-              >
+              <Link href={`/app/${budget.year}/planning`} className="block rounded-md px-2 py-1 text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800">
+                Planning
+              </Link>
+              <Link href={`/app/${budget.year}/savings`} className="block rounded-md px-2 py-1 text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800">
                 Savings
               </Link>
-              <Link
-                href={`/app/${budget.year}/planning`}
-                className="block rounded-md px-2 py-1 text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800"
-              >
-                Planning
+              <Link href={`/app/${budget.year}/variance`} className="block rounded-md px-2 py-1 text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800">
+                Budget vs Actual
               </Link>
             </div>
           </div>
           <div>
             <p className="px-2 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400 mb-2">
-              Follow Up
+              Investments
             </p>
             <div className="space-y-1">
-              <Link
-                href={`/app/${budget.year}/variance`}
-                className="block rounded-md px-2 py-1 text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800"
-              >
-                Budget vs Actual
-              </Link>
-              <Link
-                href={`/app/${budget.year}/portfolio`}
-                className="block rounded-md px-2 py-1 text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800"
-              >
+              <Link href={`/app/${budget.year}/portfolio`} className="block rounded-md px-2 py-1 text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800">
                 Portfolio
               </Link>
-              <Link
-                href={`/app/${budget.year}/tracking`}
-                className="block rounded-md px-2 py-1 text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800"
-              >
+              <Link href={`/app/${budget.year}/tracking`} className="block rounded-md px-2 py-1 text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800">
                 Tracking
               </Link>
-              <Link
-                href={`/app/${budget.year}/assets`}
-                className="block rounded-md px-2 py-1 text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800"
-              >
+            </div>
+          </div>
+          <div>
+            <p className="px-2 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400 mb-2">
+              Net Worth
+            </p>
+            <div className="space-y-1">
+              <Link href={`/app/${budget.year}/assets`} className="block rounded-md px-2 py-1 text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800">
                 Assets
               </Link>
-              <Link
-                href={`/app/${budget.year}/loans`}
-                className="block rounded-md px-2 py-1 text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800"
-              >
+              <Link href={`/app/${budget.year}/loans`} className="block rounded-md px-2 py-1 text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800">
                 Loans
               </Link>
-              <Link
-                href={`/app/${budget.year}/wealth`}
-                className="block rounded-md px-2 py-1 text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800"
-              >
+              <Link href={`/app/${budget.year}/wealth`} className="block rounded-md px-2 py-1 text-zinc-900 hover:bg-zinc-100 dark:text-zinc-50 dark:hover:bg-zinc-800">
                 Wealth
               </Link>
             </div>
