@@ -50,6 +50,13 @@
       "when": 1777810568510,
       "tag": "0006_gifted_fabian_cortez",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1777814871388,
+      "tag": "0007_silent_silver_fox",
+      "breakpoints": true
     }
   ]
 }

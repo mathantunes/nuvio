@@ -294,6 +294,121 @@ export const instrumentTransfers = pgTable("instrument_transfers", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// ── ASSETS (Real estate, vehicles, and other financed assets) ────────────────
+
+/**
+ * A physical or financial asset owned by the user (property, car, boat, etc.).
+ * Standalone entity — persists independently of any associated loan/financing.
+ * Linked to a loan via loans.asset_id (optional).
+ */
+export const assets = pgTable("assets", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(),
+  name: text("name").notNull(),
+  /** e.g. 'real_estate' | 'vehicle' | 'other' */
+  kind: text("kind").notNull().default("other"),
+  description: text("description"),
+  currencyCode: text("currency_code").notNull(),
+  /** Purchase price at acquisition */
+  purchasePrice: numeric("purchase_price", { precision: 18, scale: 6 }).notNull(),
+  purchasedAt: timestamp("purchased_at", { withTimezone: true }).notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * Market value snapshots for an asset over time.
+ * Used to compute equity = latest_valuation − outstanding_loan_balance.
+ */
+export const assetValuations = pgTable("asset_valuations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(),
+  assetId: uuid("asset_id").notNull().references(() => assets.id),
+  value: numeric("value", { precision: 18, scale: 6 }).notNull(),
+  currencyCode: text("currency_code").notNull(),
+  valuedAt: timestamp("valued_at", { withTimezone: true }).notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// ── LOANS / MORTGAGES ────────────────────────────────────────────────────────
+
+/**
+ * A loan or mortgage. Can exist as a simulation (no cash effects) before being
+ * promoted to active (liability tracked in wealth computation).
+ *
+ * status lifecycle: 'simulation' → 'active' → 'closed'
+ *
+ * SAC (Sistema de Amortização Constante) is the only supported amortization type.
+ * The payment schedule is always computed at runtime from these params +
+ * recorded amortization events — never stored.
+ */
+export const loans = pgTable("loans", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(),
+  name: text("name").notNull(),
+  lender: text("lender").notNull(),
+  /** Original principal amount borrowed */
+  principal: numeric("principal", { precision: 18, scale: 6 }).notNull(),
+  currencyCode: text("currency_code").notNull(),
+  /** Annual interest rate as a percentage, e.g. 1.5 = 1.5% */
+  interestRate: numeric("interest_rate", { precision: 8, scale: 6 }).notNull(),
+  termMonths: integer("term_months").notNull(),
+  startDate: timestamp("start_date", { withTimezone: true }).notNull(),
+  /** simulation | active | closed */
+  status: text("status").notNull().default("simulation"),
+  /** Optional link to the asset this loan finances (property, vehicle, etc.) */
+  assetId: uuid("asset_id").references(() => assets.id),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * Extra principal amortization events on a loan.
+ * kind='a_prazo' reduces the remaining term (does not reduce the installment amount).
+ * The schedule recomputes from the outstanding balance at the point of amortization.
+ */
+export const loanAmortizations = pgTable("loan_amortizations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(),
+  loanId: uuid("loan_id").notNull().references(() => loans.id),
+  amount: numeric("amount", { precision: 18, scale: 6 }).notNull(),
+  /** 'a_prazo' — reduces the term */
+  kind: text("kind").notNull().default("a_prazo"),
+  occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+  /** Links to cash account debit when account was specified */
+  instrumentTransferId: uuid("instrument_transfer_id").references(() => instrumentTransfers.id),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * Actual installment payments recorded against an active loan.
+ * Amounts are stored for audit trail (computed from schedule at time of payment,
+ * but stored to survive future schedule changes).
+ */
+export const loanPayments = pgTable("loan_payments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(),
+  loanId: uuid("loan_id").notNull().references(() => loans.id),
+  /** Links to cash account debit */
+  instrumentTransferId: uuid("instrument_transfer_id").references(() => instrumentTransfers.id),
+  paymentDate: timestamp("payment_date", { withTimezone: true }).notNull(),
+  totalAmount: numeric("total_amount", { precision: 18, scale: 6 }).notNull(),
+  principalAmount: numeric("principal_amount", { precision: 18, scale: 6 }).notNull(),
+  interestAmount: numeric("interest_amount", { precision: 18, scale: 6 }).notNull(),
+  /** Remaining balance after this payment */
+  remainingBalance: numeric("remaining_balance", { precision: 18, scale: 6 }).notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // USERS: local authentication — replaces Supabase auth.users.
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
