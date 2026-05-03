@@ -375,7 +375,7 @@ function CurrencyCharts({
                 return (
                   <div key={entry.name} className="flex items-center gap-2">
                     <span
-                      className="inline-block h-2.5 w-2.5 rounded-full flex-shrink-0"
+                      className="inline-block h-2.5 w-2.5 rounded-full shrink-0"
                       style={{ backgroundColor: PIE_COLORS[idx % PIE_COLORS.length] }}
                     />
                     <span className="text-zinc-700 dark:text-zinc-300">
