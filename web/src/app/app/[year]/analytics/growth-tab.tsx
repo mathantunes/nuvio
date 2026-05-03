@@ -1,10 +1,8 @@
 "use client";
 
-import React from "react";
 import {
   ComposedChart,
   Bar,
-  Line,
   Area,
   XAxis,
   YAxis,
