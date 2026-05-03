@@ -254,6 +254,42 @@ export const investmentFlows = pgTable("investment_flows", {
   flowKind: text("flow_kind").notNull(),
   occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
   notes: text("notes"),
+  /** Link to the cash-account side of this flow, when captured */
+  instrumentTransferId: uuid("instrument_transfer_id").references(() => instrumentTransfers.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * Bridge between cash accounts (domain 1) and financial instruments (domain 2).
+ * Records the cash-account side of any deposit into or withdrawal from a
+ * portfolio position (or future loan). Essential for keeping the wealth picture
+ * accurate — without this, cash balance and instrument value would both show the
+ * same money.
+ *
+ * direction:
+ *   'to_instrument'   — cash left the account (deposit into portfolio)
+ *   'from_instrument' — cash entered the account (withdrawal / dividend)
+ *
+ * kind: 'deposit' | 'withdrawal' | 'dividend' | 'loan_payment' | 'amortization'
+ */
+export const instrumentTransfers = pgTable("instrument_transfers", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(),
+  /** The cash account that sent or received the money */
+  accountId: uuid("account_id").notNull().references(() => accounts.id),
+  /** Direction from the cash account's perspective */
+  direction: text("direction").notNull(), // 'to_instrument' | 'from_instrument'
+  /** 'investment_position' | 'loan' */
+  instrumentType: text("instrument_type").notNull(),
+  /** FK into the relevant instrument table (e.g. investment_positions.id) */
+  instrumentId: uuid("instrument_id").notNull(),
+  amount: numeric("amount", { precision: 18, scale: 6 }).notNull(),
+  currencyCode: text("currency_code").notNull(),
+  /** deposit | withdrawal | dividend | loan_payment | amortization */
+  kind: text("kind").notNull(),
+  occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+  notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

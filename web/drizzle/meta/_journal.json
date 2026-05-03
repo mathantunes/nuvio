@@ -43,6 +43,13 @@
       "when": 1777729134360,
       "tag": "0005_slow_expediter",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1777810568510,
+      "tag": "0006_gifted_fabian_cortez",
+      "breakpoints": true
     }
   ]
 }
