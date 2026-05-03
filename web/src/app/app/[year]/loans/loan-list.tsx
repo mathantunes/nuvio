@@ -13,7 +13,6 @@ import {
 import type {
   LoanData,
   LoanSummary,
-  AssetSummary,
 } from "@/lib/loan-computations";
 import {
   createSimulation,
@@ -21,9 +20,6 @@ import {
   promoteToActive,
   recordPayment,
   recordAmortization,
-  recordAssetValuation,
-  createAsset,
-  deleteAsset,
   linkAssetToLoan,
   closeLoan,
   deleteLoan,
@@ -31,6 +27,7 @@ import {
   deleteAmortization,
   demoteToSimulation,
 } from "./loans.actions";
+import { RecordAssetValuationForm } from "../assets/assets-page";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1234,72 +1231,6 @@ function RecordAmortizationForm({
   );
 }
 
-// ─── RecordAssetValuationForm ─────────────────────────────────────────────────
-
-function RecordAssetValuationForm({
-  loan,
-  year,
-  onDone,
-}: {
-  loan: LoanSummary;
-  year: number;
-  onDone: () => void;
-}) {
-  const router = useRouter();
-  const [submitting, setSubmitting] = useState(false);
-
-  if (!loan.asset) return null;
-
-  async function handleSubmit(fd: FormData) {
-    setSubmitting(true);
-    try {
-      fd.set("assetId", loan.asset!.id);
-      fd.set("year", String(year));
-      await recordAssetValuation(fd);
-      onDone();
-      router.refresh();
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  return (
-    <form action={handleSubmit} className="space-y-3">
-      <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
-        Record valuation for {loan.asset.name}
-      </p>
-      <div className="grid grid-cols-2 gap-2">
-        <div className="space-y-1">
-          <label className={labelCls}>Market value ({loan.asset.currencyCode})</label>
-          <input
-            name="value"
-            type="number"
-            step="1000"
-            min="0"
-            required
-            defaultValue={loan.asset.currentValue > 0 ? loan.asset.currentValue.toFixed(0) : ""}
-            placeholder="0"
-            className={inputCls}
-          />
-        </div>
-        <div className="space-y-1">
-          <label className={labelCls}>Valuation date</label>
-          <input name="valuedAt" type="date" required defaultValue={todayISO()} className={inputCls} />
-        </div>
-      </div>
-      <input name="notes" placeholder="Source / notes (optional)" className={inputCls} />
-      <div className="flex gap-2">
-        <button type="submit" disabled={submitting} className={submitBtnCls}>
-          {submitting ? "Saving…" : "Save valuation"}
-        </button>
-        <button type="button" onClick={onDone} className={ghostBtnCls}>
-          Cancel
-        </button>
-      </div>
-    </form>
-  );
-}
-
 // ─── AssetSection ─────────────────────────────────────────────────────────────
 
 function AssetSection({
@@ -1388,7 +1319,14 @@ function AssetSection({
         {showValForm ? "Cancel" : "Update valuation"}
       </button>
       {showValForm && (
-        <RecordAssetValuationForm loan={loan} year={year} onDone={() => setShowValForm(false)} />
+        <RecordAssetValuationForm
+          assetId={loan.asset!.id}
+          assetName={loan.asset!.name}
+          currencyCode={loan.asset!.currencyCode}
+          currentValue={loan.asset!.currentValue}
+          year={year}
+          onDone={() => setShowValForm(false)}
+        />
       )}
     </div>
   );
@@ -1672,7 +1610,14 @@ function ActiveLoanCard({
         />
       )}
       {showValForm && loan.asset && (
-        <RecordAssetValuationForm loan={loan} year={year} onDone={() => setShowValForm(false)} />
+        <RecordAssetValuationForm
+          assetId={loan.asset.id}
+          assetName={loan.asset.name}
+          currencyCode={loan.asset.currencyCode}
+          currentValue={loan.asset.currentValue}
+          year={year}
+          onDone={() => setShowValForm(false)}
+        />
       )}
 
       {/* Link asset form */}
@@ -1828,184 +1773,6 @@ function ActiveLoanCard({
         />
       )}
     </div>
-  );
-}
-
-// ─── StandaloneAssetCard ──────────────────────────────────────────────────────
-
-function StandaloneAssetCard({ asset, year }: { asset: AssetSummary; year: number }) {
-  const [showValForm, setShowValForm] = useState(false);
-
-  async function handleValuation(fd: FormData) {
-    fd.set("assetId", asset.id);
-    fd.set("year", String(year));
-    await recordAssetValuation(fd);
-    setShowValForm(false);
-  }
-
-  return (
-    <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 p-4 space-y-3">
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-            {asset.kind === "real_estate" ? "🏠" : asset.kind === "vehicle" ? "🚗" : "📦"}{" "}
-            {asset.name}
-          </p>
-          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
-            {asset.kind.replace("_", " ")} · {asset.currencyCode} · purchased{" "}
-            {fmtDate(asset.purchasedAt)} for {formatCurrency(asset.purchasePrice, asset.currencyCode)}
-          </p>
-        </div>
-        <form action={async (fd) => { fd.set("assetId", asset.id); fd.set("year", String(year)); await deleteAsset(fd); }}>
-          <button
-            type="submit"
-            onClick={(e) => { if (!confirm(`Delete "${asset.name}"? This cannot be undone.`)) e.preventDefault(); }}
-            className="text-[11px] text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 px-2 py-1 rounded"
-          >
-            Delete
-          </button>
-        </form>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 text-xs">
-        <div>
-          <p className="text-zinc-500 dark:text-zinc-400">Current value</p>
-          <p className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
-            {asset.currentValue > 0
-              ? formatCurrency(asset.currentValue, asset.currencyCode)
-              : "—"}
-          </p>
-          {asset.latestValuation && (
-            <p className="text-[10px] text-zinc-400 mt-0.5">
-              as of {fmtDate(asset.latestValuation.valuedAt)}
-            </p>
-          )}
-        </div>
-        <div>
-          <p className="text-zinc-500 dark:text-zinc-400">Year-start value</p>
-          <p className="font-medium tabular-nums text-zinc-600 dark:text-zinc-300">
-            {asset.yearStartValue > 0
-              ? formatCurrency(asset.yearStartValue, asset.currencyCode)
-              : "—"}
-          </p>
-        </div>
-      </div>
-
-      <button
-        type="button"
-        onClick={() => setShowValForm((v) => !v)}
-        className={ghostBtnCls}
-      >
-        {showValForm ? "Cancel" : "Update valuation"}
-      </button>
-
-      {showValForm && (
-        <form action={handleValuation} className="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className={labelCls}>Value ({asset.currencyCode})</label>
-              <input name="value" type="number" min="0" step="0.01" required className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>Valued on</label>
-              <input name="valuedAt" type="date" defaultValue={todayISO()} required className={inputCls} />
-            </div>
-          </div>
-          <input name="notes" type="text" placeholder="Notes (optional)" className={inputCls} />
-          <button type="submit" className={submitBtnCls}>Save valuation</button>
-        </form>
-      )}
-    </div>
-  );
-}
-
-// ─── AssetsSection ────────────────────────────────────────────────────────────
-
-function AssetsSection({ assets, year }: { assets: AssetSummary[]; year: number }) {
-  const [showForm, setShowForm] = useState(false);
-
-  async function handleCreate(fd: FormData) {
-    fd.set("year", String(year));
-    await createAsset(fd);
-    setShowForm(false);
-  }
-
-  return (
-    <section className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
-          Assets {assets.length > 0 && `(${assets.length})`}
-        </h2>
-        {!showForm && (
-          <button
-            onClick={() => setShowForm(true)}
-            className="text-xs border border-zinc-300 dark:border-zinc-700 rounded-full px-3 py-1.5 font-medium text-zinc-600 dark:text-zinc-400 hover:border-zinc-500 dark:hover:border-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 transition"
-          >
-            + Add Asset
-          </button>
-        )}
-      </div>
-
-      {showForm && (
-        <form
-          action={handleCreate}
-          className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-4 space-y-3"
-        >
-          <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">New Asset</p>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2">
-              <label className={labelCls}>Name</label>
-              <input name="name" type="text" required placeholder="My Apartment" className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>Kind</label>
-              <select name="kind" required className={inputCls}>
-                <option value="real_estate">Real estate</option>
-                <option value="vehicle">Vehicle</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <div>
-              <label className={labelCls}>Currency</label>
-              <input name="currencyCode" type="text" required defaultValue="BRL" maxLength={3} className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>Purchase price</label>
-              <input name="purchasePrice" type="number" min="0" step="0.01" required className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>Purchase date</label>
-              <input name="purchasedAt" type="date" required defaultValue={todayISO()} className={inputCls} />
-            </div>
-            <div className="col-span-2">
-              <label className={labelCls}>Notes (optional)</label>
-              <input name="notes" type="text" className={inputCls} />
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <button type="submit" className={submitBtnCls}>Create asset</button>
-            <button type="button" onClick={() => setShowForm(false)} className={ghostBtnCls}>Cancel</button>
-          </div>
-        </form>
-      )}
-
-      {assets.length > 0 ? (
-        <div className="grid gap-3 lg:grid-cols-2">
-          {assets.map((asset) => (
-            <StandaloneAssetCard key={asset.id} asset={asset} year={year} />
-          ))}
-        </div>
-      ) : (
-        !showForm && (
-          <div className="rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800 p-8 text-center">
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">No assets yet.</p>
-            <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
-              Add properties, vehicles, or other assets to track their value over time.
-            </p>
-          </div>
-        )
-      )}
-    </section>
   );
 }
 
@@ -2211,9 +1978,6 @@ export function LoanList({ loanData, accounts, availableAssets, year }: LoanList
           )}
         </section>
       )}
-
-      {/* ── Assets (standalone, always visible) ── */}
-      <AssetsSection assets={loanData.allAssets} year={year} />
     </div>
   );
 }
