@@ -54,6 +54,26 @@ export async function recordAssetValuation(formData: FormData) {
   revalidatePath(`/app/${year}/variance`);
 }
 
+export async function deleteAsset(formData: FormData) {
+  const user = await AuthService.getCurrentUser();
+  const assetId = formData.get("assetId") as string;
+  const year = formData.get("year") as string;
+
+  const [asset] = await db.select().from(assets).where(eq(assets.id, assetId));
+  if (!asset || asset.userId !== user.id) throw new Error("Not found");
+
+  // Unlink from any loans first
+  await db.update(loans).set({ assetId: null }).where(eq(loans.assetId, assetId));
+  // Delete valuations, then asset
+  await db.delete(assetValuations).where(eq(assetValuations.assetId, assetId));
+  await db.delete(assets).where(eq(assets.id, assetId));
+
+  revalidatePath(`/app/${year}/loans`);
+  revalidatePath(`/app/${year}/variance`);
+  revalidatePath(`/app/${year}/wealth`);
+  revalidatePath(`/app/${year}`);
+}
+
 // ── Loan actions ──────────────────────────────────────────────────────────────
 
 export async function createSimulation(formData: FormData) {

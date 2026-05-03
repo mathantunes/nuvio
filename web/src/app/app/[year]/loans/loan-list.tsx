@@ -23,6 +23,7 @@ import {
   recordAmortization,
   recordAssetValuation,
   createAsset,
+  deleteAsset,
   linkAssetToLoan,
   closeLoan,
   deleteLoan,
@@ -1855,6 +1856,15 @@ function StandaloneAssetCard({ asset, year }: { asset: AssetSummary; year: numbe
             {fmtDate(asset.purchasedAt)} for {formatCurrency(asset.purchasePrice, asset.currencyCode)}
           </p>
         </div>
+        <form action={async (fd) => { fd.set("assetId", asset.id); fd.set("year", String(year)); await deleteAsset(fd); }}>
+          <button
+            type="submit"
+            onClick={(e) => { if (!confirm(`Delete "${asset.name}"? This cannot be undone.`)) e.preventDefault(); }}
+            className="text-[11px] text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 px-2 py-1 rounded"
+          >
+            Delete
+          </button>
+        </form>
       </div>
 
       <div className="grid grid-cols-2 gap-3 text-xs">
