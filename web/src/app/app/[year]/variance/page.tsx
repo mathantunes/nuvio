@@ -10,6 +10,7 @@ import {
 import { fetchDashboardData } from "@/lib/dashboard-computations";
 import { calculateGrowthAnalytics } from "@/lib/growth-computations";
 import { fetchPortfolioData } from "@/lib/portfolio-computations";
+import { fetchLoanData } from "@/lib/loan-computations";
 import { VarianceTabs } from "./variance-tabs";
 
 export default async function VariancePage({
@@ -23,10 +24,11 @@ export default async function VariancePage({
   const user = await AuthService.getCurrentUser();
 
   try {
-    const [{ rows, currentMonthIdx }, dashboardData, portfolioData] = await Promise.all([
+    const [{ rows, currentMonthIdx }, dashboardData, portfolioData, loanData] = await Promise.all([
       fetchVarianceData(year, user.id),
       fetchDashboardData(year, user.id),
       fetchPortfolioData(user.id, year),
+      fetchLoanData(user.id, year),
     ]);
 
     const monthNames = Array.from({ length: 12 }, (_, i) =>
@@ -51,8 +53,15 @@ export default async function VariancePage({
       portfolioData.yearStartValueByCurrency,
       portfolioData.totalValueByCurrency,
       portfolioData.totalReturnByCurrency,
+      portfolioData.netDepositsYTDByCurrency,
       dashboardData.instrumentTransferImpacts,
+      dashboardData.loanTransferImpacts,
       dashboardData.yearInstrumentTransfers,
+      dashboardData.yearLoanTransfers,
+      loanData.outstandingBalanceByCurrency,
+      loanData.assetValueByCurrency,
+      loanData.yearStartOutstandingByCurrency,
+      loanData.yearStartAssetValueByCurrency,
     );
 
     return (

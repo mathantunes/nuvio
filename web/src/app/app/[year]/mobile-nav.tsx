@@ -31,8 +31,10 @@ export function MobileNav({ year, currentPath }: MobileNavProps) {
       title: "Follow Up",
       items: [
         { href: `/app/${year}/variance`, label: "Budget vs Actual" },
+        { href: `/app/${year}/analytics`, label: "Analytics" },
         { href: `/app/${year}/portfolio`, label: "Portfolio" },
         { href: `/app/${year}/tracking`, label: "Tracking" },
+        { href: `/app/${year}/loans`, label: "Loans" },
       ],
     },
   ];

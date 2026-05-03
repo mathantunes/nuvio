@@ -73,6 +73,8 @@ export type PortfolioData = {
   yearStartValueByCurrency: Record<string, number>;
   /** Total YTD return by currency */
   totalReturnByCurrency: Record<string, number>;
+  /** Net deposits (contributions minus withdrawals) YTD by currency */
+  netDepositsYTDByCurrency: Record<string, number>;
 };
 
 export async function fetchPortfolioData(
@@ -97,7 +99,7 @@ export async function fetchPortfolioData(
   // All valuations for these positions
   const positionIds = positions.map((p) => p.id);
   if (positionIds.length === 0) {
-    return { positions: [], byKind: { invest: [], pension: [], crypto: [] }, totalValueByCurrency: {}, yearStartValueByCurrency: {}, totalReturnByCurrency: {} };
+    return { positions: [], byKind: { invest: [], pension: [], crypto: [] }, totalValueByCurrency: {}, yearStartValueByCurrency: {}, totalReturnByCurrency: {}, netDepositsYTDByCurrency: {} };
   }
 
   // Fetch all valuations at once (sorted oldest→newest for history)
@@ -198,12 +200,14 @@ export async function fetchPortfolioData(
   const totalValueByCurrency:     Record<string, number> = {};
   const yearStartValueByCurrency: Record<string, number> = {};
   const totalReturnByCurrency:    Record<string, number> = {};
+  const netDepositsYTDByCurrency: Record<string, number> = {};
 
   for (const s of summaries) {
     totalValueByCurrency[s.currencyCode]     = (totalValueByCurrency[s.currencyCode]     ?? 0) + s.latestValue;
     yearStartValueByCurrency[s.currencyCode] = (yearStartValueByCurrency[s.currencyCode] ?? 0) + s.yearStartValue;
     // Use marketReturn (true economic return) for currency-level aggregation
     totalReturnByCurrency[s.currencyCode]    = (totalReturnByCurrency[s.currencyCode]    ?? 0) + s.marketReturn;
+    netDepositsYTDByCurrency[s.currencyCode] = (netDepositsYTDByCurrency[s.currencyCode] ?? 0) + s.netDepositsYTD;
   }
 
   const byKind: Record<InvestmentKind, PositionSummary[]> = {
@@ -218,5 +222,6 @@ export async function fetchPortfolioData(
     totalValueByCurrency,
     yearStartValueByCurrency,
     totalReturnByCurrency,
+    netDepositsYTDByCurrency,
   };
 }

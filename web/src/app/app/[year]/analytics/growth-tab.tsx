@@ -110,6 +110,8 @@ export function GrowthTab({ growthAnalytics, currentMonthIdx }: GrowthTabProps) 
 
 function CurrencyGrowthCard({ currency }: { currency: GrowthData }) {
   const hasPortfolio = currency.portfolioYearStartValue > 0 || currency.portfolioCurrentValue > 0;
+  const hasAssets = currency.assetYearStartValue > 0 || currency.assetCurrentValue > 0;
+  const hasLoans = currency.loanYearStartBalance > 0 || currency.loanOutstandingBalance > 0;
   const isPositiveWealth = currency.wealthGrowthRate >= 0;
   const isPositiveCash = currency.growthRate >= 0;
 
@@ -145,6 +147,65 @@ function CurrencyGrowthCard({ currency }: { currency: GrowthData }) {
           </div>
         </div>
       </div>
+
+      {/* Wealth composition breakdown */}
+      <details className="group mb-2" open>
+        <summary className="cursor-pointer text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 mb-2">
+          Wealth breakdown
+        </summary>
+        <div className="space-y-1.5 pl-2 border-l-2 border-zinc-100 dark:border-zinc-800 mt-2">
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">Cash</span>
+            <span className="text-xs font-medium text-zinc-900 dark:text-zinc-50">
+              {formatCurrency(currency.currentBalance, currency.currency)}
+            </span>
+          </div>
+          {hasPortfolio && (
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">Portfolio</span>
+              <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400">
+                {formatCurrency(currency.portfolioCurrentValue, currency.currency)}
+              </span>
+            </div>
+          )}
+          {hasAssets && (
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">Assets</span>
+              <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                +{formatCurrency(currency.assetCurrentValue, currency.currency)}
+              </span>
+            </div>
+          )}
+          {hasLoans && (
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">Loan liabilities</span>
+              <span className="text-xs font-medium text-red-600 dark:text-red-400">
+                −{formatCurrency(currency.loanOutstandingBalance, currency.currency)}
+              </span>
+            </div>
+          )}
+          {hasAssets && hasLoans && (
+            <div className="flex justify-between items-center pt-1 border-t border-dashed border-zinc-100 dark:border-zinc-800">
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">Asset equity</span>
+              <span className={`text-xs font-medium ${
+                currency.assetCurrentValue - currency.loanOutstandingBalance >= 0
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : 'text-red-600 dark:text-red-400'
+              }`}>
+                {formatCurrency(currency.assetCurrentValue - currency.loanOutstandingBalance, currency.currency)}
+              </span>
+            </div>
+          )}
+          <div className="flex justify-between items-center pt-1 border-t border-zinc-100 dark:border-zinc-800">
+            <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">= Net wealth</span>
+            <span className={`text-xs font-bold ${
+              isPositiveWealth ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+            }`}>
+              {formatCurrency(currency.wealthCurrentBalance, currency.currency)}
+            </span>
+          </div>
+        </div>
+      </details>
 
       {/* Cash flow breakdown */}
       <details className="group">
@@ -190,6 +251,16 @@ function CurrencyGrowthCard({ currency }: { currency: GrowthData }) {
               </span>
             </div>
           )}
+          {currency.loanTransferImpact !== 0 && (
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">Loan flows</span>
+              <span className={`text-xs font-medium ${
+                currency.loanTransferImpact >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'
+              }`}>
+                {currency.loanTransferImpact >= 0 ? '+' : ''}{formatCurrency(currency.loanTransferImpact, currency.currency)}
+              </span>
+            </div>
+          )}
           {currency.totalFees > 0 && (
             <div className="flex justify-between items-center">
               <span className="text-xs text-zinc-500 dark:text-zinc-400">Fees</span>
@@ -215,13 +286,23 @@ function CurrencyGrowthCard({ currency }: { currency: GrowthData }) {
           </summary>
           <div className="space-y-2 pl-2 border-l-2 border-indigo-100 dark:border-indigo-900 mt-2">
             <div className="flex justify-between items-center">
-              <span className="text-xs text-zinc-500 dark:text-zinc-400">Portfolio (start)</span>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">Portfolio (Jan 1)</span>
               <span className="text-xs font-medium text-zinc-900 dark:text-zinc-50">
                 {formatCurrency(currency.portfolioYearStartValue, currency.currency)}
               </span>
             </div>
+            {currency.portfolioNetDeposits !== 0 && (
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">Net deposits / withdrawals</span>
+                <span className={`text-xs font-medium ${
+                  currency.portfolioNetDeposits >= 0 ? 'text-teal-600 dark:text-teal-400' : 'text-orange-600 dark:text-orange-400'
+                }`}>
+                  {currency.portfolioNetDeposits >= 0 ? '+' : ''}{formatCurrency(currency.portfolioNetDeposits, currency.currency)}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between items-center">
-              <span className="text-xs text-zinc-500 dark:text-zinc-400">Total return</span>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">Market return</span>
               <span className={`text-xs font-medium ${
                 currency.portfolioTotalReturn >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
               }`}>
@@ -234,6 +315,61 @@ function CurrencyGrowthCard({ currency }: { currency: GrowthData }) {
                 {formatCurrency(currency.portfolioCurrentValue, currency.currency)}
               </span>
             </div>
+          </div>
+        </details>
+      )}
+
+      {/* Assets & Liabilities breakdown */}
+      {(hasAssets || hasLoans) && (
+        <details className="group mt-2">
+          <summary className="cursor-pointer text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 mb-2">
+            Assets &amp; liabilities
+          </summary>
+          <div className="space-y-2 pl-2 border-l-2 border-amber-100 dark:border-amber-900 mt-2">
+            {hasAssets && (
+              <>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400">Asset value (Jan 1)</span>
+                  <span className="text-xs font-medium text-zinc-900 dark:text-zinc-50">
+                    {formatCurrency(currency.assetYearStartValue, currency.currency)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pt-1 border-t border-zinc-100 dark:border-zinc-800">
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400">Asset value (now)</span>
+                  <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                    {formatCurrency(currency.assetCurrentValue, currency.currency)}
+                  </span>
+                </div>
+              </>
+            )}
+            {hasLoans && (
+              <>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400">Loan balance (Jan 1)</span>
+                  <span className="text-xs font-medium text-zinc-900 dark:text-zinc-50">
+                    −{formatCurrency(currency.loanYearStartBalance, currency.currency)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pt-1 border-t border-zinc-100 dark:border-zinc-800">
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400">Loan balance (now)</span>
+                  <span className="text-xs font-medium text-red-600 dark:text-red-400">
+                    −{formatCurrency(currency.loanOutstandingBalance, currency.currency)}
+                  </span>
+                </div>
+              </>
+            )}
+            {hasAssets && hasLoans && (
+              <div className="flex justify-between items-center pt-1 border-t border-dashed border-zinc-100 dark:border-zinc-800">
+                <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Net equity</span>
+                <span className={`text-xs font-bold ${
+                  currency.assetCurrentValue - currency.loanOutstandingBalance >= 0
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : 'text-red-600 dark:text-red-400'
+                }`}>
+                  {formatCurrency(currency.assetCurrentValue - currency.loanOutstandingBalance, currency.currency)}
+                </span>
+              </div>
+            )}
           </div>
         </details>
       )}
@@ -259,6 +395,7 @@ function MonthlyProgressChart({
     Balance: m.endingBalance,
     transferImpact: m.transferImpact,
     instrumentTransferImpact: m.instrumentTransferImpact,
+    loanTransferImpact: m.loanTransferImpact,
   }));
 
   const formatYAxis = (v: number) =>
@@ -300,6 +437,13 @@ function MonthlyProgressChart({
             dataKey="instrumentTransferImpact"
             name="Portfolio flow"
             fill="#14b8a6"
+            radius={[3, 3, 0, 0]}
+            opacity={0.75}
+          />
+          <Bar
+            dataKey="loanTransferImpact"
+            name="Loan flow"
+            fill="#3b82f6"
             radius={[3, 3, 0, 0]}
             opacity={0.75}
           />

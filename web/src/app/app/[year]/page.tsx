@@ -7,6 +7,7 @@ import {
   type CurrencyTotals 
 } from "@/lib/dashboard-computations";
 import { fetchPortfolioData } from "@/lib/portfolio-computations";
+import { fetchLoanData } from "@/lib/loan-computations";
 import { formatCurrency } from "./planning/currency-format";
 
 export default async function BudgetDashboardPage({
@@ -20,9 +21,10 @@ export default async function BudgetDashboardPage({
   const user = await AuthService.getCurrentUser();
 
   try {
-    const [data, portfolio] = await Promise.all([
+    const [data, portfolio, loanData] = await Promise.all([
       fetchDashboardData(year, user.id),
       fetchPortfolioData(user.id, year),
+      fetchLoanData(user.id, year),
     ]);
     const ytdTotals = getYtdTotals(data);
 
@@ -339,6 +341,52 @@ export default async function BudgetDashboardPage({
                           </div>
                         </div>
                       ))}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {/* Loans & Assets summary */}
+          {loanData.loans.filter(l => l.status === "active").length > 0 && (
+            <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Loans & Assets</p>
+                <a
+                  href={`/app/${year}/loans`}
+                  className="text-xs text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50 underline"
+                >
+                  Manage →
+                </a>
+              </div>
+              <div className="space-y-2">
+                {loanData.loans.filter(l => l.status === "active").map((loan) => {
+                  const equity = loan.asset
+                    ? loan.asset.currentValue - loan.outstandingBalance
+                    : null;
+                  return (
+                    <div key={loan.id} className="text-xs">
+                      <div className="flex items-center justify-between py-0.5">
+                        <span className="text-zinc-700 dark:text-zinc-300 font-medium">{loan.name}</span>
+                        <div className="flex items-center gap-2 tabular-nums">
+                          <span className="text-red-600 dark:text-red-400">
+                            −{formatCurrency(loan.outstandingBalance, loan.currencyCode)}
+                          </span>
+                          {equity !== null && (
+                            <span className={`text-[10px] font-semibold ${equity >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                              equity {equity >= 0 ? "+" : ""}{formatCurrency(equity, loan.currencyCode)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {loan.asset && (
+                        <div className="flex items-center justify-between py-0.5 pl-2 text-zinc-500 dark:text-zinc-400">
+                          <span>{loan.asset.name}</span>
+                          <span className="text-emerald-600 dark:text-emerald-400 tabular-nums">
+                            {formatCurrency(loan.asset.currentValue, loan.asset.currencyCode)}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   );
                 })}

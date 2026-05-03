@@ -55,8 +55,10 @@ export type DashboardData = {
   }>;
   transferImpacts: CurrencyTotals;
   totalFees: CurrencyTotals;
-  /** Net cash impact of instrument transfers per currency (positive = cash gained) */
+  /** Net cash impact of portfolio instrument transfers per currency (positive = cash gained) */
   instrumentTransferImpacts: CurrencyTotals;
+  /** Net cash impact of loan transfers per currency (disbursements, payments, amortizations) */
+  loanTransferImpacts: CurrencyTotals;
   yearInstrumentTransfers: Array<{
     id: string;
     accountId: string;
@@ -66,6 +68,13 @@ export type DashboardData = {
     amount: string;
     currencyCode: string;
     kind: string;
+    occurredAt: Date;
+  }>;
+  yearLoanTransfers: Array<{
+    accountId: string;
+    direction: string;
+    amount: string;
+    currencyCode: string;
     occurredAt: Date;
   }>;
 };
@@ -268,14 +277,25 @@ export async function fetchDashboardData(year: number, userId: string): Promise<
       )
     );
 
-  // Net cash impact per currency:
+  // Net cash impact per currency — split portfolio vs loan transfers:
   //   from_instrument (withdrawal/dividend) → cash gained (+)
-  //   to_instrument (deposit)               → cash lost (-)
+  //   to_instrument (deposit/payment)       → cash lost (-)
   const instrumentTransferImpacts: CurrencyTotals = {};
+  const loanTransferImpacts: CurrencyTotals = {};
   for (const it of yearInstrumentTransfers) {
     const sign = it.direction === "from_instrument" ? 1 : -1;
-    addTo(instrumentTransferImpacts, it.currencyCode, sign * Number(it.amount));
+    if (it.instrumentType === "loan") {
+      addTo(loanTransferImpacts, it.currencyCode, sign * Number(it.amount));
+    } else {
+      addTo(instrumentTransferImpacts, it.currencyCode, sign * Number(it.amount));
+    }
   }
+
+  // Filter into portfolio-only and loan-only for downstream consumers
+  const portfolioInstrumentTransfers = yearInstrumentTransfers.filter(it => it.instrumentType !== "loan");
+  const loanOnlyTransfers = yearInstrumentTransfers
+    .filter(it => it.instrumentType === "loan")
+    .map(it => ({ accountId: it.accountId, direction: it.direction, amount: it.amount, currencyCode: it.currencyCode, occurredAt: it.occurredAt }));
 
   return {
     budget,
@@ -295,7 +315,9 @@ export async function fetchDashboardData(year: number, userId: string): Promise<
     transferImpacts,
     totalFees,
     instrumentTransferImpacts,
-    yearInstrumentTransfers,
+    loanTransferImpacts,
+    yearInstrumentTransfers: portfolioInstrumentTransfers,
+    yearLoanTransfers: loanOnlyTransfers,
   };
 }
 

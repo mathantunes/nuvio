@@ -8,8 +8,10 @@ export interface GrowthData {
   ytdExpenses: number;
   netSavings: number;
   transferImpact: number;
-  /** Net cash impact from instrument flows (portfolio withdrawals/deposits) */
+  /** Net cash impact from instrument flows (portfolio withdrawals/deposits only) */
   instrumentTransferImpact: number;
+  /** Net cash impact from loan flows (disbursements, payments, amortizations) */
+  loanTransferImpact: number;
   totalFees: number;
   currentBalance: number;
   growthRate: number;
@@ -17,8 +19,15 @@ export interface GrowthData {
   // Portfolio / investment figures per currency
   portfolioYearStartValue: number;
   portfolioCurrentValue: number;
+  portfolioNetDeposits: number;
   portfolioTotalReturn: number;
-  // Combined wealth (cash + portfolio)
+  // Asset (real estate, vehicles) figures per currency
+  assetYearStartValue: number;
+  assetCurrentValue: number;
+  // Loan / mortgage liabilities per currency (active loans only)
+  loanYearStartBalance: number;
+  loanOutstandingBalance: number;
+  // Combined wealth (cash + portfolio + assets − loans)
   wealthStartingBalance: number;
   wealthCurrentBalance: number;
   wealthGrowthRate: number;
@@ -33,6 +42,7 @@ export interface MonthlyGrowthData {
   netSavings: number;
   transferImpact: number;
   instrumentTransferImpact: number;
+  loanTransferImpact: number;
   endingBalance: number;
 }
 
@@ -82,8 +92,11 @@ export function calculateGrowthAnalytics(
   portfolioYearStart: Record<string, number> = {},
   portfolioLatest: Record<string, number> = {},
   portfolioTotalReturn: Record<string, number> = {},
-  /** Net cash impact of instrument transfers per currency (from fetchDashboardData) */
+  portfolioNetDeposits: Record<string, number> = {},
+  /** Net cash impact of portfolio instrument transfers per currency (from fetchDashboardData) */
   instrumentTransferImpacts: CurrencyTotals = {},
+  /** Net cash impact of loan transfers per currency (disbursements, payments, amortizations) */
+  loanTransferImpacts: CurrencyTotals = {},
   yearInstrumentTransfers: Array<{
     accountId: string;
     direction: string;
@@ -91,6 +104,17 @@ export function calculateGrowthAnalytics(
     currencyCode: string;
     occurredAt: Date;
   }> = [],
+  yearLoanTransfers: Array<{
+    accountId: string;
+    direction: string;
+    amount: string;
+    currencyCode: string;
+    occurredAt: Date;
+  }> = [],
+  loanOutstandingByCurrency: Record<string, number> = {},
+  assetValueByCurrency: Record<string, number> = {},
+  loanYearStartByCurrency: Record<string, number> = {},
+  assetYearStartByCurrency: Record<string, number> = {},
 ): GrowthAnalytics {
   // Get all unique currencies from savings, income/expenses, transfers, and portfolio
   const allCurrencies = new Set<string>();
@@ -113,6 +137,10 @@ export function calculateGrowthAnalytics(
   Object.keys(portfolioYearStart).forEach(c => allCurrencies.add(c));
   Object.keys(portfolioLatest).forEach(c => allCurrencies.add(c));
 
+  // Add currencies from loans and assets
+  Object.keys(loanOutstandingByCurrency).forEach(c => allCurrencies.add(c));
+  Object.keys(assetValueByCurrency).forEach(c => allCurrencies.add(c));
+
   // Calculate growth data for each currency
   const byCurrency: GrowthData[] = Array.from(allCurrencies).map(currency => {
     // Get starting balance for this currency
@@ -126,9 +154,10 @@ export function calculateGrowthAnalytics(
     const transferImpact = transferImpacts[currency] || 0;
     const fees = totalFees[currency] || 0;
     const instrumentTransferImpact = instrumentTransferImpacts[currency] || 0;
+    const loanTransferImpact = loanTransferImpacts[currency] || 0;
     
-    // Calculate current balance
-    const currentBalance = startingBalance + netSavings + transferImpact + instrumentTransferImpact;
+    // Calculate current balance (portfolio + loan flows both affect cash)
+    const currentBalance = startingBalance + netSavings + transferImpact + instrumentTransferImpact + loanTransferImpact;
     
     // Calculate growth rate
     const growthRate = startingBalance !== 0 
@@ -163,7 +192,7 @@ export function calculateGrowthAnalytics(
         }
       });
 
-      // Instrument transfers for this month and currency
+      // Portfolio instrument transfers for this month and currency (investment_position only)
       const monthInstrumentTransfers = yearInstrumentTransfers.filter(it => {
         const itMonth = new Date(it.occurredAt).getUTCMonth() + 1;
         return itMonth === month.month && it.currencyCode === currency;
@@ -174,7 +203,18 @@ export function calculateGrowthAnalytics(
         monthInstrumentTransferImpact += sign * Number(it.amount);
       }
 
-      const endingBalance = runningBalance + monthNetSavings + monthTransferImpact + monthInstrumentTransferImpact;
+      // Loan transfers for this month (disbursements, payments, amortizations)
+      const monthLoanTransfers = yearLoanTransfers.filter(lt => {
+        const ltMonth = new Date(lt.occurredAt).getUTCMonth() + 1;
+        return ltMonth === month.month && lt.currencyCode === currency;
+      });
+      let monthLoanTransferImpact = 0;
+      for (const lt of monthLoanTransfers) {
+        const sign = lt.direction === "from_instrument" ? 1 : -1;
+        monthLoanTransferImpact += sign * Number(lt.amount);
+      }
+
+      const endingBalance = runningBalance + monthNetSavings + monthTransferImpact + monthInstrumentTransferImpact + monthLoanTransferImpact;
       
       monthlyBreakdown.push({
         month: month.month,
@@ -185,6 +225,7 @@ export function calculateGrowthAnalytics(
         netSavings: monthNetSavings,
         transferImpact: monthTransferImpact,
         instrumentTransferImpact: monthInstrumentTransferImpact,
+        loanTransferImpact: monthLoanTransferImpact,
         endingBalance
       });
       
@@ -194,9 +235,15 @@ export function calculateGrowthAnalytics(
     const portYearStart   = portfolioYearStart[currency]   ?? 0;
     const portCurrent     = portfolioLatest[currency]       ?? 0;
     const portTotalReturn = portfolioTotalReturn[currency]  ?? 0;
+    const portNetDeposits = portfolioNetDeposits[currency]  ?? 0;
 
-    const wealthStartingBalance = startingBalance + portYearStart;
-    const wealthCurrentBalance  = currentBalance  + portCurrent;
+    const assetYearStart  = assetYearStartByCurrency[currency]  ?? 0;
+    const assetCurrent    = assetValueByCurrency[currency]       ?? 0;
+    const loanYearStart   = loanYearStartByCurrency[currency]    ?? 0;
+    const loanCurrent     = loanOutstandingByCurrency[currency]  ?? 0;
+
+    const wealthStartingBalance = startingBalance + portYearStart + assetYearStart - loanYearStart;
+    const wealthCurrentBalance  = currentBalance  + portCurrent   + assetCurrent   - loanCurrent;
     const wealthGrowthRate = wealthStartingBalance !== 0
       ? ((wealthCurrentBalance - wealthStartingBalance) / Math.abs(wealthStartingBalance)) * 100
       : (wealthCurrentBalance !== 0 ? 100 : 0);
@@ -209,13 +256,19 @@ export function calculateGrowthAnalytics(
       netSavings,
       transferImpact,
       instrumentTransferImpact,
+      loanTransferImpact,
       totalFees: fees,
       currentBalance,
       growthRate,
       monthlyBreakdown,
       portfolioYearStartValue: portYearStart,
       portfolioCurrentValue: portCurrent,
+      portfolioNetDeposits: portNetDeposits,
       portfolioTotalReturn: portTotalReturn,
+      assetYearStartValue: assetYearStart,
+      assetCurrentValue: assetCurrent,
+      loanYearStartBalance: loanYearStart,
+      loanOutstandingBalance: loanCurrent,
       wealthStartingBalance,
       wealthCurrentBalance,
       wealthGrowthRate,
