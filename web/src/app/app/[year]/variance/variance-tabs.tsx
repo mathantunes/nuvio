@@ -16,7 +16,6 @@ import {
 import { formatCurrency } from "../planning/currency-format";
 import { SavingsInsightTab } from "./savings-insight-tab";
 import { TrendsTab } from "./trends-tab";
-import { GrowthTab } from "../analytics/growth-tab";
 import type {
   MonthlyVarianceData,
   YtdVarianceData,
@@ -26,7 +25,6 @@ import type {
   CategoryTrends,
   MonthlyDisciplineScore,
 } from "@/lib/variance-computations";
-import type { GrowthAnalytics } from "@/lib/growth-computations";
 
 type Props = {
   allMonthlyVariance: MonthlyVarianceData[];
@@ -36,10 +34,9 @@ type Props = {
   savingsTimeline: SavingsTimeline;
   categoryTrends: CategoryTrends;
   disciplineScores: MonthlyDisciplineScore[];
-  growthAnalytics: GrowthAnalytics;
 };
 
-type MainTab = "monthly" | "ytd" | "savings" | "trends" | "growth";
+type MainTab = "monthly" | "ytd" | "savings" | "trends";
 type KindTab = "expenses" | "income";
 type DisplayMode = "chart" | "table";
 
@@ -87,7 +84,6 @@ export function VarianceTabs({
   savingsTimeline,
   categoryTrends,
   disciplineScores,
-  growthAnalytics,
 }: Props) {
   const [mainTab, setMainTab] = useState<MainTab>("monthly");
   const [kindTab, setKindTab] = useState<KindTab>("expenses");
@@ -115,14 +111,13 @@ export function VarianceTabs({
     ytd: "YTD",
     savings: "Savings",
     trends: "Trends",
-    growth: "Cash Flow",
   };
 
   return (
     <div className="space-y-4">
       {/* Main tab navigation */}
       <div className="flex gap-1 border-b border-zinc-200 dark:border-zinc-800 overflow-x-auto">
-        {(["monthly", "ytd", "savings", "trends", "growth"] as MainTab[]).map((tab) => (
+        {(["monthly", "ytd", "savings", "trends"] as MainTab[]).map((tab) => (
           <button
             key={tab}
             onClick={() => setMainTab(tab)}
@@ -151,14 +146,6 @@ export function VarianceTabs({
         <TrendsTab
           categoryTrends={categoryTrends}
           disciplineScores={disciplineScores}
-          currentMonthIdx={currentMonthIdx}
-        />
-      )}
-
-      {/* Growth tab */}
-      {mainTab === "growth" && (
-        <GrowthTab
-          growthAnalytics={growthAnalytics}
           currentMonthIdx={currentMonthIdx}
         />
       )}

@@ -7,10 +7,6 @@ import {
   getCategoryTrends,
   getDisciplineScores,
 } from "@/lib/variance-computations";
-import { fetchDashboardData } from "@/lib/dashboard-computations";
-import { calculateGrowthAnalytics } from "@/lib/growth-computations";
-import { fetchPortfolioData } from "@/lib/portfolio-computations";
-import { fetchLoanData } from "@/lib/loan-computations";
 import { VarianceTabs } from "./variance-tabs";
 
 export default async function VariancePage({
@@ -24,12 +20,7 @@ export default async function VariancePage({
   const user = await AuthService.getCurrentUser();
 
   try {
-    const [{ rows, currentMonthIdx }, dashboardData, portfolioData, loanData] = await Promise.all([
-      fetchVarianceData(year, user.id),
-      fetchDashboardData(year, user.id),
-      fetchPortfolioData(user.id, year),
-      fetchLoanData(user.id, year),
-    ]);
+    const { rows, currentMonthIdx } = await fetchVarianceData(year, user.id);
 
     const monthNames = Array.from({ length: 12 }, (_, i) =>
       new Date(year, i).toLocaleString("en-US", { month: "long" })
@@ -43,27 +34,6 @@ export default async function VariancePage({
     const categoryTrends = getCategoryTrends(rows, currentMonthIdx);
     const disciplineScores = getDisciplineScores(rows, currentMonthIdx);
 
-    const growthAnalytics = calculateGrowthAnalytics(
-      dashboardData.allSavingsLines,
-      dashboardData.yearNetActual,
-      dashboardData.transferImpacts,
-      dashboardData.totalFees,
-      dashboardData.yearTransfers,
-      dashboardData.monthlyData,
-      portfolioData.yearStartValueByCurrency,
-      portfolioData.totalValueByCurrency,
-      portfolioData.totalReturnByCurrency,
-      portfolioData.netDepositsYTDByCurrency,
-      dashboardData.instrumentTransferImpacts,
-      dashboardData.loanTransferImpacts,
-      dashboardData.yearInstrumentTransfers,
-      dashboardData.yearLoanTransfers,
-      loanData.outstandingBalanceByCurrency,
-      loanData.assetValueByCurrency,
-      loanData.yearStartOutstandingByCurrency,
-      loanData.yearStartAssetValueByCurrency,
-    );
-
     return (
       <div className="space-y-6">
         <header className="space-y-1">
@@ -71,7 +41,7 @@ export default async function VariancePage({
             Budget vs Actual
           </h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            {year} — spending, savings, trends and net worth in one view
+            {year} — spending, savings and trends
           </p>
         </header>
 
@@ -83,7 +53,6 @@ export default async function VariancePage({
           savingsTimeline={savingsTimeline}
           categoryTrends={categoryTrends}
           disciplineScores={disciplineScores}
-          growthAnalytics={growthAnalytics}
         />
       </div>
     );
