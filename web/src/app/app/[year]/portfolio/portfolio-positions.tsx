@@ -5,6 +5,8 @@ import { formatCurrency } from "../planning/currency-format";
 import { recordValuation, recordFlow, deleteValuation, deleteFlow } from "./portfolio.actions";
 import type { PositionSummary } from "@/lib/portfolio-computations";
 
+type Account = { id: string; name: string; currencyCode: string };
+
 const todayISO = () => new Date().toISOString().split("T")[0];
 
 const FLOW_KIND_LABELS: Record<string, string> = {
@@ -30,9 +32,11 @@ function ReturnBadge({ value, pct }: { value: number; pct: number | null }) {
 function PositionCard({
   position,
   year,
+  accounts,
 }: {
   position: PositionSummary;
   year: number;
+  accounts: Account[];
 }) {
   const [showValForm, setShowValForm] = useState(false);
   const [showFlowForm, setShowFlowForm] = useState(false);
@@ -273,6 +277,21 @@ function PositionCard({
           <input name="notes" type="text" placeholder="e.g. Sold Stock X, Dividend Q1"
             className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 outline-none focus:border-zinc-900 dark:focus:border-zinc-50"
           />
+          <div className="space-y-1">
+            <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-300">
+              Cash account <span className="text-zinc-400">(links to wealth picture)</span>
+            </label>
+            <select name="accountId"
+              className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 outline-none focus:border-zinc-900 dark:focus:border-zinc-50"
+            >
+              <option value="">— not linked —</option>
+              {accounts
+                .filter((a) => a.currencyCode === position.currencyCode)
+                .map((a) => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+            </select>
+          </div>
           <button type="submit"
             className="inline-flex items-center rounded-full bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-50 hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200"
           >
@@ -287,9 +306,11 @@ function PositionCard({
 export function PortfolioPositions({
   byKind,
   year,
+  accounts,
 }: {
   byKind: Record<string, PositionSummary[]>;
   year: number;
+  accounts: Account[];
 }) {
   const kindMeta: Record<string, { label: string; emoji: string }> = {
     invest:  { label: "Investments",   emoji: "📈" },
@@ -310,7 +331,7 @@ export function PortfolioPositions({
             </h2>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {positions.map((pos) => (
-                <PositionCard key={pos.id} position={pos} year={year} />
+                <PositionCard key={pos.id} position={pos} year={year} accounts={accounts} />
               ))}
             </div>
           </section>

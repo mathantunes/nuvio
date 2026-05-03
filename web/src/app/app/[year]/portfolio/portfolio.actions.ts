@@ -6,6 +6,7 @@ import {
   investmentPositions,
   investmentValuations,
   investmentFlows,
+  instrumentTransfers,
 } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { AuthService } from "@/lib/auth-service";
@@ -44,6 +45,7 @@ export async function recordFlow(formData: FormData) {
   const flowKind = formData.get("flowKind") as string;
   const occurredAt = formData.get("occurredAt") as string;
   const notes = (formData.get("notes") as string) || null;
+  const accountId = (formData.get("accountId") as string) || null;
   const year = formData.get("year") as string;
 
   const [position] = await db
@@ -52,6 +54,32 @@ export async function recordFlow(formData: FormData) {
     .where(eq(investmentPositions.id, positionId));
   if (!position || position.userId !== user.id) throw new Error("Not found");
 
+  let instrumentTransferId: string | null = null;
+
+  if (accountId) {
+    // direction: deposits go TO the instrument; withdrawals/dividends come FROM it
+    const direction: "to_instrument" | "from_instrument" =
+      flowKind === "deposit" ? "to_instrument" : "from_instrument";
+
+    const [transfer] = await db
+      .insert(instrumentTransfers)
+      .values({
+        userId: user.id,
+        accountId,
+        direction,
+        instrumentType: "investment_position",
+        instrumentId: positionId,
+        amount,
+        currencyCode: position.currencyCode,
+        kind: flowKind,
+        occurredAt: new Date(occurredAt),
+        notes,
+      })
+      .returning({ id: instrumentTransfers.id });
+
+    instrumentTransferId = transfer.id;
+  }
+
   await db.insert(investmentFlows).values({
     userId: user.id,
     positionId,
@@ -59,9 +87,12 @@ export async function recordFlow(formData: FormData) {
     flowKind,
     occurredAt: new Date(occurredAt),
     notes,
+    instrumentTransferId,
   });
 
   revalidatePath(`/app/${year}/portfolio`);
+  revalidatePath(`/app/${year}`);
+  revalidatePath(`/app/${year}/variance`);
 }
 
 export async function deleteValuation(formData: FormData) {

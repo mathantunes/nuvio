@@ -8,6 +8,7 @@ import {
   transfers,
   savingsSnapshots,
   savingsSnapshotLines,
+  instrumentTransfers,
 } from "@/db/schema";
 import { and, eq, gte, lte, sum, desc } from "drizzle-orm";
 
@@ -54,6 +55,19 @@ export type DashboardData = {
   }>;
   transferImpacts: CurrencyTotals;
   totalFees: CurrencyTotals;
+  /** Net cash impact of instrument transfers per currency (positive = cash gained) */
+  instrumentTransferImpacts: CurrencyTotals;
+  yearInstrumentTransfers: Array<{
+    id: string;
+    accountId: string;
+    direction: string;
+    instrumentType: string;
+    instrumentId: string;
+    amount: string;
+    currencyCode: string;
+    kind: string;
+    occurredAt: Date;
+  }>;
 };
 
 /**
@@ -103,9 +117,14 @@ export async function fetchDashboardData(year: number, userId: string): Promise<
         eq(budgetLines.budgetId, budget.id)
       ));
 
-  // Savings snapshot for Jan 1 of this year
-  const yearStart = new Date(year, 0, 1);
-  const yearEnd = new Date(year, 11, 31, 23, 59, 59);
+  // Savings snapshot for Jan 1 of this year.
+  // Use a 2-day window (Dec 31 → Jan 2) instead of an exact timestamp to survive
+  // timezone offsets: a snapshot created at local midnight Jan 1 may be stored as
+  // Dec 31 23:00 UTC or Jan 1 01:00 UTC depending on the server's timezone.
+  const yearStart = new Date(Date.UTC(year, 0, 1));
+  const yearEnd   = new Date(Date.UTC(year, 11, 31, 23, 59, 59));
+  const snapshotWindowStart = new Date(Date.UTC(year - 1, 11, 30)); // Dec 30 previous year (UTC)
+  const snapshotWindowEnd   = new Date(Date.UTC(year,      0,  2)); // Jan 2 this year (UTC)
 
   const allSavingsLines = await db
     .select({
@@ -116,7 +135,8 @@ export async function fetchDashboardData(year: number, userId: string): Promise<
     .leftJoin(accounts, eq(savingsSnapshotLines.accountId, accounts.id))
     .where(and(
       eq(savingsSnapshots.userId, userId),
-      eq(savingsSnapshots.asOf, yearStart)
+      gte(savingsSnapshots.asOf, snapshotWindowStart),
+      lte(savingsSnapshots.asOf, snapshotWindowEnd),
     ))
     .orderBy(desc(sum(savingsSnapshotLines.amount)))
     .groupBy(accounts.currencyCode);
@@ -226,6 +246,37 @@ export async function fetchDashboardData(year: number, userId: string): Promise<
     addTo(transferImpacts, transfer.targetCurrencyCode, targetAmount);
   }
 
+  // Instrument transfers (portfolio deposits/withdrawals) for this year
+  const yearInstrumentTransfers = await db
+    .select({
+      id: instrumentTransfers.id,
+      accountId: instrumentTransfers.accountId,
+      direction: instrumentTransfers.direction,
+      instrumentType: instrumentTransfers.instrumentType,
+      instrumentId: instrumentTransfers.instrumentId,
+      amount: instrumentTransfers.amount,
+      currencyCode: instrumentTransfers.currencyCode,
+      kind: instrumentTransfers.kind,
+      occurredAt: instrumentTransfers.occurredAt,
+    })
+    .from(instrumentTransfers)
+    .where(
+      and(
+        eq(instrumentTransfers.userId, userId),
+        gte(instrumentTransfers.occurredAt, yearStart),
+        lte(instrumentTransfers.occurredAt, yearEnd)
+      )
+    );
+
+  // Net cash impact per currency:
+  //   from_instrument (withdrawal/dividend) → cash gained (+)
+  //   to_instrument (deposit)               → cash lost (-)
+  const instrumentTransferImpacts: CurrencyTotals = {};
+  for (const it of yearInstrumentTransfers) {
+    const sign = it.direction === "from_instrument" ? 1 : -1;
+    addTo(instrumentTransferImpacts, it.currencyCode, sign * Number(it.amount));
+  }
+
   return {
     budget,
     monthlyData,
@@ -243,6 +294,8 @@ export async function fetchDashboardData(year: number, userId: string): Promise<
     yearTransfers,
     transferImpacts,
     totalFees,
+    instrumentTransferImpacts,
+    yearInstrumentTransfers,
   };
 }
 
@@ -253,17 +306,20 @@ export function calculateSavingsData(
   currencyCode: string,
   startingBalance: string | null,
   yearNetActual: CurrencyTotals,
-  transferImpacts: CurrencyTotals
+  transferImpacts: CurrencyTotals,
+  instrumentTransferImpacts: CurrencyTotals = {}
 ) {
   const startingBalanceNum = Number(startingBalance) || 0;
   const netIncome = yearNetActual[currencyCode] ?? 0;
   const transferImpact = transferImpacts[currencyCode] ?? 0;
-  const finalBalance = startingBalanceNum + netIncome + transferImpact;
+  const instrumentTransferImpact = instrumentTransferImpacts[currencyCode] ?? 0;
+  const finalBalance = startingBalanceNum + netIncome + transferImpact + instrumentTransferImpact;
   
   return {
     startingBalance: startingBalanceNum,
     netIncome,
     transferImpact,
+    instrumentTransferImpact,
     finalBalance,
   };
 }

@@ -51,6 +51,8 @@ export default async function VariancePage({
       portfolioData.yearStartValueByCurrency,
       portfolioData.totalValueByCurrency,
       portfolioData.totalReturnByCurrency,
+      dashboardData.instrumentTransferImpacts,
+      dashboardData.yearInstrumentTransfers,
     );
 
     return (

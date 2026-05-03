@@ -215,10 +215,11 @@ export default async function BudgetDashboardPage({
             {data.allSavingsLines.length > 0 ? (
               <div className="mt-1 space-y-1">
                 {/* Column headers - responsive */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-xs mb-2">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-4 text-xs mb-2">
                   <div className="text-zinc-500 dark:text-zinc-400">Start</div>
                   <div className="text-zinc-500 dark:text-zinc-400">Savings</div>
                   <div className="hidden sm:block text-zinc-500 dark:text-zinc-400">FX</div>
+                  <div className="hidden sm:block text-zinc-500 dark:text-zinc-400">Portfolio</div>
                   <div className="text-zinc-500 dark:text-zinc-400">Final</div>
                 </div>
                 {/* Currency rows - responsive */}
@@ -227,7 +228,8 @@ export default async function BudgetDashboardPage({
                     currencyCode!,
                     amount,
                     data.yearNetActual,
-                    data.transferImpacts
+                    data.transferImpacts,
+                    data.instrumentTransferImpacts
                   );
                   
                   return (
@@ -246,13 +248,21 @@ export default async function BudgetDashboardPage({
                         <div className={`tabular-nums text-right ${savingsData.transferImpact > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                           {savingsData.transferImpact > 0 ? "+" : ""}{formatCurrency(savingsData.transferImpact, currencyCode!)}
                         </div>
+                        {savingsData.instrumentTransferImpact !== 0 && (
+                          <>
+                            <div className="text-zinc-500 dark:text-zinc-400">Portfolio:</div>
+                            <div className={`tabular-nums text-right ${savingsData.instrumentTransferImpact > 0 ? "text-teal-600 dark:text-teal-400" : "text-orange-600 dark:text-orange-400"}`}>
+                              {savingsData.instrumentTransferImpact > 0 ? "+" : ""}{formatCurrency(savingsData.instrumentTransferImpact, currencyCode!)}
+                            </div>
+                          </>
+                        )}
                         <div className="text-zinc-500 dark:text-zinc-400">Final:</div>
                         <div className={`tabular-nums font-semibold text-right ${savingsData.finalBalance > savingsData.startingBalance ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                           {formatCurrency(savingsData.finalBalance, currencyCode!)}
                         </div>
                       </div>
                       {/* Desktop layout - horizontal */}
-                      <div className="hidden sm:grid grid-cols-4 gap-4 text-xs">
+                      <div className="hidden sm:grid grid-cols-5 gap-4 text-xs">
                         <div className="tabular-nums text-zinc-900 dark:text-zinc-50">
                           {formatCurrency(savingsData.startingBalance, currencyCode!)}
                         </div>
@@ -261,6 +271,11 @@ export default async function BudgetDashboardPage({
                         </div>
                         <div className={`tabular-nums ${savingsData.transferImpact > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                           {savingsData.transferImpact > 0 ? "+" : ""}{formatCurrency(savingsData.transferImpact, currencyCode!)}
+                        </div>
+                        <div className={`tabular-nums ${savingsData.instrumentTransferImpact > 0 ? "text-teal-600 dark:text-teal-400" : savingsData.instrumentTransferImpact < 0 ? "text-orange-600 dark:text-orange-400" : "text-zinc-400 dark:text-zinc-600"}`}>
+                          {savingsData.instrumentTransferImpact !== 0
+                            ? `${savingsData.instrumentTransferImpact > 0 ? "+" : ""}${formatCurrency(savingsData.instrumentTransferImpact, currencyCode!)}`
+                            : "—"}
                         </div>
                         <div className={`tabular-nums font-semibold ${savingsData.finalBalance > savingsData.startingBalance ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                           {formatCurrency(savingsData.finalBalance, currencyCode!)}

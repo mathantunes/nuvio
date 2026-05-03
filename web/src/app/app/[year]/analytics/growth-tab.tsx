@@ -180,6 +180,16 @@ function CurrencyGrowthCard({ currency }: { currency: GrowthData }) {
               </span>
             </div>
           )}
+          {currency.instrumentTransferImpact !== 0 && (
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">Portfolio flows</span>
+              <span className={`text-xs font-medium ${
+                currency.instrumentTransferImpact >= 0 ? 'text-teal-600 dark:text-teal-400' : 'text-orange-600 dark:text-orange-400'
+              }`}>
+                {currency.instrumentTransferImpact >= 0 ? '+' : ''}{formatCurrency(currency.instrumentTransferImpact, currency.currency)}
+              </span>
+            </div>
+          )}
           {currency.totalFees > 0 && (
             <div className="flex justify-between items-center">
               <span className="text-xs text-zinc-500 dark:text-zinc-400">Fees</span>
@@ -248,6 +258,7 @@ function MonthlyProgressChart({
     Expenses: m.expenses,
     Balance: m.endingBalance,
     transferImpact: m.transferImpact,
+    instrumentTransferImpact: m.instrumentTransferImpact,
   }));
 
   const formatYAxis = (v: number) =>
@@ -268,6 +279,12 @@ function MonthlyProgressChart({
           <p className={entry.transferImpact >= 0 ? "text-purple-500" : "text-red-400"}>
             FX impact: {entry.transferImpact >= 0 ? "+" : ""}
             {formatCurrency(entry.transferImpact, currency.currency)}
+          </p>
+        )}
+        {entry && entry.instrumentTransferImpact !== 0 && (
+          <p className={entry.instrumentTransferImpact >= 0 ? "text-teal-500" : "text-orange-400"}>
+            Portfolio flow: {entry.instrumentTransferImpact >= 0 ? "+" : ""}
+            {formatCurrency(entry.instrumentTransferImpact, currency.currency)}
           </p>
         )}
       </div>

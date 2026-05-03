@@ -8,6 +8,8 @@ export interface GrowthData {
   ytdExpenses: number;
   netSavings: number;
   transferImpact: number;
+  /** Net cash impact from instrument flows (portfolio withdrawals/deposits) */
+  instrumentTransferImpact: number;
   totalFees: number;
   currentBalance: number;
   growthRate: number;
@@ -30,6 +32,7 @@ export interface MonthlyGrowthData {
   expenses: number;
   netSavings: number;
   transferImpact: number;
+  instrumentTransferImpact: number;
   endingBalance: number;
 }
 
@@ -79,6 +82,15 @@ export function calculateGrowthAnalytics(
   portfolioYearStart: Record<string, number> = {},
   portfolioLatest: Record<string, number> = {},
   portfolioTotalReturn: Record<string, number> = {},
+  /** Net cash impact of instrument transfers per currency (from fetchDashboardData) */
+  instrumentTransferImpacts: CurrencyTotals = {},
+  yearInstrumentTransfers: Array<{
+    accountId: string;
+    direction: string;
+    amount: string;
+    currencyCode: string;
+    occurredAt: Date;
+  }> = [],
 ): GrowthAnalytics {
   // Get all unique currencies from savings, income/expenses, transfers, and portfolio
   const allCurrencies = new Set<string>();
@@ -113,9 +125,10 @@ export function calculateGrowthAnalytics(
     // Get transfer impact and fees for this currency
     const transferImpact = transferImpacts[currency] || 0;
     const fees = totalFees[currency] || 0;
+    const instrumentTransferImpact = instrumentTransferImpacts[currency] || 0;
     
     // Calculate current balance
-    const currentBalance = startingBalance + netSavings + transferImpact;
+    const currentBalance = startingBalance + netSavings + transferImpact + instrumentTransferImpact;
     
     // Calculate growth rate
     const growthRate = startingBalance !== 0 
@@ -149,8 +162,19 @@ export function calculateGrowthAnalytics(
           monthTransferImpact += Number(transfer.targetAmount);
         }
       });
-      
-      const endingBalance = runningBalance + monthNetSavings + monthTransferImpact;
+
+      // Instrument transfers for this month and currency
+      const monthInstrumentTransfers = yearInstrumentTransfers.filter(it => {
+        const itMonth = new Date(it.occurredAt).getUTCMonth() + 1;
+        return itMonth === month.month && it.currencyCode === currency;
+      });
+      let monthInstrumentTransferImpact = 0;
+      for (const it of monthInstrumentTransfers) {
+        const sign = it.direction === "from_instrument" ? 1 : -1;
+        monthInstrumentTransferImpact += sign * Number(it.amount);
+      }
+
+      const endingBalance = runningBalance + monthNetSavings + monthTransferImpact + monthInstrumentTransferImpact;
       
       monthlyBreakdown.push({
         month: month.month,
@@ -160,6 +184,7 @@ export function calculateGrowthAnalytics(
         expenses: monthExpenses,
         netSavings: monthNetSavings,
         transferImpact: monthTransferImpact,
+        instrumentTransferImpact: monthInstrumentTransferImpact,
         endingBalance
       });
       
@@ -183,6 +208,7 @@ export function calculateGrowthAnalytics(
       ytdExpenses: monthlyData.reduce((sum, month) => sum + (month.actualExpenses[currency] || 0), 0),
       netSavings,
       transferImpact,
+      instrumentTransferImpact,
       totalFees: fees,
       currentBalance,
       growthRate,

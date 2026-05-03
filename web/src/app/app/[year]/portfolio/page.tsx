@@ -4,6 +4,9 @@ import { fetchPortfolioData } from "@/lib/portfolio-computations";
 import { formatCurrency } from "../planning/currency-format";
 import { PortfolioPositions } from "./portfolio-positions";
 import { createPosition } from "./portfolio.actions";
+import { db } from "@/db/client";
+import { accounts } from "@/db/schema";
+import { and, eq } from "drizzle-orm";
 
 type Props = {
   params: Promise<{ year: string }>;
@@ -17,7 +20,13 @@ export default async function PortfolioPage({ params }: Props) {
   const user = await AuthService.getCurrentUser();
 
   try {
-    const portfolio = await fetchPortfolioData(user.id, year);
+    const [portfolio, userAccounts] = await Promise.all([
+      fetchPortfolioData(user.id, year),
+      db
+        .select({ id: accounts.id, name: accounts.name, currencyCode: accounts.currencyCode })
+        .from(accounts)
+        .where(and(eq(accounts.userId, user.id), eq(accounts.isActive, true))),
+    ]);
 
     const allCurrencies = Array.from(
       new Set([
@@ -80,7 +89,7 @@ export default async function PortfolioPage({ params }: Props) {
 
         {/* Position cards grouped by kind */}
         {portfolio.positions.length > 0 ? (
-          <PortfolioPositions byKind={portfolio.byKind} year={year} />
+          <PortfolioPositions byKind={portfolio.byKind} year={year} accounts={userAccounts} />
         ) : (
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             No positions yet. Add your first one below.
