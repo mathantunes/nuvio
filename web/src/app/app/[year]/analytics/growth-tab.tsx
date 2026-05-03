@@ -266,7 +266,6 @@ function MonthlyProgressChart({
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
-    const entry = ytdMonths.find((m) => m.monthName === label);
     return (
       <div className="rounded-lg border border-zinc-200 bg-white p-3 shadow-sm text-xs dark:border-zinc-700 dark:bg-zinc-900 space-y-1">
         <p className="font-semibold text-zinc-900 dark:text-zinc-50">{label}</p>
@@ -275,18 +274,6 @@ function MonthlyProgressChart({
             {p.name}: {formatCurrency(p.value, currency.currency)}
           </p>
         ))}
-        {entry && entry.transferImpact !== 0 && (
-          <p className={entry.transferImpact >= 0 ? "text-purple-500" : "text-red-400"}>
-            FX impact: {entry.transferImpact >= 0 ? "+" : ""}
-            {formatCurrency(entry.transferImpact, currency.currency)}
-          </p>
-        )}
-        {entry && entry.instrumentTransferImpact !== 0 && (
-          <p className={entry.instrumentTransferImpact >= 0 ? "text-teal-500" : "text-orange-400"}>
-            Portfolio flow: {entry.instrumentTransferImpact >= 0 ? "+" : ""}
-            {formatCurrency(entry.instrumentTransferImpact, currency.currency)}
-          </p>
-        )}
       </div>
     );
   };
@@ -297,7 +284,7 @@ function MonthlyProgressChart({
         <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
           {currency.currency} Cash Flow Progress
         </h4>
-        <span className="text-xs text-zinc-400 dark:text-zinc-500 italic">cash only — portfolio excluded</span>
+        <span className="text-xs text-zinc-400 dark:text-zinc-500 italic">cash balance · includes portfolio flows</span>
       </div>
 
       <ResponsiveContainer width="100%" height={240}>
@@ -309,6 +296,20 @@ function MonthlyProgressChart({
 
           <Bar dataKey="Income" name="Income" fill="#10b981" radius={[3, 3, 0, 0]} opacity={0.85} />
           <Bar dataKey="Expenses" name="Expenses" fill="#f87171" radius={[3, 3, 0, 0]} opacity={0.85} />
+          <Bar
+            dataKey="instrumentTransferImpact"
+            name="Portfolio flow"
+            fill="#14b8a6"
+            radius={[3, 3, 0, 0]}
+            opacity={0.75}
+          />
+          <Bar
+            dataKey="transferImpact"
+            name="FX impact"
+            fill="#a855f7"
+            radius={[3, 3, 0, 0]}
+            opacity={0.75}
+          />
 
           <Area
             type="monotone"
