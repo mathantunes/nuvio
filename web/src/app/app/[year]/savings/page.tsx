@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 
 import { db } from "@/db/client";
 import { profiles, savingsSnapshotLines, savingsSnapshots, accounts } from "@/db/schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, gte, lte } from "drizzle-orm";
 import { createSavingsSnapshotLine } from "./savings.actions";
 import { formatCurrency } from "../planning/currency-format";
 import { AuthService } from "@/lib/auth-service";
@@ -21,12 +21,22 @@ export default async function SavingsPage({ params }: Props) {
 
     const user = await AuthService.getCurrentUser();
 
-    // Get budget
+    // Use a 2-day window around Jan 1 (Dec 30 → Jan 2 UTC) to survive timezone
+    // offsets: a snapshot created at local midnight Jan 1 may be stored as
+    // Dec 31 23:00 UTC or Jan 1 01:00 UTC depending on the server timezone.
+    // This mirrors the same fix applied in dashboard-computations.ts.
+    const snapshotWindowStart = new Date(Date.UTC(year - 1, 11, 30));
+    const snapshotWindowEnd = new Date(Date.UTC(year, 0, 2));
+
     const savings = await db.query.savingsSnapshots.findFirst({
-        where: and(eq(savingsSnapshots.userId, user.id), eq(savingsSnapshots.asOf, new Date(year, 0, 1))),
+        where: and(
+            eq(savingsSnapshots.userId, user.id),
+            gte(savingsSnapshots.asOf, snapshotWindowStart),
+            lte(savingsSnapshots.asOf, snapshotWindowEnd),
+        ),
     }) ?? (await db.insert(savingsSnapshots).values({
         userId: user.id,
-        asOf: new Date(year, 0, 1),
+        asOf: new Date(Date.UTC(year, 0, 1)),
     }).returning({ id: savingsSnapshots.id }))[0];
 
     // Get profile for base currency
