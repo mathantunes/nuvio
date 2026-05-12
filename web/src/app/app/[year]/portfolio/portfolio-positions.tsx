@@ -104,7 +104,7 @@ function PositionCard({
             </p>
           </div>
           <div>
-            <p className="text-zinc-500 dark:text-zinc-400">Total return</p>
+            <p className="text-zinc-500 dark:text-zinc-400">Market return</p>
             <div className="flex items-center gap-1.5">
               <p className={`font-semibold tabular-nums ${position.marketReturn >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
                 {position.marketReturn >= 0 ? "+" : ""}
@@ -112,14 +112,6 @@ function PositionCard({
               </p>
               <ReturnBadge value={position.marketReturn} pct={position.marketReturnPct} />
             </div>
-          </div>
-          <div>
-            <p className="text-zinc-500 dark:text-zinc-400">Portfolio value Δ</p>
-            <p className={`text-xs tabular-nums ${position.totalReturn >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
-              {position.totalReturn >= 0 ? "+" : ""}
-              {formatCurrency(position.totalReturn, position.currencyCode)}
-              <span className="text-zinc-400 dark:text-zinc-500 ml-1">(excl. cash flows)</span>
-            </p>
           </div>
         </div>
       ) : (
