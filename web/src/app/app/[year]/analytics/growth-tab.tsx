@@ -153,7 +153,10 @@ function CurrencyGrowthCard({ currency }: { currency: GrowthData }) {
         </summary>
         <div className="space-y-1.5 pl-2 border-l-2 border-zinc-100 dark:border-zinc-800 mt-2">
           <div className="flex justify-between items-center">
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">Cash</span>
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">
+              Cash
+              <span className="text-[10px] text-zinc-400 dark:text-zinc-500 ml-1">(incl. portfolio flows)</span>
+            </span>
             <span className="text-xs font-medium text-zinc-900 dark:text-zinc-50">
               {formatCurrency(currency.currentBalance, currency.currency)}
             </span>
