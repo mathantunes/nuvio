@@ -4,7 +4,7 @@ import { startTransition, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { TransactionForm } from "./transaction-form";
 import { formatAmount } from "../planning/currency-format";
-import { deleteTransaction } from "./transactions.actions";
+import { deleteTransaction, createUnplannedTransaction } from "./transactions.actions";
 
 type BudgetLine = {
   id: string;
@@ -43,6 +43,12 @@ type Account = {
   currencyCode: string;
 };
 
+type Category = {
+  id: string;
+  name: string;
+  kind: string | null;
+};
+
 type Props = {
   budgetId: string;
   year: number;
@@ -52,6 +58,8 @@ type Props = {
   transactions: Transaction[];
   accounts: Account[];
   baseCurrency: string;
+  incomeCategories: Category[];
+  expenseCategories: Category[];
 };
 
 export function TrackingTabs({
@@ -63,6 +71,8 @@ export function TrackingTabs({
   transactions,
   accounts,
   baseCurrency,
+  incomeCategories,
+  expenseCategories,
 }: Props) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"income" | "expense">("expense");
@@ -182,6 +192,8 @@ export function TrackingTabs({
       setOpenPopupId(null);
     });
   };
+
+  const currentCategories = activeTab === "income" ? incomeCategories : expenseCategories;
 
   return (
     <div className="space-y-4">
@@ -574,6 +586,150 @@ export function TrackingTabs({
           </div>
         )}
       </div>
+
+      {/* Unplanned Section — form only; transactions appear in the regular list above */}
+      <div className="space-y-2 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+          Unplanned
+        </h3>
+
+        {/* Add unplanned transaction form */}
+        <UnplannedForm
+          year={year}
+          month={selectedMonth}
+          categories={currentCategories}
+          accounts={accounts}
+        />
+      </div>
     </div>
+  );
+}
+
+function UnplannedForm({
+  year,
+  month,
+  categories,
+  accounts,
+}: {
+  year: number;
+  month: number;
+  categories: Category[];
+  accounts: { id: string; name: string; currencyCode: string }[];
+}) {
+  const [selectedAccountCurrency, setSelectedAccountCurrency] = useState(
+    accounts[0]?.currencyCode ?? "CHF"
+  );
+
+  const defaultDate = (() => {
+    const now = new Date();
+    const nowMonth = now.getMonth() + 1;
+    const nowYear = now.getFullYear();
+    if (nowYear === year && nowMonth === month) {
+      return now.toISOString().split("T")[0];
+    }
+    return `${year}-${String(month).padStart(2, "0")}-01`;
+  })();
+
+  if (categories.length === 0) {
+    return (
+      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+        No categories available. Create one in{" "}
+        <a href={`/app/${year}/categories`} className="underline">
+          Categories
+        </a>
+        .
+      </p>
+    );
+  }
+
+  return (
+    <form action={createUnplannedTransaction} className="space-y-3">
+      <input type="hidden" name="year" value={year} />
+      <input type="hidden" name="month" value={month} />
+      <input type="hidden" name="currencyCode" value={selectedAccountCurrency} />
+
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div>
+          <label className="text-[11px] text-zinc-500 dark:text-zinc-400">Category</label>
+          <select
+            name="categoryId"
+            required
+            className="mt-0.5 w-full rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+          >
+            <option value="">Select category…</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="text-[11px] text-zinc-500 dark:text-zinc-400">Account</label>
+          <select
+            name="accountId"
+            required
+            onChange={(e) => {
+              const acc = accounts.find((a) => a.id === e.target.value);
+              if (acc) setSelectedAccountCurrency(acc.currencyCode);
+            }}
+            className="mt-0.5 w-full rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+          >
+            {accounts.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name} ({a.currencyCode})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="text-[11px] text-zinc-500 dark:text-zinc-400">
+            Amount ({selectedAccountCurrency})
+          </label>
+          <input
+            type="number"
+            name="amount"
+            min="0.01"
+            step="0.01"
+            required
+            placeholder="0.00"
+            className="mt-0.5 w-full rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+          />
+        </div>
+
+        <div>
+          <label className="text-[11px] text-zinc-500 dark:text-zinc-400">Date</label>
+          <input
+            type="date"
+            name="occurredAt"
+            required
+            defaultValue={defaultDate}
+            className="mt-0.5 w-full rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="text-[11px] text-zinc-500 dark:text-zinc-400">
+          Description (optional)
+        </label>
+        <input
+          type="text"
+          name="description"
+          maxLength={500}
+
+          className="mt-0.5 w-full rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+        />
+      </div>
+
+      <button
+        type="submit"
+        className="text-xs text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 underline decoration-dotted underline-offset-2"
+      >
+        Add unplanned transaction
+      </button>
+    </form>
   );
 }
