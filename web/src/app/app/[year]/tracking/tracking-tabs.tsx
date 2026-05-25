@@ -246,7 +246,7 @@ export function TrackingTabs({
               setOpenPopupId(null);
             }}
             className={`px-4 py-2 text-sm font-medium transition ${activeTab === "income"
-                ? "border-b-2 border-zinc-900 text-zinc-900 dark:text-zinc-50 dark:text-zinc-50"
+                ? "border-b-2 border-zinc-900 text-zinc-900 dark:text-zinc-50"
                 : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
               }`}
           >
