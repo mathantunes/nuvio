@@ -115,6 +115,17 @@ export default async function BudgetTrackingMonthPage({ params }: Props) {
     .from(accounts)
     .where(and(eq(accounts.userId, user.id), eq(accounts.isActive, true)));
 
+  // Get all user categories split by kind for the unplanned form
+  const allCategories = await db
+    .select({ id: categories.id, name: categories.name, kind: categories.kind })
+    .from(categories)
+    .where(eq(categories.userId, user.id));
+
+  const incomeCategories = allCategories.filter((c) => c.kind === "income");
+  const expenseCategories = allCategories.filter(
+    (c) => c.kind === "expense" || c.kind === null
+  );
+
   return (
     <div className="space-y-4">
       <header className="space-y-1">
@@ -137,6 +148,8 @@ export default async function BudgetTrackingMonthPage({ params }: Props) {
           transactions={yearTransactions}
           accounts={userAccounts}
           baseCurrency={baseCurrency}
+          incomeCategories={incomeCategories}
+          expenseCategories={expenseCategories}
         />
       </div>
     </div>

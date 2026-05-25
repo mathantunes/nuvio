@@ -1,10 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { db } from "@/db/client";
-import { transactions, budgetLines, categories } from "@/db/schema";
+import { transactions, budgetLines, categories, budgets } from "@/db/schema";
 import { AuthService } from "@/lib/auth-service";
 import { and, eq } from "drizzle-orm";
 
@@ -224,4 +225,138 @@ export async function updateTransaction(formData: FormData) {
     console.error("Failed to update transaction:", error);
     return { error: error instanceof Error ? error.message : "Failed to update transaction." };
   }
+}
+
+const createUnplannedTransactionSchema = z.object({
+  categoryId: z.string().uuid(),
+  accountId: z.string().uuid(),
+  amount: z
+    .string()
+    .transform((val) => parseFloat(val))
+    .pipe(z.number().min(0.01)),
+  currencyCode: z
+    .string()
+    .min(3)
+    .max(3)
+    .regex(/^[A-Z]{3}$/, "Currency code must be a 3-letter ISO code."),
+  occurredAt: z.string().transform((val) => new Date(val)),
+  description: z.string().max(500).optional(),
+  year: z
+    .string()
+    .transform((val) => parseInt(val, 10))
+    .pipe(z.number().int()),
+  month: z
+    .string()
+    .transform((val) => parseInt(val, 10))
+    .pipe(z.number().int().min(1).max(12)),
+});
+
+/**
+ * Creates a transaction for a category without a pre-existing planned budget line.
+ * If no budget line exists for the given category + month, a $0 budget line is
+ * automatically created. If one already exists (planned or unplanned), it is reused.
+ */
+export async function createUnplannedTransaction(formData: FormData) {
+  const user = await AuthService.getCurrentUser();
+
+  const yearRaw = String(formData.get("year") ?? "");
+  const monthRaw = String(formData.get("month") ?? "");
+
+  const raw = {
+    categoryId: String(formData.get("categoryId") ?? ""),
+    accountId: String(formData.get("accountId") ?? ""),
+    amount: String(formData.get("amount") ?? "0"),
+    currencyCode: String(formData.get("currencyCode") ?? "").toUpperCase(),
+    occurredAt: String(formData.get("occurredAt") ?? ""),
+    description: formData.get("description") ? String(formData.get("description")) : undefined,
+    year: yearRaw,
+    month: monthRaw,
+  };
+
+  const parsed = createUnplannedTransactionSchema.safeParse(raw);
+
+  if (!parsed.success) {
+    redirect(
+      `/app/${yearRaw}/tracking/${monthRaw}?unplannedError=${encodeURIComponent(
+        parsed.error.issues[0]?.message ?? "Invalid data."
+      )}`
+    );
+  }
+
+  const { categoryId, accountId, amount, currencyCode, occurredAt, description, year, month } =
+    parsed.data;
+
+  // Verify category ownership and derive transaction type from kind
+  const categoryResult = await db
+    .select({ id: categories.id, kind: categories.kind })
+    .from(categories)
+    .where(and(eq(categories.id, categoryId), eq(categories.userId, user.id)))
+    .limit(1);
+
+  if (categoryResult.length === 0) {
+    redirect(
+      `/app/${year}/tracking/${month}?unplannedError=${encodeURIComponent("Category not found.")}`
+    );
+  }
+
+  const transactionType = categoryResult[0].kind === "income" ? "income" : "expense";
+
+  // Get the budget for this year
+  const budget = await db.query.budgets.findFirst({
+    where: and(eq(budgets.year, year), eq(budgets.userId, user.id)),
+  });
+
+  if (!budget) {
+    redirect(
+      `/app/${year}/tracking/${month}?unplannedError=${encodeURIComponent(
+        "Budget not found for this year."
+      )}`
+    );
+  }
+
+  // Find or create a $0 budget line for this category + month
+  const existingLine = await db
+    .select({ id: budgetLines.id })
+    .from(budgetLines)
+    .where(
+      and(
+        eq(budgetLines.budgetId, budget.id),
+        eq(budgetLines.categoryId, categoryId),
+        eq(budgetLines.month, month)
+      )
+    )
+    .limit(1);
+
+  let budgetLineId: string;
+
+  if (existingLine.length > 0) {
+    budgetLineId = existingLine[0].id;
+  } else {
+    const [newLine] = await db
+      .insert(budgetLines)
+      .values({
+        budgetId: budget.id,
+        categoryId,
+        month,
+        plannedAmount: "0",
+        currencyCode,
+      })
+      .returning({ id: budgetLines.id });
+    budgetLineId = newLine.id;
+  }
+
+  await db.insert(transactions).values({
+    userId: user.id,
+    accountId,
+    categoryId,
+    budgetLineId,
+    transactionType,
+    amount: amount.toString(),
+    currencyCode,
+    occurredAt,
+    description,
+  });
+
+  revalidatePath(`/app/${year}/tracking`);
+  revalidatePath(`/app/${year}`);
 }
