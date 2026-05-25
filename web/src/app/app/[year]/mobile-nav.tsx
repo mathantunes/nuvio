@@ -23,6 +23,7 @@ export function MobileNav({ year, currentPath }: MobileNavProps) {
       items: [
         { href: `/app/${year}/accounts`, label: "Accounts" },
         { href: `/app/${year}/fx`, label: "FX Transfers" },
+        { href: `/app/${year}/categories`, label: "Categories" },
       ],
     },
     {
