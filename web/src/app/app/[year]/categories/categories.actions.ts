@@ -7,13 +7,40 @@ import { z } from "zod";
 import { db } from "@/db/client";
 import { categories, budgetLines, transactions } from "@/db/schema";
 import { AuthService } from "@/lib/auth-service";
-import { eq, count } from "drizzle-orm";
+import { eq, count, and } from "drizzle-orm";
 
 function categoryBase(year: string) {
   return `/app/${year}/categories`;
 }
 
 const categoryIdSchema = z.string().uuid("Invalid category ID.");
+
+const kindValues = ["income", "expense"] as const;
+
+export async function createCategory(formData: FormData) {
+  const user = await AuthService.getCurrentUser();
+  const year = String(formData.get("year") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  const kind = String(formData.get("kind") ?? "") as (typeof kindValues)[number];
+
+  if (!name || !kindValues.includes(kind)) {
+    redirect(`${categoryBase(year)}?error=invalid`);
+  }
+
+  // Prevent duplicate names for the same user+kind
+  const existing = await db.query.categories.findFirst({
+    where: and(eq(categories.userId, user.id), eq(categories.name, name)),
+  });
+
+  if (existing) {
+    redirect(`${categoryBase(year)}?error=duplicate&name=${encodeURIComponent(name)}`);
+  }
+
+  await db.insert(categories).values({ userId: user.id, name, kind });
+
+  revalidatePath("/app");
+  redirect(categoryBase(year));
+}
 
 export async function updateCategory(formData: FormData) {
   const user = await AuthService.getCurrentUser();
