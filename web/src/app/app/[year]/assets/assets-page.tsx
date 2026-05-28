@@ -8,16 +8,15 @@ import {
   recordAssetValuation,
   deleteAsset,
 } from "./assets.actions";
+import { IconHome, IconCar, IconBox } from "@/components/icons";
 import type { AssetSummary } from "@/lib/loan-computations";
 
 // ── Shared style constants (matches loan-list.tsx) ────────────────────────────
-const inputCls =
-  "block w-full rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 outline-none focus:border-zinc-900 dark:focus:border-zinc-50";
-const labelCls = "block text-[11px] font-medium text-zinc-700 dark:text-zinc-300";
-const submitBtnCls =
-  "inline-flex items-center rounded-full bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-50 hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200 disabled:opacity-50";
-const ghostBtnCls =
-  "text-xs text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50 underline";
+const inputCls = "input px-3 py-1.5 text-xs";
+const labelCls = "block text-[11px] font-medium";
+const labelStyle = { color: "var(--color-text-muted)" } as const;
+const submitBtnCls = "btn-primary px-3 py-1.5 text-xs";
+const ghostBtnCls = "btn-ghost text-xs";
 
 function todayISO() {
   return new Date().toISOString().split("T")[0];
@@ -67,12 +66,12 @@ export function RecordAssetValuationForm({
 
   return (
     <form action={handleSubmit} className="space-y-3">
-      <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+      <p className="text-xs font-medium" style={{ color: "var(--color-text-muted)" }}>
         Record valuation for {assetName}
       </p>
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
-          <label className={labelCls}>Market value ({currencyCode})</label>
+          <label className={labelCls} style={labelStyle}>Market value ({currencyCode})</label>
           <input
             name="value"
             type="number"
@@ -85,7 +84,7 @@ export function RecordAssetValuationForm({
           />
         </div>
         <div className="space-y-1">
-          <label className={labelCls}>Valuation date</label>
+          <label className={labelCls} style={labelStyle}>Valuation date</label>
           <input
             name="valuedAt"
             type="date"
@@ -120,22 +119,22 @@ function AssetCard({ asset, year }: { asset: AssetSummary; year: number }) {
     setShowValForm(false);
   }
 
-  const emoji =
-    asset.kind === "real_estate" ? "🏠" : asset.kind === "vehicle" ? "🚗" : "📦";
+  const AssetIcon =
+    asset.kind === "real_estate" ? IconHome : asset.kind === "vehicle" ? IconCar : IconBox;
   const appreciation =
     asset.currentValue > 0 && asset.purchasePrice > 0
       ? asset.currentValue - asset.purchasePrice
       : null;
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 p-4 space-y-3">
+    <div className="card space-y-3 p-4">
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-            {emoji} {asset.name}
+          <p className="flex items-center gap-1.5 text-sm font-semibold" style={{ color: "var(--color-text)" }}>
+            <AssetIcon size={14} /> {asset.name}
           </p>
-          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+          <p className="mt-0.5 text-[11px]" style={{ color: "var(--color-text-subtle)" }}>
             {asset.kind.replace("_", " ")} · {asset.currencyCode} · purchased{" "}
             {fmtDate(asset.purchasedAt)} for{" "}
             {formatCurrency(asset.purchasePrice, asset.currencyCode)}
@@ -154,7 +153,8 @@ function AssetCard({ asset, year }: { asset: AssetSummary; year: number }) {
               if (!confirm(`Delete "${asset.name}"? This cannot be undone.`))
                 e.preventDefault();
             }}
-            className="text-[11px] text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 px-2 py-1 rounded"
+            className="rounded px-2 py-1 text-[11px]"
+            style={{ color: "var(--color-danger)" }}
           >
             Delete
           </button>
@@ -164,21 +164,21 @@ function AssetCard({ asset, year }: { asset: AssetSummary; year: number }) {
       {/* Value grid */}
       <div className="grid grid-cols-2 gap-3 text-xs">
         <div>
-          <p className="text-zinc-500 dark:text-zinc-400">Current value</p>
-          <p className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
+          <p style={{ color: "var(--color-text-subtle)" }}>Current value</p>
+          <p className="font-semibold tabular-nums" style={{ color: "var(--color-text)" }}>
             {asset.currentValue > 0
               ? formatCurrency(asset.currentValue, asset.currencyCode)
               : "—"}
           </p>
           {asset.latestValuation && (
-            <p className="text-[10px] text-zinc-400 mt-0.5">
+            <p className="mt-0.5 text-[10px]" style={{ color: "var(--color-text-subtle)" }}>
               as of {fmtDate(asset.latestValuation.valuedAt)}
             </p>
           )}
         </div>
         <div>
-          <p className="text-zinc-500 dark:text-zinc-400">Year-start value</p>
-          <p className="font-medium tabular-nums text-zinc-600 dark:text-zinc-300">
+          <p style={{ color: "var(--color-text-subtle)" }}>Year-start value</p>
+          <p className="font-medium tabular-nums" style={{ color: "var(--color-text-muted)" }}>
             {asset.yearStartValue > 0
               ? formatCurrency(asset.yearStartValue, asset.currencyCode)
               : "—"}
@@ -186,13 +186,12 @@ function AssetCard({ asset, year }: { asset: AssetSummary; year: number }) {
         </div>
         {appreciation !== null && (
           <div className="col-span-2">
-            <p className="text-zinc-500 dark:text-zinc-400">Gain vs purchase price</p>
+            <p style={{ color: "var(--color-text-subtle)" }}>Gain vs purchase price</p>
             <p
-              className={`font-medium tabular-nums ${
-                appreciation >= 0
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-red-600 dark:text-red-400"
-              }`}
+              className="font-medium tabular-nums"
+              style={{
+                color: appreciation >= 0 ? "var(--color-success)" : "var(--color-danger)",
+              }}
             >
               {appreciation >= 0 ? "+" : ""}
               {formatCurrency(appreciation, asset.currencyCode)}
@@ -213,11 +212,12 @@ function AssetCard({ asset, year }: { asset: AssetSummary; year: number }) {
       {showValForm && (
         <form
           action={handleValuation}
-          className="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-800"
+          className="space-y-2 border-t pt-2"
+          style={{ borderColor: "var(--color-border)" }}
         >
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className={labelCls}>Value ({asset.currencyCode})</label>
+              <label className={labelCls} style={labelStyle}>Value ({asset.currencyCode})</label>
               <input
                 name="value"
                 type="number"
@@ -228,7 +228,7 @@ function AssetCard({ asset, year }: { asset: AssetSummary; year: number }) {
               />
             </div>
             <div>
-              <label className={labelCls}>Valued on</label>
+              <label className={labelCls} style={labelStyle}>Valued on</label>
               <input
                 name="valuedAt"
                 type="date"
@@ -265,12 +265,12 @@ function AddAssetForm({ year, onDone }: { year: number; onDone: () => void }) {
   return (
     <form
       action={handleCreate}
-      className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-4 space-y-3"
+      className="card space-y-3 p-4"
     >
-      <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">New Asset</p>
+      <p className="text-sm font-semibold" style={{ color: "var(--color-text)" }}>New Asset</p>
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
-          <label className={labelCls}>Name</label>
+          <label className={labelCls} style={labelStyle}>Name</label>
           <input
             name="name"
             type="text"
@@ -280,7 +280,7 @@ function AddAssetForm({ year, onDone }: { year: number; onDone: () => void }) {
           />
         </div>
         <div>
-          <label className={labelCls}>Kind</label>
+          <label className={labelCls} style={labelStyle}>Kind</label>
           <select name="kind" required className={inputCls}>
             <option value="real_estate">Real estate</option>
             <option value="vehicle">Vehicle</option>
@@ -288,7 +288,7 @@ function AddAssetForm({ year, onDone }: { year: number; onDone: () => void }) {
           </select>
         </div>
         <div>
-          <label className={labelCls}>Currency</label>
+          <label className={labelCls} style={labelStyle}>Currency</label>
           <input
             name="currencyCode"
             type="text"
@@ -299,7 +299,7 @@ function AddAssetForm({ year, onDone }: { year: number; onDone: () => void }) {
           />
         </div>
         <div>
-          <label className={labelCls}>Purchase price</label>
+          <label className={labelCls} style={labelStyle}>Purchase price</label>
           <input
             name="purchasePrice"
             type="number"
@@ -310,7 +310,7 @@ function AddAssetForm({ year, onDone }: { year: number; onDone: () => void }) {
           />
         </div>
         <div>
-          <label className={labelCls}>Purchase date</label>
+          <label className={labelCls} style={labelStyle}>Purchase date</label>
           <input
             name="purchasedAt"
             type="date"
@@ -320,7 +320,7 @@ function AddAssetForm({ year, onDone }: { year: number; onDone: () => void }) {
           />
         </div>
         <div className="col-span-2">
-          <label className={labelCls}>Notes (optional)</label>
+          <label className={labelCls} style={labelStyle}>Notes (optional)</label>
           <input name="notes" type="text" className={inputCls} />
         </div>
       </div>
@@ -351,17 +351,17 @@ export function AssetsPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">Assets</h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-0.5">
+          <h1 className="text-xl font-semibold" style={{ color: "var(--color-text)" }}>Assets</h1>
+          <p className="mt-0.5 text-sm" style={{ color: "var(--color-text-muted)" }}>
             {year} — properties, vehicles, and other assets
           </p>
         </div>
         {!showForm && (
           <button
             onClick={() => setShowForm(true)}
-            className="rounded-full border border-zinc-300 dark:border-zinc-700 px-4 py-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:border-zinc-500 dark:hover:border-zinc-400 transition"
+            className="btn-primary gap-2 text-xs"
           >
-            + Add Asset
+            Add Asset
           </button>
         )}
       </div>
@@ -376,9 +376,12 @@ export function AssetsPage({
         </div>
       ) : (
         !showForm && (
-          <div className="rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800 p-12 text-center">
-            <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">No assets yet</p>
-            <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
+          <div
+            className="rounded-xl border border-dashed p-12 text-center"
+            style={{ borderColor: "var(--color-border)" }}
+          >
+            <p className="text-sm font-medium" style={{ color: "var(--color-text-subtle)" }}>No assets yet</p>
+            <p className="mt-1 text-xs" style={{ color: "var(--color-text-subtle)" }}>
               Add properties, vehicles, or other assets to track their value and see them reflected
               in your net wealth.
             </p>

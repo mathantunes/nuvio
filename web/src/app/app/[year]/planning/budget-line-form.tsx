@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import { createBudgetLine, updateBudgetLine } from "./budget-lines.actions";
 
 type Props = {
@@ -31,7 +31,7 @@ export function BudgetLineForm({
   const [isMonthly, setIsMonthly] = useState(!editingLine);
   const [month, setMonth] = useState(String(editingLine?.month ?? 1));
   const [plannedAmount, setPlannedAmount] = useState(
-    editingLine?.plannedAmount ?? "0"
+    editingLine ? parseFloat(editingLine.plannedAmount).toFixed(2) : "0.00"
   );
   const [currencyCode, setCurrencyCode] = useState(
     editingLine?.currencyCode ?? baseCurrency
@@ -41,6 +41,14 @@ export function BudgetLineForm({
   const [error, setError] = useState<string | null>(null);
 
   const isEditing = !!editingLine;
+  const amountRef = useRef<HTMLInputElement>(null);
+
+  // Autofocus amount when rendered in a portal (autoFocus attr unreliable in portals)
+  useEffect(() => {
+    if (!isEditing) return;
+    const t = setTimeout(() => amountRef.current?.focus(), 50);
+    return () => clearTimeout(t);
+  }, [isEditing]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -63,12 +71,11 @@ export function BudgetLineForm({
         return;
       }
 
-      // Reset form on success
       if (!isEditing) {
         setCategoryName("");
         setIsMonthly(true);
         setMonth("1");
-        setPlannedAmount("0");
+        setPlannedAmount("0.00");
         setCurrencyCode(baseCurrency);
         setNotes("");
       }
@@ -78,15 +85,29 @@ export function BudgetLineForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+    <form onSubmit={handleSubmit} className="card space-y-3">
       {isEditing && (
-        <input type="hidden" name="budgetLineId" value={editingLine.id} />
+        <>
+          <input type="hidden" name="budgetLineId" value={editingLine.id} />
+          <input type="hidden" name="month" value={editingLine.month} />
+          <div>
+            <p className="text-sm font-semibold" style={{ color: "var(--color-text)" }}>
+              {editingLine.categoryName}
+            </p>
+            <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+              {new Date(year, editingLine.month - 1).toLocaleString("en-US", { month: "long" })}
+            </p>
+          </div>
+        </>
       )}
 
       <div className="space-y-3">
         {!isEditing && (
           <div className="space-y-1">
-            <label className="block text-xs font-medium text-zinc-900 dark:text-zinc-50">
+            <label
+              className="block text-xs font-medium"
+              style={{ color: "var(--color-text)" }}
+            >
               Category
             </label>
             <input
@@ -94,7 +115,7 @@ export function BudgetLineForm({
               value={categoryName}
               onChange={(event) => setCategoryName(event.target.value)}
               required
-              className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 shadow-sm outline-none ring-0 transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+              className="input"
               placeholder={categoryKind === "income" ? "Salary, Dividends..." : "Rent, Groceries..."}
             />
           </div>
@@ -108,11 +129,17 @@ export function BudgetLineForm({
               name="isMonthly"
               checked={isMonthly}
               onChange={(event) => setIsMonthly(event.target.checked)}
-              className="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950"
+              className="h-4 w-4 rounded"
+              style={{
+                accentColor: "var(--color-brand)",
+                borderColor: "var(--color-border)",
+                backgroundColor: "var(--color-surface)",
+              }}
             />
             <label
               htmlFor="isMonthly"
-              className="text-xs font-medium text-zinc-900 dark:text-zinc-50"
+              className="text-xs font-medium"
+              style={{ color: "var(--color-text)" }}
             >
               Monthly (applies to all 12 months)
             </label>
@@ -122,9 +149,12 @@ export function BudgetLineForm({
         {isMonthly && !isEditing && (
           <input type="hidden" name="month" value="1" />
         )}
-        {(!isMonthly || isEditing) && (
+        {!isMonthly && !isEditing && (
           <div className="space-y-1">
-            <label className="block text-xs font-medium text-zinc-900 dark:text-zinc-50">
+            <label
+              className="block text-xs font-medium"
+              style={{ color: "var(--color-text)" }}
+            >
               Month
             </label>
             <select
@@ -133,7 +163,7 @@ export function BudgetLineForm({
               onChange={(event) => setMonth(event.target.value)}
               required
               disabled={isEditing}
-              className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 shadow-sm outline-none ring-0 transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+              className="input disabled:cursor-not-allowed disabled:opacity-50"
             >
               {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
                 <option key={m} value={m}>
@@ -146,10 +176,14 @@ export function BudgetLineForm({
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <label className="block text-xs font-medium text-zinc-900 dark:text-zinc-50">
+            <label
+              className="block text-xs font-medium"
+              style={{ color: "var(--color-text)" }}
+            >
               Amount
             </label>
             <input
+              ref={amountRef}
               name="plannedAmount"
               type="number"
               step="0.01"
@@ -157,30 +191,46 @@ export function BudgetLineForm({
               value={plannedAmount}
               onChange={(event) => setPlannedAmount(event.target.value)}
               required
-              className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 shadow-sm outline-none ring-0 transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+              className="input"
               placeholder="0.00"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="block text-xs font-medium text-zinc-900 dark:text-zinc-50">
+            <label
+              className="block text-xs font-medium"
+              style={{ color: "var(--color-text)" }}
+            >
               Currency
             </label>
-            <input
-              name="currencyCode"
-              value={currencyCode}
-              onChange={(event) => setCurrencyCode(event.target.value.toUpperCase())}
-              required
-              maxLength={3}
-              className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs uppercase tracking-[0.2em] text-zinc-900 shadow-sm outline-none ring-0 transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
-              placeholder="USD"
-            />
+            {isEditing ? (
+              <>
+                <input type="hidden" name="currencyCode" value={currencyCode} />
+                <p className="input uppercase tracking-[0.2em] cursor-default select-none opacity-60"
+                   style={{ color: "var(--color-text)" }}>
+                  {currencyCode}
+                </p>
+              </>
+            ) : (
+              <input
+                name="currencyCode"
+                value={currencyCode}
+                onChange={(event) => setCurrencyCode(event.target.value.toUpperCase())}
+                required
+                maxLength={3}
+                className="input uppercase tracking-[0.2em]"
+                placeholder="USD"
+              />
+            )}
           </div>
         </div>
       </div>
 
       <div className="space-y-1">
-        <label className="block text-xs font-medium text-zinc-900 dark:text-zinc-50">
+        <label
+          className="block text-xs font-medium"
+          style={{ color: "var(--color-text)" }}
+        >
           Notes (optional)
         </label>
         <textarea
@@ -189,20 +239,18 @@ export function BudgetLineForm({
           onChange={(event) => setNotes(event.target.value)}
           rows={2}
           maxLength={500}
-          className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 shadow-sm outline-none ring-0 transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+          className="input"
           placeholder="Additional details..."
         />
       </div>
 
       {error ? (
-        <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
+        <p className="text-xs" style={{ color: "var(--color-danger)" }}>
+          {error}
+        </p>
       ) : null}
 
-      <button
-        type="submit"
-        disabled={isPending}
-        className="inline-flex items-center justify-center rounded-full bg-zinc-900 px-4 py-2 text-xs font-medium text-zinc-50 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-400 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200"
-      >
+      <button type="submit" disabled={isPending} className="btn-primary">
         {isPending
           ? isEditing
             ? "Updating…"

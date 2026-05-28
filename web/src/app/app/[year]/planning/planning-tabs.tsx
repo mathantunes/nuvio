@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { BudgetLineForm } from "./budget-line-form";
-import { formatCurrency, formatAmount } from "./currency-format";
+import { formatAmount } from "./currency-format";
+import { CardTitle, Table, Thead, Tbody, Th, Td, Tr } from "@/components/ui";
 
 type BudgetLine = {
   id: string;
@@ -42,6 +44,52 @@ export function PlanningTabs({
 }: Props) {
   const [activeTab, setActiveTab] = useState<"income" | "expense">("expense");
   const [editingLine, setEditingLine] = useState<BudgetLine | null>(null);
+  const [formAnchorPos, setFormAnchorPos] = useState<{ x: number; y: number } | null>(null);
+  // track the cell button that triggered the form so we can restore focus
+  const [triggerCellId, setTriggerCellId] = useState<string | null>(null);
+
+  function anchorFromElement(el: Element) {
+    const FORM_WIDTH = 320;
+    const FORM_HEIGHT = 280;
+    const rect = el.getBoundingClientRect();
+    const x = Math.min(rect.left, window.innerWidth - FORM_WIDTH - 16);
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const y = spaceBelow < FORM_HEIGHT ? rect.top - FORM_HEIGHT - 8 : rect.bottom + 8;
+    return { x, y };
+  }
+
+  function openForm(line: BudgetLine, el: Element) {
+    setEditingLine(line);
+    setFormAnchorPos(anchorFromElement(el));
+    setTriggerCellId(`cell-${line.id}`);
+  }
+
+  function closeForm() {
+    const id = triggerCellId;
+    setEditingLine(null);
+    setFormAnchorPos(null);
+    setTriggerCellId(null);
+    if (id) {
+      setTimeout(() => {
+        (document.querySelector(`[data-cell-id="${id}"]`) as HTMLElement | null)?.focus();
+      }, 0);
+    }
+  }
+
+  useEffect(() => {
+    if (!editingLine) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (!(e.target as Element)?.closest?.('[data-planning-popup]')) closeForm();
+    };
+    const handleScroll = () => closeForm();
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('scroll', handleScroll, { capture: true, passive: true });
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('scroll', handleScroll, { capture: true });
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingLine]);
 
   const currentLines = activeTab === "income" ? incomeLines : expenseLines;
 
@@ -49,13 +97,12 @@ export function PlanningTabs({
     new Date(year, i).toLocaleString("en-US", { month: "short" })
   );
 
-  // Group lines by category and aggregate by month
   const categoryGroups = useMemo(() => {
     const groups = new Map<string, CategoryGroup>();
 
     currentLines.forEach((line) => {
       const key = `${line.category.id}-${line.currencyCode}`;
-      
+
       if (!groups.has(key)) {
         groups.set(key, {
           categoryId: line.category.id,
@@ -72,18 +119,16 @@ export function PlanningTabs({
     });
 
     return Array.from(groups.values()).sort((a, b) => {
-      // Sort by currency first, then by total amount (descending), then by category name
       if (a.currencyCode !== b.currencyCode) {
         return a.currencyCode.localeCompare(b.currencyCode);
       }
       if (a.total !== b.total) {
-        return b.total - a.total; // Descending order (higher amounts first)
+        return b.total - a.total;
       }
       return a.categoryName.localeCompare(b.categoryName);
     });
   }, [currentLines]);
 
-  // Calculate totals per currency
   const currencyTotals = useMemo(() => {
     const totals = new Map<string, { monthlyTotals: Map<number, number>; yearlyTotal: number }>();
 
@@ -109,232 +154,225 @@ export function PlanningTabs({
 
   return (
     <div className="space-y-4">
-      {/* Tabs */}
-      <div className="flex gap-2 border-b border-zinc-200 dark:border-zinc-800">
+      <div className="tab-bar">
         <button
           onClick={() => {
             setActiveTab("expense");
-            setEditingLine(null);
+            closeForm();
           }}
-          className={`px-4 py-2 text-sm font-medium transition ${
-            activeTab === "expense"
-              ? "border-b-2 border-zinc-900 text-zinc-900 dark:border-zinc-50 dark:text-zinc-50"
-              : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
-          }`}
+          className={`tab-btn ${activeTab === "expense" ? "active" : ""}`}
         >
           Expenses
         </button>
         <button
           onClick={() => {
             setActiveTab("income");
-            setEditingLine(null);
+            closeForm();
           }}
-          className={`px-4 py-2 text-sm font-medium transition ${
-            activeTab === "income"
-              ? "border-b-2 border-zinc-900 text-zinc-900 dark:text-zinc-50 dark:text-zinc-50"
-              : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
-          }`}
+          className={`tab-btn ${activeTab === "income" ? "active" : ""}`}
         >
           Income
         </button>
       </div>
 
-      {/* Table View */}
-      <div className="overflow-x-auto">
-        {categoryGroups.length === 0 ? (
-          <p className="text-xs text-zinc-600 dark:text-zinc-400 py-4">
-            No {activeTab === "income" ? "income" : "expense"} lines yet. Add one
-            below.
-          </p>
-        ) : (
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="border-b border-zinc-200 dark:border-zinc-800">
-                <th className="text-left py-2 px-2 font-semibold text-zinc-900 dark:text-zinc-50">
-                  Category
-                </th>
-                {monthNames.map((month, idx) => (
-                  <th
-                    key={idx}
-                    className="text-left py-2 px-2 font-semibold text-zinc-600 dark:text-zinc-400"
-                  >
-                    {month}
-                  </th>
-                ))}
-                <th className="text-left py-2 px-2 font-semibold text-zinc-900 dark:text-zinc-50">
-                  Total
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {(() => {
-                const rows: React.ReactNode[] = [];
-                let currentCurrency = "";
+      {categoryGroups.length === 0 ? (
+        <p className="py-4 text-xs" style={{ color: "var(--color-text-muted)" }}>
+          No {activeTab === "income" ? "income" : "expense"} lines yet. Add one
+          below.
+        </p>
+      ) : (
+        <Table caption={activeTab === "income" ? "Income lines" : "Expense lines"}>
+          <Thead>
+            <Tr>
+              <Th>Category</Th>
+              {monthNames.map((month, idx) => (
+                <Th key={idx} numeric>
+                  {month}
+                </Th>
+              ))}
+              <Th numeric>Total</Th>
+            </Tr>
+          </Thead>
+          <Tbody>
+            {(() => {
+              const rows: React.ReactNode[] = [];
+                  let currentCurrency = "";
 
-                categoryGroups.forEach((group, idx) => {
-                  // Add a total row when currency changes
-                  if (currentCurrency !== "" && currentCurrency !== group.currencyCode) {
-                    const currencyTotal = currencyTotals.get(currentCurrency);
-                    if (currencyTotal) {
-                      rows.push(
-                        <tr
-                          key={`total-${currentCurrency}`}
-                          className="border-t-2 border-zinc-300 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800"
-                        >
-                          <td className="py-2 px-2 font-semibold text-zinc-900 dark:text-zinc-50">
-                            Total ({currentCurrency})
-                          </td>
-                          {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
-                            const monthTotal = currencyTotal.monthlyTotals.get(month) || 0;
-                            return (
-                              <td
-                                key={month}
-                                className="text-left py-2 px-2 tabular-nums font-semibold text-zinc-900 dark:text-zinc-50 text-[11px]"
-                              >
-                                {monthTotal > 0
-                                  ? formatAmount(monthTotal, currentCurrency)
-                                  : "—"}
-                              </td>
-                            );
-                          })}
-                          <td className="text-left py-2 px-2 tabular-nums font-semibold text-zinc-900 dark:text-zinc-50 text-[11px]">
-                            {formatAmount(currencyTotal.yearlyTotal, currentCurrency)}
-                          </td>
-                        </tr>
-                      );
-                    }
-                  }
-
-                  // Add category row
-                  rows.push(
-                    <tr
-                      key={`${group.categoryId}-${group.currencyCode}`}
-                      className="border-b border-zinc-100 dark:border-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800"
-                    >
-                      <td className="py-2 px-2">
-                        <div className="space-x-1.5">
-                          <span className="font-medium text-zinc-900 dark:text-zinc-50">
-                            {group.categoryName}
-                          </span>
-                          <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                            ({group.currencyCode})
-                          </span>
-                        </div>
-                      </td>
-                      {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
-                        const line = group.months.get(month);
-                        return (
-                          <td
-                            key={month}
-                            className="text-left py-2 px-2 text-zinc-700 dark:text-zinc-300"
+                  categoryGroups.forEach((group, idx) => {
+                    if (currentCurrency !== "" && currentCurrency !== group.currencyCode) {
+                      const currencyTotal = currencyTotals.get(currentCurrency);
+                      if (currencyTotal) {
+                        rows.push(
+                          <Tr
+                            key={`total-${currentCurrency}`}
+                            separator
+                            style={{ backgroundColor: "var(--color-surface-raised)" }}
                           >
-                            {line ? (
-                              <button
-                                onClick={() => setEditingLine(line)}
-                                className="hover:underline tabular-nums text-[11px]"
-                                title={`Edit ${group.categoryName} - ${monthNames[month - 1]}`}
-                              >
-                                {formatAmount(
-                                  parseFloat(line.plannedAmount),
-                                  line.currencyCode
-                                )}
-                              </button>
-                            ) : (
-                              <span className="text-zinc-400 dark:text-zinc-600">—</span>
-                            )}
-                          </td>
+                            <Td className="font-semibold">Total ({currentCurrency})</Td>
+                            {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
+                              const monthTotal = currencyTotal.monthlyTotals.get(month) || 0;
+                              return (
+                                <Td key={month} numeric className="font-semibold">
+                                  {monthTotal > 0
+                                    ? formatAmount(monthTotal, currentCurrency)
+                                    : "—"}
+                                </Td>
+                              );
+                            })}
+                            <Td numeric className="font-semibold">
+                              {formatAmount(currencyTotal.yearlyTotal, currentCurrency)}
+                            </Td>
+                          </Tr>
                         );
-                      })}
-                      <td className="text-left py-2 px-2 tabular-nums text-[11px] text-zinc-700 dark:text-zinc-300">
-                        {formatAmount(group.total, group.currencyCode)}
-                      </td>
-                    </tr>
-                  );
-
-                  currentCurrency = group.currencyCode;
-
-                  // Add total row after last category of last currency
-                  if (idx === categoryGroups.length - 1) {
-                    const currencyTotal = currencyTotals.get(currentCurrency);
-                    if (currencyTotal) {
-                      rows.push(
-                        <tr
-                          key={`total-${currentCurrency}`}
-                          className="border-t-2 border-zinc-300 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800"
-                        >
-                          <td className="py-2 px-2 font-semibold text-zinc-900 dark:text-zinc-50">
-                            Total ({currentCurrency})
-                          </td>
-                          {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
-                            const monthTotal = currencyTotal.monthlyTotals.get(month) || 0;
-                            return (
-                              <td
-                                key={month}
-                                className="text-left py-2 px-2 tabular-nums font-semibold text-zinc-900 dark:text-zinc-50 text-[11px]"
-                              >
-                                {monthTotal > 0
-                                  ? formatAmount(monthTotal, currentCurrency)
-                                  : "—"}
-                              </td>
-                            );
-                          })}
-                          <td className="text-left py-2 px-2 tabular-nums font-semibold text-zinc-900 dark:text-zinc-50 text-[11px]">
-                            {formatAmount(currencyTotal.yearlyTotal, currentCurrency)}
-                          </td>
-                        </tr>
-                      );
+                      }
                     }
-                  }
-                });
 
-                return rows;
-              })()}
-            </tbody>
-          </table>
-        )}
+                    rows.push(
+                      <Tr key={`${group.categoryId}-${group.currencyCode}`}>
+                        <Td>
+                          <div className="space-x-1.5">
+                            <span className="font-medium">{group.categoryName}</span>
+                            <span className="text-[10px] uppercase tracking-wider">
+                              ({group.currencyCode})
+                            </span>
+                          </div>
+                        </Td>
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
+                          const line = group.months.get(month);
+                          return (
+                            <Td key={month} numeric>
+                              {line ? (
+                                <button
+                                  data-cell-id={`cell-${line.id}`}
+                                  tabIndex={0}
+                                  onClick={(e) => openForm(line, e.currentTarget)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                      e.preventDefault();
+                                      openForm(line, e.currentTarget);
+                                    } else if (e.key === 'ArrowRight') {
+                                      e.preventDefault();
+                                      const nextTd = e.currentTarget.closest('td')?.nextElementSibling;
+                                      (nextTd?.querySelector('[data-cell-id]') as HTMLElement | null)?.focus();
+                                    } else if (e.key === 'ArrowLeft') {
+                                      e.preventDefault();
+                                      const prevTd = e.currentTarget.closest('td')?.previousElementSibling;
+                                      (prevTd?.querySelector('[data-cell-id]') as HTMLElement | null)?.focus();
+                                    } else if (e.key === 'ArrowDown') {
+                                      e.preventDefault();
+                                      const currentTr = e.currentTarget.closest('tr');
+                                      const nextTr = currentTr?.nextElementSibling;
+                                      const colIdx = Array.from(currentTr?.children ?? []).indexOf(e.currentTarget.closest('td')!);
+                                      (nextTr?.children[colIdx]?.querySelector('[data-cell-id]') as HTMLElement | null)?.focus();
+                                    } else if (e.key === 'ArrowUp') {
+                                      e.preventDefault();
+                                      const currentTr = e.currentTarget.closest('tr');
+                                      const prevTr = currentTr?.previousElementSibling;
+                                      const colIdx = Array.from(currentTr?.children ?? []).indexOf(e.currentTarget.closest('td')!);
+                                      (prevTr?.children[colIdx]?.querySelector('[data-cell-id]') as HTMLElement | null)?.focus();
+                                    } else if (e.key === 'Escape') {
+                                      closeForm();
+                                    }
+                                  }}
+                                  className="hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:rounded-sm"
+                                  title={`Edit ${group.categoryName} - ${monthNames[month - 1]}`}
+                                >
+                                  {formatAmount(
+                                    parseFloat(line.plannedAmount),
+                                    line.currencyCode
+                                  )}
+                                </button>
+                              ) : (
+                                <span>—</span>
+                              )}
+                            </Td>
+                          );
+                        })}
+                        <Td numeric>{formatAmount(group.total, group.currencyCode)}</Td>
+                      </Tr>
+                    );
+
+                    currentCurrency = group.currencyCode;
+
+                    if (idx === categoryGroups.length - 1) {
+                      const currencyTotal = currencyTotals.get(currentCurrency);
+                      if (currencyTotal) {
+                        rows.push(
+                          <Tr
+                            key={`total-${currentCurrency}`}
+                            separator
+                            style={{ backgroundColor: "var(--color-surface-raised)" }}
+                          >
+                            <Td className="font-semibold">Total ({currentCurrency})</Td>
+                            {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
+                              const monthTotal = currencyTotal.monthlyTotals.get(month) || 0;
+                              return (
+                                <Td key={month} numeric className="font-semibold">
+                                  {monthTotal > 0
+                                    ? formatAmount(monthTotal, currentCurrency)
+                                    : "—"}
+                                </Td>
+                              );
+                            })}
+                            <Td numeric className="font-semibold">
+                              {formatAmount(currencyTotal.yearlyTotal, currentCurrency)}
+                            </Td>
+                          </Tr>
+                        );
+                      }
+                    }
+                  });
+
+                  return rows;
+                })()}
+          </Tbody>
+        </Table>
+      )}
+
+      <div className="mt-6">
+        <BudgetLineForm
+          budgetId={budgetId}
+          year={year}
+          categoryKind={activeTab}
+          baseCurrency={baseCurrency}
+        />
       </div>
 
-      {/* Form */}
-      <div className="mt-6">
-        {editingLine ? (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-zinc-900 dark:text-zinc-50">
-                Editing: {editingLine.category.name} ({monthNames[editingLine.month - 1]})
-              </p>
-              <button
-                onClick={() => setEditingLine(null)}
-                className="text-xs text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
-              >
-                Cancel
-              </button>
-            </div>
-            <BudgetLineForm
-              budgetId={budgetId}
-              year={year}
-              categoryKind={activeTab}
-              baseCurrency={baseCurrency}
-              editingLine={{
-                id: editingLine.id,
-                categoryName: editingLine.category.name,
-                month: editingLine.month,
-                plannedAmount: editingLine.plannedAmount,
-                currencyCode: editingLine.currencyCode,
-                notes: editingLine.notes,
-              }}
-              onSuccess={() => setEditingLine(null)}
-            />
-          </div>
-        ) : (
+      {/* Edit form portal — positioned near the clicked cell */}
+      {editingLine && formAnchorPos && createPortal(
+        <div
+          data-planning-popup
+          onMouseDown={(e) => e.stopPropagation()}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') closeForm();
+          }}
+          style={{
+            position: "fixed",
+            left: formAnchorPos.x,
+            top: formAnchorPos.y,
+            width: 320,
+            zIndex: 50,
+          }}
+          className="shadow-xl"
+        >
           <BudgetLineForm
             budgetId={budgetId}
             year={year}
             categoryKind={activeTab}
             baseCurrency={baseCurrency}
-            onSuccess={() => setEditingLine(null)}
+            editingLine={{
+              id: editingLine.id,
+              categoryName: editingLine.category.name,
+              month: editingLine.month,
+              plannedAmount: editingLine.plannedAmount,
+              currencyCode: editingLine.currencyCode,
+              notes: editingLine.notes,
+            }}
+            onSuccess={closeForm}
           />
-        )}
-      </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

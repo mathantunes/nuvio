@@ -47,10 +47,10 @@ export default async function WealthPage({
     return (
       <div className="space-y-6">
         <header className="space-y-1">
-          <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
+          <h1 className="text-xl font-semibold" style={{ color: "var(--color-text)" }}>
             Wealth
           </h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
             {year} — net worth, cash flow, portfolio and asset breakdown
           </p>
         </header>

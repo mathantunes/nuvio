@@ -43,7 +43,36 @@
 - Never log or expose secrets (access tokens, API keys). Use environment variables and Supabase config.
 - Use RLS (Row Level Security) policies in Supabase to protect per-user data.
 
-### Agent behavior & limitations
+### Color signals & financial semantics
+
+**Never use `--color-success` / `--color-danger` for budget tracking.** Use the dedicated tokens below so the mapping can evolve independently.
+
+#### Budget tracking tokens
+| Token | Meaning |
+|---|---|
+| `--color-on-track` | Performing as planned or better |
+| `--color-on-track-subtle` | Background tint for on-track pills/badges |
+| `--color-off-track` | Performing worse than planned |
+| `--color-off-track-subtle` | Background tint for off-track pills/badges |
+
+#### Decision rules (context-dependent)
+| Category | On-track condition | Off-track condition |
+|---|---|---|
+| **Expenses** | `actual ≤ planned` | `actual > planned` |
+| **Income** | `actual ≥ planned` | `actual < planned` |
+| **% of budget (expenses)** | `pct ≤ 100%` | `pct > 100%` |
+| **% of budget (income)** | `pct ≥ 100%` | `pct < 100%` |
+
+#### Raw amount signals (not budget-relative)
+Use `--color-success` / `--color-danger` only for **sign-based** signals (positive/negative amounts) that are not compared against a plan — e.g., portfolio gains, loan equity, net worth change.
+
+#### Zero is neutral
+A value of exactly `0` or `100%` counts as on-track (use `>=` / `<=`, never strict `>`).
+
+#### Hardcoded hex colors are forbidden
+Always reference CSS tokens (`var(--color-on-track)` etc.). Never use raw hex values (`#15803D`) in component code — they break dark mode and theming.
+
+
 - Agents must **not** introduce new major dependencies or external services without explaining why and ensuring they fit Vercel/Supabase.
 - Prefer incremental, well-scoped changes with clear migration plans for Postgres.
 - When adding features, always consider:

@@ -109,12 +109,12 @@ export function FxTransferForm() {
   };
 
   if (loading) {
-    return <div className="text-xs text-zinc-500 dark:text-zinc-400">Loading accounts...</div>;
+    return <div className="text-xs" style={{ color: "var(--color-text-subtle)" }}>Loading accounts...</div>;
   }
 
   if (accounts.length === 0) {
     return (
-      <div className="text-xs text-zinc-500 dark:text-zinc-400">
+      <div className="text-xs" style={{ color: "var(--color-text-subtle)" }}>
         No accounts available. Please create an account first.
       </div>
     );
@@ -128,7 +128,7 @@ export function FxTransferForm() {
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Source Account */}
       <div className="space-y-1">
-        <label className="block text-xs font-medium text-zinc-900 dark:text-zinc-50">
+        <label className="block text-xs font-medium" style={{ color: "var(--color-text)" }}>
           From Account
         </label>
         <select
@@ -136,7 +136,7 @@ export function FxTransferForm() {
           value={sourceAccountId}
           onChange={(e) => setSourceAccountId(e.target.value)}
           required
-          className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 shadow-sm outline-none ring-0 transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+          className="input text-xs"
         >
           <option value="">Select source account</option>
           {accounts.map((account) => (
@@ -154,7 +154,7 @@ export function FxTransferForm() {
 
       {/* Source Amount */}
       <div className="space-y-1">
-        <label className="block text-xs font-medium text-zinc-900 dark:text-zinc-50">
+        <label className="block text-xs font-medium" style={{ color: "var(--color-text)" }}>
           Amount to Send
         </label>
         <input
@@ -165,14 +165,14 @@ export function FxTransferForm() {
           value={sourceAmount}
           onChange={(e) => setSourceAmount(e.target.value)}
           required
-          className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 shadow-sm outline-none ring-0 transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+          className="input text-xs"
           placeholder="0.00"
         />
       </div>
 
       {/* Target Account */}
       <div className="space-y-1">
-        <label className="block text-xs font-medium text-zinc-900 dark:text-zinc-50">
+        <label className="block text-xs font-medium" style={{ color: "var(--color-text)" }}>
           To Account
         </label>
         <select
@@ -180,7 +180,7 @@ export function FxTransferForm() {
           value={targetAccountId}
           onChange={(e) => setTargetAccountId(e.target.value)}
           required
-          className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 shadow-sm outline-none ring-0 transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+          className="input text-xs"
         >
           <option value="">Select target account</option>
           {accounts.filter(acc => acc.id !== sourceAccountId).map((account) => (
@@ -199,7 +199,7 @@ export function FxTransferForm() {
       {/* FX Rate (only for different currencies) */}
       {!isSameCurrency && sourceAccountId && targetAccountId && (
         <div className="space-y-1">
-          <label className="block text-xs font-medium text-zinc-900 dark:text-zinc-50">
+          <label className="block text-xs font-medium" style={{ color: "var(--color-text)" }}>
             FX Rate (1 {sourceAccount?.currencyCode} = ? {targetAccount?.currencyCode})
           </label>
           <input
@@ -209,7 +209,7 @@ export function FxTransferForm() {
             min="0.00000001"
             value={fxRate}
             onChange={(e) => handleFxRateChange(e.target.value)}
-            className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 shadow-sm outline-none ring-0 transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+            className="input text-xs"
             placeholder="Auto-calculated"
           />
         </div>
@@ -217,7 +217,7 @@ export function FxTransferForm() {
 
       {/* Target Amount */}
       <div className="space-y-1">
-        <label className="block text-xs font-medium text-zinc-900 dark:text-zinc-50">
+        <label className="block text-xs font-medium" style={{ color: "var(--color-text)" }}>
           Amount to Receive {targetAccount && `(${targetAccount.currencyCode})`}
         </label>
         <input
@@ -228,7 +228,7 @@ export function FxTransferForm() {
           value={targetAmount}
           onChange={(e) => handleTargetAmountChange(e.target.value)}
           required
-          className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 shadow-sm outline-none ring-0 transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+          className="input text-xs"
           placeholder="0.00"
         />
       </div>
@@ -236,7 +236,7 @@ export function FxTransferForm() {
       {/* Fees and Taxes */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <label className="block text-xs font-medium text-zinc-900 dark:text-zinc-50">
+          <label className="block text-xs font-medium" style={{ color: "var(--color-text)" }}>
             Fee Amount ({sourceAccount?.currencyCode})
           </label>
           <input
@@ -246,12 +246,12 @@ export function FxTransferForm() {
             min="0"
             value={feeAmount}
             onChange={(e) => setFeeAmount(e.target.value)}
-            className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 shadow-sm outline-none ring-0 transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+            className="input text-xs"
             placeholder="0.00"
           />
         </div>
         <div className="space-y-1">
-          <label className="block text-xs font-medium text-zinc-900 dark:text-zinc-50">
+          <label className="block text-xs font-medium" style={{ color: "var(--color-text)" }}>
             Tax Amount ({sourceAccount?.currencyCode})
           </label>
           <input
@@ -261,7 +261,7 @@ export function FxTransferForm() {
             min="0"
             value={taxAmount}
             onChange={(e) => setTaxAmount(e.target.value)}
-            className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 shadow-sm outline-none ring-0 transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+            className="input text-xs"
             placeholder="0.00"
           />
         </div>
@@ -269,8 +269,11 @@ export function FxTransferForm() {
 
       {/* Effective Rate Display */}
       {effectiveRate && !isSameCurrency && (
-        <div className="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-900">
-          <p className="text-xs font-medium text-zinc-900 dark:text-zinc-50">
+        <div
+          className="rounded-lg p-3"
+          style={{ backgroundColor: "var(--color-surface-raised)" }}
+        >
+          <p className="text-xs font-medium" style={{ color: "var(--color-text)" }}>
             Effective Rate: 1 {sourceAccount?.currencyCode} = {effectiveRate} {targetAccount?.currencyCode}
           </p>
         </div>
@@ -278,7 +281,7 @@ export function FxTransferForm() {
 
       {/* Note */}
       <div className="space-y-1">
-        <label className="block text-xs font-medium text-zinc-900 dark:text-zinc-50">
+        <label className="block text-xs font-medium" style={{ color: "var(--color-text)" }}>
           Note (optional)
         </label>
         <input
@@ -287,14 +290,14 @@ export function FxTransferForm() {
           value={note}
           onChange={(e) => setNote(e.target.value)}
           maxLength={500}
-          className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 shadow-sm outline-none ring-0 transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+          className="input text-xs"
           placeholder="Transfer via Wise, Revolut, etc."
         />
       </div>
 
       {/* Date */}
       <div className="space-y-1">
-        <label className="block text-xs font-medium text-zinc-900 dark:text-zinc-50">
+        <label className="block text-xs font-medium" style={{ color: "var(--color-text)" }}>
           Date
         </label>
         <input
@@ -302,18 +305,18 @@ export function FxTransferForm() {
           value={occurredAt}
           onChange={(e) => setOccurredAt(e.target.value)}
           required
-          className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 shadow-sm outline-none ring-0 transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+          className="input text-xs"
         />
       </div>
 
       {error ? (
-        <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
+        <p className="text-xs" style={{ color: "var(--color-danger)" }}>{error}</p>
       ) : null}
 
       <button
         type="submit"
         disabled={isPending || !sourceAccountId || !targetAccountId}
-        className="inline-flex items-center justify-center rounded-full bg-zinc-900 px-4 py-2 text-xs font-medium text-zinc-50 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-400 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200"
+        className="btn-primary text-xs"
       >
         {isPending ? "Creating Transfer…" : "Create Transfer"}
       </button>

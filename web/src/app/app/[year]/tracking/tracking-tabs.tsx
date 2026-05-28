@@ -1,7 +1,9 @@
 "use client";
 
 import { startTransition, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import { Card, DataList, DataListRow, RowAction } from "@/components/ui";
 import { TransactionForm } from "./transaction-form";
 import { formatAmount } from "../planning/currency-format";
 import { deleteTransaction, createUnplannedTransaction } from "./transactions.actions";
@@ -81,28 +83,62 @@ export function TrackingTabs({
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
   const [openPopupId, setOpenPopupId] = useState<string | null>(null);
+  const [formAnchorPos, setFormAnchorPos] = useState<{ x: number; y: number } | null>(null);
 
-  // Close popup when clicking outside
+  function anchorFromEvent(e: { clientX: number; clientY: number }) {
+    const FORM_WIDTH = 320;
+    const FORM_HEIGHT = 320;
+    const x = Math.min(e.clientX, window.innerWidth - FORM_WIDTH - 16);
+    const spaceBelow = window.innerHeight - e.clientY;
+    const y = spaceBelow < FORM_HEIGHT ? e.clientY - FORM_HEIGHT - 12 : e.clientY + 12;
+    return { x, y };
+  }
+
+  function anchorFromElement(el: Element) {
+    const rect = el.getBoundingClientRect();
+    return anchorFromEvent({ clientX: rect.right - 320, clientY: rect.bottom });
+  }
+
+  function openForm(line: BudgetLineWithActuals, pos: { x: number; y: number }) {
+    setEditingTransaction(null);
+    setOpenPopupId(null);
+    setSelectedBudgetLine(line);
+    setFormAnchorPos(pos);
+  }
+
+  function closeForm() {
+    setSelectedBudgetLine(null);
+    setEditingTransaction(null);
+    setFormAnchorPos(null);
+  }
+
+  // Close both popovers when clicking outside any [data-transaction-popup] element
+  // Also close on scroll (capture phase catches scroll on any container)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node;
-
-      // Check if click is on any transaction button or popup
-      const isTransactionClick = (target as Element)?.closest?.('[data-transaction-popup]');
-
-      if (!isTransactionClick) {
+      const isInsidePopup = (event.target as Element)?.closest?.('[data-transaction-popup]');
+      if (!isInsidePopup) {
         setOpenPopupId(null);
+        setSelectedBudgetLine(null);
+        setEditingTransaction(null);
+        setFormAnchorPos(null);
       }
     };
-
-    if (openPopupId) {
+    const handleScroll = () => {
+      setOpenPopupId(null);
+      setSelectedBudgetLine(null);
+      setEditingTransaction(null);
+      setFormAnchorPos(null);
+    };
+    if (openPopupId || selectedBudgetLine) {
       document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('scroll', handleScroll, { capture: true, passive: true });
     }
-
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('scroll', handleScroll, { capture: true });
     };
-  }, [openPopupId]);
+  }, [openPopupId, selectedBudgetLine]);
 
   const allCurrentLines = activeTab === "income" ? incomeLines : expenseLines;
 
@@ -160,6 +196,7 @@ export function TrackingTabs({
       return a.category.name.localeCompare(b.category.name);
     });
 
+  // Keep ref up to date for keyboard handler
   const monthNames = Array.from({ length: 12 }, (_, i) =>
     new Date(year, i).toLocaleString("en-US", { month: "short" })
   );
@@ -200,7 +237,7 @@ export function TrackingTabs({
       {/* Month Selector and Tabs */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+          <label className="text-sm font-medium" style={{ color: "var(--color-text)" }}>
             Month:
           </label>
           <select
@@ -212,7 +249,7 @@ export function TrackingTabs({
               setOpenPopupId(null);
               router.push(`/app/${year}/tracking/${nextMonth}`);
             }}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 shadow-sm outline-none ring-0 transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+            className="input py-1.5"
           >
             {monthNames.map((name, index) => (
               <option key={index + 1} value={index + 1}>
@@ -223,7 +260,7 @@ export function TrackingTabs({
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 border-b border-zinc-200 dark:border-zinc-800">
+        <div className="tab-bar">
           <button
             onClick={() => {
               setActiveTab("expense");
@@ -231,10 +268,7 @@ export function TrackingTabs({
               setEditingTransaction(null);
               setOpenPopupId(null);
             }}
-            className={`px-4 py-2 text-sm font-medium transition ${activeTab === "expense"
-                ? "border-b-2 border-zinc-900 text-zinc-900 dark:border-zinc-50 dark:text-zinc-50"
-                : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
-              }`}
+            className={`tab-btn ${activeTab === "expense" ? "active" : ""}`}
           >
             Expenses
           </button>
@@ -245,32 +279,35 @@ export function TrackingTabs({
               setEditingTransaction(null);
               setOpenPopupId(null);
             }}
-            className={`px-4 py-2 text-sm font-medium transition ${activeTab === "income"
-                ? "border-b-2 border-zinc-900 text-zinc-900 dark:text-zinc-50"
-                : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
-              }`}
+            className={`tab-btn ${activeTab === "income" ? "active" : ""}`}
           >
             Income
           </button>
         </div>
       </div>
 
-      {/* Month Header */}
-      <div className="rounded-lg border-zinc-200 bg-zinc-50 p-4 text-left dark:border-zinc-800 dark:bg-zinc-950">
-        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-          {fullMonthNames[selectedMonth - 1]} {year}
-        </h2>
-      </div>
-
       {/* Lines List */}
       <div className="space-y-2">
         {linesWithActuals.length === 0 ? (
-          <p className="text-xs text-zinc-600 dark:text-zinc-400 py-4">
+          <p className="py-4 text-xs" style={{ color: "var(--color-text-muted)" }}>
             No {activeTab === "income" ? "income" : "expense"} budget lines yet.
             Create them in Planning first.
           </p>
         ) : (
-          <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
+          <div className="space-y-0 rounded-lg" style={{ backgroundColor: "var(--color-surface)" }}>
+          <DataList
+              headerClassName="hidden sm:flex"
+              header={
+                <>
+                  <div className="min-w-0 flex-1">Budget line</div>
+                  <div className="w-28 shrink-0">Transactions</div>
+                  <div className="w-32 shrink-0 text-right">Expected</div>
+                  <div className="w-32 shrink-0 text-right">Actual</div>
+                  <div className="w-24 shrink-0 text-right">%</div>
+                  <div className="w-24 shrink-0 text-right">Actions</div>
+                </>
+              }
+            >
             {linesWithActuals.map((line) => {
               const expected = parseFloat(line.plannedAmount);
               const actual = line.actualTotal;
@@ -282,279 +319,322 @@ export function TrackingTabs({
               );
               const isOver = percentage !== null && actual > expected;
               const isUnder = percentage !== null && actual < expected;
+              const isSelected = selectedBudgetLine?.id === line.id;
+              const transactionLabel = `${line.transactions.length} transaction${line.transactions.length !== 1 ? "s" : ""}`;
 
               return (
-                <div
+                <DataListRow
                   key={line.id}
-                  className="py-2 px-2 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                  data-line-id={line.id}
+                  tabIndex={0}
+                  className={`flex-col items-stretch gap-3 sm:flex-row sm:items-start ${
+                    isSelected ? "border-l-2 bg-[var(--color-brand-subtle)]" : ""
+                  } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-inset`}
+                  style={{
+                    cursor: "pointer",
+                    ...(isSelected ? { borderLeftColor: "var(--color-brand)" } : undefined),
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      if (isSelected) {
+                        closeForm();
+                      } else {
+                        openForm(line, anchorFromElement(e.currentTarget));
+                      }
+                    } else if (e.key === 'ArrowDown') {
+                      e.preventDefault();
+                      const next = e.currentTarget.nextElementSibling as HTMLElement | null;
+                      next?.focus();
+                    } else if (e.key === 'ArrowUp') {
+                      e.preventDefault();
+                      const prev = e.currentTarget.previousElementSibling as HTMLElement | null;
+                      prev?.focus();
+                    } else if (e.key === 'Escape') {
+                      closeForm();
+                      (e.currentTarget as HTMLElement).focus();
+                    }
+                  }}
+                  onMouseDown={(e) => {
+                    const target = e.target as Element;
+                    if (target.closest('button') || target.closest('[data-transaction-popup]')) return;
+                    e.stopPropagation();
+                    setOpenPopupId(null);
+                    if (selectedBudgetLine?.id === line.id) {
+                      closeForm();
+                    } else {
+                      openForm(line, anchorFromEvent(e));
+                    }
+                  }}
                 >
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                          {line.category.name}
-                        </span>
-                        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                          {line.currencyCode}
-                        </span>
-                      </div>
-                      {line.transactions.length > 0 && (
-                        <div className="relative" data-transaction-popup>
-                          <button
-                            onClick={() => setOpenPopupId(openPopupId === line.id ? null : line.id)}
-                            className="text-xs text-zinc-600 underline decoration-dotted underline-offset-2 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-300"
-                          >
-                            {line.transactions.length} transaction
-                            {line.transactions.length !== 1 ? "s" : ""}
-                          </button>
-                          {openPopupId === line.id && (
-                            <div className="absolute bottom-full left-0 z-50 mb-2 w-72 rounded-lg border border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-800" data-transaction-popup>
-                              <div className="p-3">
-                                <div className="mb-2 text-xs font-semibold text-zinc-900 dark:text-zinc-50">
-                                  Transactions
-                                </div>
-                                <div className="space-y-1.5">
-                                  {line.transactions.map((tx) => (
-                                    <div
-                                      key={tx.id}
-                                      className="flex items-center justify-between gap-3 rounded px-2 py-1.5 text-xs group/transaction"
-                                    >
-                                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                                        <span className="truncate text-zinc-700 dark:text-zinc-300">
-                                          {tx.account.name}
-                                        </span>
-                                        {tx.description && (
-                                          <span className="truncate text-zinc-500 dark:text-zinc-400 text-[10px]">
-                                            {tx.description}
-                                          </span>
-                                        )}
-                                      </div>
-                                      <div className="flex items-center gap-2 shrink-0">
-                                        <span className="tabular-nums text-zinc-900 dark:text-zinc-50">
-                                          {formatAmount(
-                                            parseFloat(tx.amount),
-                                            tx.currencyCode
-                                          )}
-                                        </span>
-                                        <button
-                                          onClick={() => {
-                                            setEditingTransaction(tx);
-                                            setSelectedBudgetLine(line);
-                                            setOpenPopupId(null);
-                                          }}
-                                          className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
-                                          title="Edit transaction"
-                                        >
-                                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                          </svg>
-                                        </button>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium" style={{ color: "var(--color-text)" }}>
+                        {line.category.name}
+                      </span>
+                      <span className="text-[10px] uppercase tracking-wider" style={{ color: "var(--color-text-subtle)" }}>
+                        {line.currencyCode}
+                      </span>
                     </div>
-
-                    {/* Desktop layout - horizontal */}
-                    <div className="hidden sm:flex items-center gap-4">
-                      <div className="text-right">
-                        <div className="text-[11px] leading-4 text-zinc-500 dark:text-zinc-400">
-                          &nbsp;
-                        </div>
-                        <button
-                          onClick={() => {
-                            if (editingTransaction && selectedBudgetLine?.id === line.id) {
-                              // Cancel edit mode
-                              setEditingTransaction(null);
-                              setSelectedBudgetLine(null);
-                            } else {
-                              // Start create mode
-                              setEditingTransaction(null);
-                              setSelectedBudgetLine(line);
-                            }
-                          }}
-                          className="text-xs leading-5 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
-                        >
-                          {editingTransaction && selectedBudgetLine?.id === line.id ? "Cancel" : "Add"}
-                        </button>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-[11px] leading-4 text-zinc-500 dark:text-zinc-400">
-                          &nbsp;
-                        </div>
-                        <button
-                          onClick={() => {
-                            clearLine(line);
-                            setEditingTransaction(null);
-                          }}
-                          className="text-xs leading-5 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
-                        >
-                          Clear
-                        </button>
-                      </div>
-
-                      <div className="grid items-center gap-x-4 gap-y-1 grid-cols-[7.5rem_7.5rem_5.5rem]">
-                        {/* Expected */}
-                        <div className="text-right">
-                          <div className="text-[11px] leading-4 text-zinc-500 dark:text-zinc-400">
-                            Expected
-                          </div>
-                          <div className="text-sm leading-5 tabular-nums text-zinc-700 dark:text-zinc-300">
-                            {formatAmount(expected, line.currencyCode)}
-                          </div>
-                        </div>
-
-                        {/* Actual */}
-                        <div className="text-right">
-                          <div className="text-[11px] leading-4 text-zinc-500 dark:text-zinc-400">
-                            Actual
-                          </div>
-                          <div className="text-sm leading-5 tabular-nums text-zinc-700 dark:text-zinc-300">
-                            {actual > 0
-                              ? formatAmount(actual, line.actualCurrency)
-                              : "—"}
-                          </div>
-                        </div>
-
-                        {/* Percentage with arrow */}
-                        <div className="text-right">
-                          <div className="text-[11px] leading-4 text-zinc-500 dark:text-zinc-400">
-                            %
-                          </div>
-                          {actual > 0 && percentage !== null ? (
-                            <div className="inline-flex items-center justify-end gap-1 text-sm leading-5 font-semibold">
-                              {isOver ? (
-                                <span className={`${activeTab === "income" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                                  ↑
-                                </span>
-                              ) : isUnder ? (
-                                <span className={`${activeTab === "income" ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>
-                                  ↓
-                                </span>
-                              ) : (
-                                <span className="text-zinc-500 dark:text-zinc-400">
-                                  →
-                                </span>
-                              )}
-                              <span
-                                className={
-                                  isOver
-                                    ? `${activeTab === "income" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`
-                                    : isUnder
-                                      ? `${activeTab === "income" ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`
-                                      : "text-zinc-700 dark:text-zinc-300"
-                                }
-                              >
-                                {percentage.toFixed(0)}%
-                              </span>
-                            </div>
-                          ) : actual > 0 ? (
-                            <div className="text-xs leading-5 text-zinc-500 dark:text-zinc-400">
-                              —
-                            </div>
-                          ) : (
-                            <div className="text-xs leading-5 text-zinc-400 dark:text-zinc-600">
-                              —
+                    {line.transactions.length > 0 && (
+                      <div className="mt-1 sm:hidden" data-transaction-popup>
+                        <div className="relative inline-block" data-transaction-popup>
+                          <RowAction
+                            type="button"
+                            onClick={() => setOpenPopupId(openPopupId === line.id ? null : line.id)}
+                            className="underline decoration-dotted underline-offset-2"
+                          >
+                            {transactionLabel}
+                          </RowAction>
+                          {openPopupId === line.id && (
+                            <div
+                          className="absolute left-0 z-50 mt-1 w-80 max-w-[calc(100vw-3rem)] shadow-xl"
+                              data-transaction-popup
+                            >
+                              <TransactionPopover
+                                transactions={line.transactions}
+                                onEdit={(tx, rect) => {
+                                  setOpenPopupId(null);
+                                  openForm(line, anchorFromEvent({ clientX: rect.left, clientY: rect.bottom }));
+                                  setEditingTransaction(tx);
+                                }}
+                              />
                             </div>
                           )}
                         </div>
                       </div>
+                    )}
+                  </div>
+
+                  <div className="relative hidden w-28 shrink-0 sm:block" data-transaction-popup>
+                    {line.transactions.length > 0 ? (
+                      <>
+                        <RowAction
+                          type="button"
+                          onClick={() => setOpenPopupId(openPopupId === line.id ? null : line.id)}
+                          className="underline decoration-dotted underline-offset-2"
+                        >
+                          {transactionLabel}
+                        </RowAction>
+                        {openPopupId === line.id && (
+                          <div
+                          className="absolute left-0 z-50 mt-1 w-80 shadow-xl"
+                            data-transaction-popup
+                          >
+                            <TransactionPopover
+                              transactions={line.transactions}
+                              onEdit={(tx, rect) => {
+                                setEditingTransaction(tx);
+                                setOpenPopupId(null);
+                                openForm(line, anchorFromEvent({ clientX: rect.left, clientY: rect.bottom }));
+                              }}
+                            />
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-xs" style={{ color: "var(--color-text-subtle)" }}>
+                        —
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="hidden w-32 shrink-0 text-right sm:block">
+                    <div className="text-sm leading-5 tabular-nums" style={{ color: "var(--color-text-muted)" }}>
+                      {formatAmount(expected, line.currencyCode)}
                     </div>
                   </div>
 
-                  {/* Mobile layout - stacked */}
-                  <div className="sm:hidden mt-3 space-y-3 border-t border-zinc-200 dark:border-zinc-800 pt-3">
-                    {/* Mobile action buttons */}
+                  <div className="hidden w-32 shrink-0 text-right sm:block">
+                    <div className="text-sm leading-5 tabular-nums" style={{ color: "var(--color-text-muted)" }}>
+                      {actual > 0 ? formatAmount(actual, line.actualCurrency) : "—"}
+                    </div>
+                  </div>
+
+                  <div className="hidden w-24 shrink-0 text-right sm:block">
+                    {actual > 0 && percentage !== null ? (
+                      <div className="inline-flex items-center justify-end gap-1 text-sm leading-5 font-semibold">
+                        {isOver ? (
+                          <span
+                            style={{
+                              color:
+                                activeTab === "income"
+                                  ? "var(--color-on-track)"
+                                  : "var(--color-off-track)",
+                            }}
+                          >
+                            ↑
+                          </span>
+                        ) : isUnder ? (
+                          <span
+                            style={{
+                              color:
+                                activeTab === "income"
+                                  ? "var(--color-off-track)"
+                                  : "var(--color-on-track)",
+                            }}
+                          >
+                            ↓
+                          </span>
+                        ) : (
+                          <span style={{ color: "var(--color-text-subtle)" }}>
+                            →
+                          </span>
+                        )}
+                        <span
+                          style={{
+                            color: isOver
+                              ? activeTab === "income"
+                                ? "var(--color-on-track)"
+                                : "var(--color-off-track)"
+                              : isUnder
+                                ? activeTab === "income"
+                                  ? "var(--color-off-track)"
+                                  : "var(--color-on-track)"
+                                : "var(--color-text-muted)",
+                          }}
+                        >
+                          {percentage.toFixed(0)}%
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="text-xs leading-5" style={{ color: "var(--color-text-subtle)" }}>
+                        —
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="relative hidden w-24 shrink-0 justify-end gap-3 sm:flex" data-transaction-popup>
+                    <RowAction
+                      type="button"
+                      onClick={(e) => {
+                        if (selectedBudgetLine?.id === line.id) {
+                          closeForm();
+                        } else {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          openForm(line, anchorFromEvent({ clientX: rect.left, clientY: rect.bottom }));
+                        }
+                      }}
+                    >
+                      {selectedBudgetLine?.id === line.id ? "Cancel" : "Add"}
+                    </RowAction>
+                    <RowAction
+                      type="button"
+                      danger
+                      onClick={() => {
+                        clearLine(line);
+                        closeForm();
+                      }}
+                    >
+                      Clear
+                    </RowAction>
+                  </div>
+
+                  <div className="space-y-3 border-t pt-3 sm:hidden" style={{ borderColor: "var(--color-border)" }}>
                     <div className="flex items-center gap-4">
-                      <button
+                      <RowAction
+                        type="button"
                         onClick={() => {
                           if (editingTransaction && selectedBudgetLine?.id === line.id) {
-                            // Cancel edit mode
                             setEditingTransaction(null);
                             setSelectedBudgetLine(null);
                           } else {
-                            // Start create mode
                             setEditingTransaction(null);
                             setSelectedBudgetLine(line);
                           }
                         }}
-                        className="text-xs leading-5 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
                       >
                         {editingTransaction && selectedBudgetLine?.id === line.id ? "Cancel" : "Add"}
-                      </button>
-                      <button
+                      </RowAction>
+                      <RowAction
+                        type="button"
+                        danger
                         onClick={() => {
                           clearLine(line);
                           setEditingTransaction(null);
                         }}
-                        className="text-xs leading-5 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
                       >
                         Clear
-                      </button>
+                      </RowAction>
                     </div>
 
-                    {/* Mobile data display */}
                     <div className="grid grid-cols-2 gap-4 text-xs">
                       <div>
-                        <div className="text-[11px] leading-4 text-zinc-500 dark:text-zinc-400">
+                        <div className="text-[11px] leading-4" style={{ color: "var(--color-text-subtle)" }}>
                           Expected
                         </div>
-                        <div className="text-sm leading-5 tabular-nums text-zinc-700 dark:text-zinc-300">
+                        <div
+                          className="text-sm leading-5 tabular-nums"
+                          style={{ color: "var(--color-text-muted)" }}
+                        >
                           {formatAmount(expected, line.currencyCode)}
                         </div>
                       </div>
                       <div>
-                        <div className="text-[11px] leading-4 text-zinc-500 dark:text-zinc-400">
+                        <div className="text-[11px] leading-4" style={{ color: "var(--color-text-subtle)" }}>
                           Actual
                         </div>
-                        <div className="text-sm leading-5 tabular-nums text-zinc-700 dark:text-zinc-300">
-                          {actual > 0
-                            ? formatAmount(actual, line.actualCurrency)
-                            : "—"}
+                        <div
+                          className="text-sm leading-5 tabular-nums"
+                          style={{ color: "var(--color-text-muted)" }}
+                        >
+                          {actual > 0 ? formatAmount(actual, line.actualCurrency) : "—"}
                         </div>
                       </div>
                       <div>
-                        <div className="text-[11px] leading-4 text-zinc-500 dark:text-zinc-400">
+                        <div className="text-[11px] leading-4" style={{ color: "var(--color-text-subtle)" }}>
                           Progress
                         </div>
                         {actual > 0 && percentage !== null ? (
                           <div className="inline-flex items-center gap-1 text-sm leading-5 font-semibold">
                             {isOver ? (
-                              <span className={`${activeTab === "income" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                              <span
+                                style={{
+                                  color:
+                                    activeTab === "income"
+                                      ? "var(--color-on-track)"
+                                      : "var(--color-off-track)",
+                                }}
+                              >
                                 ↑
                               </span>
                             ) : isUnder ? (
-                              <span className={`${activeTab === "income" ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                              <span
+                                style={{
+                                  color:
+                                    activeTab === "income"
+                                      ? "var(--color-off-track)"
+                                      : "var(--color-on-track)",
+                                }}
+                              >
                                 ↓
                               </span>
                             ) : (
-                              <span className="text-zinc-500 dark:text-zinc-400">
+                              <span style={{ color: "var(--color-text-subtle)" }}>
                                 →
                               </span>
                             )}
                             <span
-                              className={
-                                isOver
-                                  ? `${activeTab === "income" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`
+                              style={{
+                                color: isOver
+                                  ? activeTab === "income"
+                                    ? "var(--color-on-track)"
+                                    : "var(--color-off-track)"
                                   : isUnder
-                                    ? `${activeTab === "income" ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`
-                                    : "text-zinc-700 dark:text-zinc-300"
-                              }
+                                    ? activeTab === "income"
+                                      ? "var(--color-off-track)"
+                                      : "var(--color-on-track)"
+                                    : "var(--color-text-muted)",
+                              }}
                             >
                               {percentage.toFixed(0)}%
                             </span>
                           </div>
-                        ) : actual > 0 ? (
-                          <div className="text-xs leading-5 text-zinc-500 dark:text-zinc-400">
-                            —
-                          </div>
                         ) : (
-                          <div className="text-xs leading-5 text-zinc-400 dark:text-zinc-600">
+                          <div
+                            className="text-xs leading-5"
+                            style={{ color: "var(--color-text-subtle)" }}
+                          >
                             —
                           </div>
                         )}
@@ -562,34 +642,64 @@ export function TrackingTabs({
                     </div>
                   </div>
 
-                  {/* Transaction Form */}
-                  {(selectedBudgetLine?.id === line.id) && (
-                    <div className="mt-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
-                      <TransactionForm
-                        budgetLineId={line.id}
-                        year={year}
-                        month={selectedMonth}
-                        expectedAmount={line.plannedAmount}
-                        expectedCurrency={line.currencyCode}
-                        accounts={accounts}
-                        transaction={editingTransaction}
-                        onSuccess={() => {
-                          setSelectedBudgetLine(null);
-                          setEditingTransaction(null);
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
+                </DataListRow>
               );
             })}
+            </DataList>
           </div>
         )}
       </div>
 
+      {/* Fixed-position transaction form — portaled to body so no parent transform affects it */}
+      {selectedBudgetLine && formAnchorPos && createPortal(
+        <div
+          data-transaction-popup
+          onMouseDown={(e) => e.stopPropagation()}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              const lineId = selectedBudgetLine?.id;
+              closeForm();
+              setTimeout(() => {
+                (document.querySelector(`[data-line-id="${lineId}"]`) as HTMLElement | null)?.focus();
+              }, 0);
+            }
+          }}
+          style={{
+            position: "fixed",
+            left: formAnchorPos.x,
+            top: formAnchorPos.y,
+            width: 320,
+            zIndex: 50,
+          }}
+          className="shadow-xl"
+        >
+          <TransactionForm
+            budgetLineId={selectedBudgetLine.id}
+            year={year}
+            month={selectedMonth}
+            expectedAmount={selectedBudgetLine.plannedAmount}
+            expectedCurrency={selectedBudgetLine.currencyCode}
+            categoryName={selectedBudgetLine.category.name}
+            accounts={accounts}
+            transaction={editingTransaction}
+            onSuccess={() => {
+              const lineId = selectedBudgetLine?.id;
+              closeForm();
+              // Return focus to the row so keyboard navigation continues naturally
+              if (lineId) {
+                setTimeout(() => {
+                  (document.querySelector(`[data-line-id="${lineId}"]`) as HTMLElement | null)?.focus();
+                }, 50);
+              }
+            }}
+          />
+        </div>,
+        document.body
+      )}
+
       {/* Unplanned Section — form only; transactions appear in the regular list above */}
-      <div className="space-y-2 border-t border-zinc-200 pt-4 dark:border-zinc-800">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+      <div className="space-y-2 border-t pt-4" style={{ borderColor: "var(--color-border)" }}>
+        <h3 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-subtle)" }}>
           Unplanned
         </h3>
 
@@ -602,6 +712,52 @@ export function TrackingTabs({
         />
       </div>
     </div>
+  );
+}
+
+function TransactionPopover({
+  transactions,
+  onEdit,
+}: {
+  transactions: Transaction[];
+  onEdit: (transaction: Transaction, rect: DOMRect) => void;
+}) {
+  return (
+    <DataList
+      listClassName="max-h-64 overflow-y-auto"
+      header={
+        <>
+          <div className="min-w-0 flex-1">Transaction</div>
+          <div className="w-24 shrink-0 text-right">Amount</div>
+          <div className="w-12 shrink-0 text-right">Edit</div>
+        </>
+      }
+    >
+      {transactions.map((tx) => (
+        <DataListRow key={tx.id} className="gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="truncate" style={{ color: "var(--color-text-muted)" }}>
+              {tx.account.name}
+            </div>
+            <div className="truncate text-[10px]" style={{ color: "var(--color-text-subtle)" }}>
+              {tx.description || "—"}
+            </div>
+          </div>
+          <div className="w-24 shrink-0 text-right tabular-nums" style={{ color: "var(--color-text)" }}>
+            {formatAmount(parseFloat(tx.amount), tx.currencyCode)}
+          </div>
+          <div className="w-12 shrink-0 text-right">
+            <RowAction
+              type="button"
+              onClick={(e) => onEdit(tx, e.currentTarget.getBoundingClientRect())}
+              title="Edit transaction"
+            >
+              Edit
+            </RowAction>
+          </div>
+        </DataListRow>
+      ))}
+    </DataList>
   );
 }
 
@@ -632,7 +788,7 @@ function UnplannedForm({
 
   if (categories.length === 0) {
     return (
-      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+      <p className="text-xs" style={{ color: "var(--color-text-subtle)" }}>
         No categories available. Create one in{" "}
         <a href={`/app/${year}/categories`} className="underline">
           Categories
@@ -650,11 +806,11 @@ function UnplannedForm({
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <div>
-          <label className="text-[11px] text-zinc-500 dark:text-zinc-400">Category</label>
+          <label className="text-[11px]" style={{ color: "var(--color-text-subtle)" }}>Category</label>
           <select
             name="categoryId"
             required
-            className="mt-0.5 w-full rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+            className="input mt-0.5 py-1.5 text-sm"
           >
             <option value="">Select category…</option>
             {categories.map((c) => (
@@ -666,7 +822,7 @@ function UnplannedForm({
         </div>
 
         <div>
-          <label className="text-[11px] text-zinc-500 dark:text-zinc-400">Account</label>
+          <label className="text-[11px]" style={{ color: "var(--color-text-subtle)" }}>Account</label>
           <select
             name="accountId"
             required
@@ -674,7 +830,7 @@ function UnplannedForm({
               const acc = accounts.find((a) => a.id === e.target.value);
               if (acc) setSelectedAccountCurrency(acc.currencyCode);
             }}
-            className="mt-0.5 w-full rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+            className="input mt-0.5 py-1.5 text-sm"
           >
             {accounts.map((a) => (
               <option key={a.id} value={a.id}>
@@ -685,7 +841,7 @@ function UnplannedForm({
         </div>
 
         <div>
-          <label className="text-[11px] text-zinc-500 dark:text-zinc-400">
+          <label className="text-[11px]" style={{ color: "var(--color-text-subtle)" }}>
             Amount ({selectedAccountCurrency})
           </label>
           <input
@@ -695,24 +851,24 @@ function UnplannedForm({
             step="0.01"
             required
             placeholder="0.00"
-            className="mt-0.5 w-full rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+            className="input mt-0.5 py-1.5 text-sm"
           />
         </div>
 
         <div>
-          <label className="text-[11px] text-zinc-500 dark:text-zinc-400">Date</label>
+          <label className="text-[11px]" style={{ color: "var(--color-text-subtle)" }}>Date</label>
           <input
             type="date"
             name="occurredAt"
             required
             defaultValue={defaultDate}
-            className="mt-0.5 w-full rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+            className="input mt-0.5 py-1.5 text-sm"
           />
         </div>
       </div>
 
       <div>
-        <label className="text-[11px] text-zinc-500 dark:text-zinc-400">
+        <label className="text-[11px]" style={{ color: "var(--color-text-subtle)" }}>
           Description (optional)
         </label>
         <input
@@ -720,13 +876,13 @@ function UnplannedForm({
           name="description"
           maxLength={500}
 
-          className="mt-0.5 w-full rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+          className="input mt-0.5 py-1.5 text-sm"
         />
       </div>
 
       <button
         type="submit"
-        className="text-xs text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 underline decoration-dotted underline-offset-2"
+        className="btn-primary"
       >
         Add unplanned transaction
       </button>

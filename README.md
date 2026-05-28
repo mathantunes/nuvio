@@ -1,12 +1,12 @@
-# 🌍 Globudget
+# Nuvio
 
-Globudget is a personal finance app for people managing money across countries and currencies. It covers the full picture — budgeting, spending, savings, investments, loans, and net worth — all in one place, with proper multi-currency support throughout.
+Nuvio is an open source personal finance dashboard for people managing money across countries and currencies. It covers the full picture — budgeting, spending, savings, investments, loans, and net worth — all in one place, with proper multi-currency support throughout.
 
-## Why Globudget?
+## Why Nuvio?
 
 As an immigrant, managing finances across countries can get messy. Income and daily expenses may be tied to one country, while savings, investments, or obligations exist elsewhere.
 
-Globudget was built to solve that problem:
+Nuvio was built to solve that problem:
 
 * Budget and track expenses in your day-to-day currency
 * Hold accounts, investments, and loans in different currencies
@@ -15,15 +15,14 @@ Globudget was built to solve that problem:
 
 ## Navigation
 
-The app is organised into five sections:
+The app is organised into four sections:
 
 | Section | Pages | What it's for |
 |---|---|---|
-| **Overview** | Dashboard, Analytics | High-level summaries of income, expenses, and wealth |
-| **Setup** | Accounts, FX Transfers | Configure accounts and record currency transfers |
-| **Budget** | Planning, Savings, Budget vs Actual | Plan your year, track savings goals, and review variance |
-| **Investments** | Portfolio, Tracking | Track investment portfolios with multi-currency returns |
-| **Net Worth** | Assets, Loans, Wealth | Balance sheet — properties, debts, and net wealth over time |
+| **Plan** | Planning, Savings | Set your yearly budget and savings goals |
+| **Track** | Budget vs Actual, FX Transfers | Record actuals and cross-currency transfers |
+| **Net Worth** | Assets, Loans, Portfolio, Wealth | Full balance sheet and wealth growth over time |
+| **Settings** | Accounts, Categories | Configure accounts and budget categories |
 
 ## Features
 
@@ -61,11 +60,6 @@ The app is organised into five sections:
 - Year-start vs current breakdown across cash, portfolio, assets, and liabilities
 - All figures converted to base currency for a single net wealth number
 
-### 🔍 Analytics
-- Income and expense trends
-- Category-level budget variance
-- Cash flow and wealth growth over time
-
 ## Philosophy
 
 This project is intentionally:
@@ -74,6 +68,11 @@ This project is intentionally:
 * **Multi-currency first** – amounts always carry a currency; conversions are always explicit
 * **Self-hosted** – your data stays yours
 
+## License
+
+Nuvio is licensed under the [GNU Affero General Public License v3.0](LICENSE). In short: you can freely use, modify, and self-host it, but if you run a modified version as a network service you must also release your changes under the same license.
+
 ## Status
 
 🚧 Self-hosted only
+

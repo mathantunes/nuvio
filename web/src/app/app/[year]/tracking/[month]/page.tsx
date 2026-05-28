@@ -129,16 +129,16 @@ export default async function BudgetTrackingMonthPage({ params }: Props) {
   return (
     <div className="space-y-4">
       <header className="space-y-1">
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
+        <h1 className="text-xl font-semibold" style={{ color: "var(--color-text)" }}>
           Tracking
         </h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
           Compare your actual {year} income and expenses against your plan. Add
           transactions to track progress throughout the year.
         </p>
       </header>
 
-      <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-left dark:border-zinc-800 dark:bg-zinc-950">
+      <div className="card text-left">
         <TrackingTabs
           budgetId={budget.id}
           year={year}
