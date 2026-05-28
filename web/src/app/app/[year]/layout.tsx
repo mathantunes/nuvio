@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 
 import { db } from "@/db/client";
 import { budgets } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { getMessages } from "@/i18n";
 import { AuthService } from "@/lib/auth-service";
 import { LayoutContent } from "./layout-content";
@@ -25,10 +25,10 @@ export default async function BudgetYearLayout({ children, params }: Props) {
   const user = await AuthService.getCurrentUser();
 
   const budget = await db.query.budgets.findFirst({
-    where: eq(budgets.year, numericYear),
+    where: and(eq(budgets.year, numericYear), eq(budgets.userId, user.id)),
   });
 
-  if (!budget || budget.userId !== user.id) {
+  if (!budget) {
     redirect("/app");
   }
 
@@ -44,7 +44,7 @@ export default async function BudgetYearLayout({ children, params }: Props) {
         style={{ padding: "0.75rem 0 0.75rem 0.75rem" }}
       >
         <div
-          className="flex flex-col flex-1 overflow-y-auto px-4 py-5 text-sm"
+          className="flex flex-col flex-1 overflow-y-auto scrollbar-hide px-4 py-4 text-sm"
           style={{
             backgroundColor: "var(--color-surface)",
             borderRadius: "0.75rem",
@@ -52,7 +52,7 @@ export default async function BudgetYearLayout({ children, params }: Props) {
             boxShadow: "0 2px 8px 0 rgba(0,0,0,0.06)",
           }}
         >
-        <div className="mb-6 space-y-2">
+        <div className="mb-4 space-y-2">
           <Image src="/logo.png" alt="Nuvio" width={352} height={116} style={{ width: "auto", height: "28px", objectFit: "contain", objectPosition: "left" }} />
           <Link
             href="/app"
@@ -63,7 +63,7 @@ export default async function BudgetYearLayout({ children, params }: Props) {
             <span className="text-[10px] font-normal" style={{ color: "var(--color-text-subtle)" }}>↗</span>
           </Link>
         </div>
-        <nav className="space-y-4 text-sm">
+        <nav className="space-y-3 text-sm">
           <div className="space-y-1">
             <Link
               href={`/app/${budget.year}`}
@@ -122,6 +122,9 @@ export default async function BudgetYearLayout({ children, params }: Props) {
               </Link>
               <Link href={`/app/${budget.year}/categories`} className="nav-link rounded-md px-2 py-1 font-normal">
                 Categories
+              </Link>
+              <Link href="/app/settings" className="nav-link rounded-md px-2 py-1 font-normal">
+                Preferences
               </Link>
             </div>
           </div>

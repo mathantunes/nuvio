@@ -2,12 +2,14 @@
 
 import { useState, useTransition, useRef, useEffect } from "react";
 import { createBudgetLine, updateBudgetLine } from "./budget-lines.actions";
+import { CurrencyInput } from "@/components/currency-input";
 
 type Props = {
   budgetId: string;
   year: number;
   categoryKind: "income" | "expense";
   baseCurrency: string;
+  categories?: { id: string; name: string; kind: string | null }[];
   editingLine?: {
     id: string;
     categoryName: string;
@@ -24,6 +26,7 @@ export function BudgetLineForm({
   year,
   categoryKind,
   baseCurrency,
+  categories = [],
   editingLine,
   onSuccess,
 }: Props) {
@@ -104,20 +107,32 @@ export function BudgetLineForm({
       <div className="space-y-3">
         {!isEditing && (
           <div className="space-y-1">
-            <label
-              className="block text-xs font-medium"
-              style={{ color: "var(--color-text)" }}
-            >
+            <label className="block text-xs font-medium" style={{ color: "var(--color-text)" }}>
               Category
             </label>
-            <input
-              name="categoryName"
-              value={categoryName}
-              onChange={(event) => setCategoryName(event.target.value)}
-              required
-              className="input"
-              placeholder={categoryKind === "income" ? "Salary, Dividends..." : "Rent, Groceries..."}
-            />
+            {categories.length > 0 ? (
+              <select
+                name="categoryName"
+                value={categoryName}
+                onChange={(e) => setCategoryName(e.target.value)}
+                required
+                className="input"
+              >
+                <option value="">Select a category…</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.name}>{c.name}</option>
+                ))}
+              </select>
+            ) : (
+              <input
+                name="categoryName"
+                value={categoryName}
+                onChange={(event) => setCategoryName(event.target.value)}
+                required
+                className="input"
+                placeholder={categoryKind === "income" ? "Salary, Dividends..." : "Rent, Groceries..."}
+              />
+            )}
           </div>
         )}
 
@@ -212,14 +227,12 @@ export function BudgetLineForm({
                 </p>
               </>
             ) : (
-              <input
+              <CurrencyInput
                 name="currencyCode"
                 value={currencyCode}
-                onChange={(event) => setCurrencyCode(event.target.value.toUpperCase())}
+                onChange={setCurrencyCode}
                 required
-                maxLength={3}
                 className="input uppercase tracking-[0.2em]"
-                placeholder="USD"
               />
             )}
           </div>

@@ -203,7 +203,7 @@ body {
 
 /* Nav link active / inactive */
 .nav-link {
-  @apply block rounded-lg px-3 py-2 text-sm font-medium transition-colors;
+  @apply block rounded-lg px-3 py-1.5 text-sm font-medium transition-colors;
   color: var(--color-text-muted);
 }
 .nav-link:hover {
@@ -329,3 +329,12 @@ body {
 .row-action:hover { color: var(--color-text); }
 .row-action-danger { color: var(--color-danger); opacity: 0.7; }
 .row-action-danger:hover { opacity: 1; }
+
+/* Hide scrollbar while keeping scroll functionality */
+.scrollbar-hide {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}

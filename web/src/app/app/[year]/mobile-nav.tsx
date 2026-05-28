@@ -19,11 +19,11 @@ export function MobileNav({ year, currentPath }: MobileNavProps) {
       ],
     },
     {
-      title: "Setup",
+      title: "Settings",
       items: [
         { href: `/app/${year}/accounts`, label: "Accounts" },
-        { href: `/app/${year}/fx`, label: "FX Transfers" },
         { href: `/app/${year}/categories`, label: "Categories" },
+        { href: "/app/settings", label: "Preferences" },
       ],
     },
     {

@@ -2,15 +2,18 @@
 
 import { useState, useTransition } from "react";
 import { createAccount } from "./accounts.actions";
+import { CurrencyInput } from "@/components/currency-input";
 
 type Props = {
   defaultCurrencyCode?: string;
+  year?: number;
 };
 
-export function AccountsForm({ defaultCurrencyCode }: Props) {
+export function AccountsForm({ defaultCurrencyCode, year }: Props) {
   const [name, setName] = useState("");
   const [currencyCode, setCurrencyCode] = useState(defaultCurrencyCode ?? "");
   const [institution, setInstitution] = useState("");
+  const [openingBalance, setOpeningBalance] = useState("");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -30,6 +33,7 @@ export function AccountsForm({ defaultCurrencyCode }: Props) {
       // Reset form on success.
       setName("");
       setInstitution("");
+      setOpeningBalance("");
       if (!defaultCurrencyCode) {
         setCurrencyCode("");
       }
@@ -38,6 +42,7 @@ export function AccountsForm({ defaultCurrencyCode }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
+      {year && <input type="hidden" name="year" value={year} />}
       <div className="space-y-1">
         <label className="block text-xs font-medium" style={{ color: "var(--color-text)" }}>
           Account name
@@ -57,14 +62,11 @@ export function AccountsForm({ defaultCurrencyCode }: Props) {
           <label className="block text-xs font-medium" style={{ color: "var(--color-text)" }}>
             Currency
           </label>
-          <input
+          <CurrencyInput
             name="currencyCode"
             value={currencyCode}
-            onChange={(event) => setCurrencyCode(event.target.value.toUpperCase())}
+            onChange={setCurrencyCode}
             required
-            maxLength={3}
-            className="input text-xs uppercase tracking-widest"
-            placeholder="USD"
           />
         </div>
         <div className="space-y-1">
@@ -80,6 +82,26 @@ export function AccountsForm({ defaultCurrencyCode }: Props) {
           />
         </div>
       </div>
+
+      {year && (
+        <div className="space-y-1">
+          <label className="block text-xs font-medium" style={{ color: "var(--color-text)" }}>
+            Opening balance as of Jan 1, {year} (optional)
+          </label>
+          <input
+            name="openingBalance"
+            type="number"
+            step="any"
+            value={openingBalance}
+            onChange={(event) => setOpeningBalance(event.target.value)}
+            className="input text-xs"
+            placeholder="0.00"
+          />
+          <p className="text-xs" style={{ color: "var(--color-text-subtle)" }}>
+            Fills your Savings snapshot for the start of {year}.
+          </p>
+        </div>
+      )}
 
       {error ? (
         <p className="text-xs" style={{ color: "var(--color-danger)" }}>

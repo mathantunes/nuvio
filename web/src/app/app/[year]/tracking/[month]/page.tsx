@@ -10,8 +10,10 @@ import {
   transactions,
   accounts,
 } from "@/db/schema";
-import { and, eq } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 import { TrackingTabs } from "../tracking-tabs";
+
+import Link from "next/link";
 
 type Props = {
   params: Promise<{ year: string; month: string }>;
@@ -115,6 +117,12 @@ export default async function BudgetTrackingMonthPage({ params }: Props) {
     .from(accounts)
     .where(and(eq(accounts.userId, user.id), eq(accounts.isActive, true)));
 
+  // Count all year trackers for this user — used to detect onboarding vs established users.
+  const [{ count: budgetCount }] = await db
+    .select({ count: count() })
+    .from(budgets)
+    .where(eq(budgets.userId, user.id));
+
   // Get all user categories split by kind for the unplanned form
   const allCategories = await db
     .select({ id: categories.id, name: categories.name, kind: categories.kind })
@@ -139,6 +147,26 @@ export default async function BudgetTrackingMonthPage({ params }: Props) {
       </header>
 
       <div className="card text-left">
+        {yearTransactions.length === 0 && (
+          <div className="mb-4 rounded-lg p-4 space-y-1" style={{ backgroundColor: "var(--color-brand-subtle)", border: "1px solid var(--color-brand)" }}>
+            <p className="text-sm font-medium" style={{ color: "var(--color-text)" }}>Log your first transaction</p>
+            <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+              Use the month picker at the top to navigate to the right month. Switch between <strong>Expenses</strong> and <strong>Income</strong> tabs, then click any row to record a transaction against that budget line — enter the amount, date, and which account the money came from or went to.
+            </p>
+          </div>
+        )}
+        {yearTransactions.length > 0 && budgetCount === 1 && yearTransactions.length <= 5 && (
+          <div className="mb-4 rounded-lg p-4 space-y-1" style={{ backgroundColor: "var(--color-brand-subtle)", border: "1px solid var(--color-brand)" }}>
+            <p className="text-sm font-medium" style={{ color: "var(--color-text)" }}>You&apos;re all set! 🎉</p>
+            <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+              Head to{" "}
+              <Link href={`/app/${year}/variance`} className="underline font-medium" style={{ color: "var(--color-brand)" }}>
+                Budget vs Actual
+              </Link>{" "}
+              to see how your spending compares to your plan. Explore the other pages in the sidebar to track savings, assets, loans, and more.
+            </p>
+          </div>
+        )}
         <TrackingTabs
           budgetId={budget.id}
           year={year}

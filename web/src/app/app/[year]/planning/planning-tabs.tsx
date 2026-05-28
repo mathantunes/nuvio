@@ -25,6 +25,7 @@ type Props = {
   incomeLines: BudgetLine[];
   expenseLines: BudgetLine[];
   baseCurrency: string;
+  allCategories: { id: string; name: string; kind: string | null }[];
 };
 
 type CategoryGroup = {
@@ -41,6 +42,7 @@ export function PlanningTabs({
   incomeLines,
   expenseLines,
   baseCurrency,
+  allCategories,
 }: Props) {
   const [activeTab, setActiveTab] = useState<"income" | "expense">("expense");
   const [editingLine, setEditingLine] = useState<BudgetLine | null>(null);
@@ -335,6 +337,7 @@ export function PlanningTabs({
           year={year}
           categoryKind={activeTab}
           baseCurrency={baseCurrency}
+          categories={allCategories.filter(c => activeTab === "income" ? c.kind === "income" : c.kind === "expense" || c.kind === null)}
         />
       </div>
 

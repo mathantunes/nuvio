@@ -1,11 +1,12 @@
 import { Card, DataList, DataListHeader, DataListRow, RowAction } from "@/components/ui";
 import { db } from "@/db/client";
-import { accounts, profiles } from "@/db/schema";
+import { accounts, profiles, transactions } from "@/db/schema";
 import { AuthService } from "@/lib/auth-service";
 import { AccountsForm } from "../../accounts-form";
-import { and, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { deleteAccount } from "../../accounts.actions";
+import Link from "next/link";
 
 type Props = {
   params: Promise<{ year: string }>;
@@ -24,11 +25,14 @@ export default async function BudgetAccountsPage({ params }: Props) {
     where: eq(profiles.id, user.id),
   });
 
-  const userAccounts = await db
-    .select()
-    .from(accounts)
-    .where(and(eq(accounts.userId, user.id), eq(accounts.isActive, true)))
-    .orderBy(desc(accounts.createdAt));
+  const [userAccounts, [{ count: transactionCount }]] = await Promise.all([
+    db
+      .select()
+      .from(accounts)
+      .where(and(eq(accounts.userId, user.id), eq(accounts.isActive, true)))
+      .orderBy(desc(accounts.createdAt)),
+    db.select({ count: count() }).from(transactions).where(eq(transactions.userId, user.id)),
+  ]);
 
   return (
     <div className="space-y-4">
@@ -43,11 +47,17 @@ export default async function BudgetAccountsPage({ params }: Props) {
       </header>
 
       <Card>
-        {userAccounts.length === 0 ? (
-          <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-            You don&apos;t have any accounts yet. Create your first one below.
-          </p>
-        ) : (
+        {userAccounts.length === 0 && (
+          <>
+            <div className="mb-4 rounded-lg p-4 space-y-2" style={{ backgroundColor: "var(--color-brand-subtle)", border: "1px solid var(--color-brand)" }}>
+              <p className="text-sm font-medium" style={{ color: "var(--color-text)" }}>Set up your first account</p>
+              <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                Accounts are where your money lives — a bank account, credit card, cash wallet, brokerage, etc. Use the form below to add one: give it a name, a currency, and optionally the institution it belongs to. You&apos;ll pick an account every time you log a transaction.
+              </p>
+            </div>
+          </>
+        )}
+        {userAccounts.length > 0 && (
           <DataList
             className="mb-4"
             header={
@@ -88,7 +98,17 @@ export default async function BudgetAccountsPage({ params }: Props) {
             ))}
           </DataList>
         )}
-        <AccountsForm defaultCurrencyCode={profile?.baseCurrency} />
+        {userAccounts.length > 0 && transactionCount === 0 && (
+          <div className="mb-4 rounded-lg p-4 space-y-1" style={{ backgroundColor: "var(--color-brand-subtle)", border: "1px solid var(--color-brand)" }}>
+            <p className="text-sm font-medium" style={{ color: "var(--color-text)" }}>Next: log your first transaction</p>
+            <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+              You&apos;re all set! Head to{" "}
+              <Link href={`/app/${yearString}/tracking`} className="font-medium underline hover:opacity-70" style={{ color: "var(--color-brand)" }}>Tracking</Link>
+              {" "}to start logging real income and expenses against your plan.
+            </p>
+          </div>
+        )}
+        <AccountsForm defaultCurrencyCode={profile?.baseCurrency} year={numericYear} />
       </Card>
     </div>
   );
