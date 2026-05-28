@@ -6,7 +6,7 @@ const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
   throw new Error(
-    "DATABASE_URL is not set. Please configure it to point to your Supabase or local Postgres instance."
+    "DATABASE_URL is not set. Please configure it to point to your Postgres instance."
   );
 }
 

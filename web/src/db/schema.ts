@@ -8,9 +8,9 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
-// Profiles: per-user settings keyed 1:1 to auth.users.id.
+// Profiles: per-user settings keyed 1:1 to users.id.
 export const profiles = pgTable("profiles", {
-  id: uuid("id").primaryKey(), // auth.users.id
+  id: uuid("id").primaryKey(), // users.id
   baseCurrency: text("base_currency").notNull().default("USD"),
   locale: text("locale").notNull().default("en-US"),
   timeZone: text("time_zone").notNull().default("UTC"),
@@ -409,7 +409,7 @@ export const loanPayments = pgTable("loan_payments", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-// USERS: local authentication — replaces Supabase auth.users.
+// USERS: local authentication.
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   email: text("email").notNull().unique(),
