@@ -33,13 +33,13 @@ export const en = {
     welcomeWithEmail: "Welcome, {email}.",
     workspaceIntro:
       "This is your authenticated workspace. Next steps: wire your base currency, accounts, and first transactions.",
-    budgetsListTitle: "Budgets",
+    budgetsListTitle: "Your year trackers",
     budgetsListSubtitle:
-      "Create one budget per year, then plan and track income, expenses, and savings against it.",
+      "Each year tracker lets you plan, track, and analyse your income, expenses, and savings for that year.",
     budgetsEmptyState:
-      "You don't have any budgets yet. Create one to get started.",
+      "No year trackers yet.",
     budgetsYearLabel: "Year",
-    budgetsCreateLabel: "Create budget",
+    budgetsCreateLabel: "Create year tracker",
     budgetsCreateHelper:
       "You can start with the current year and add past or future years later.",
     profileCardTitle: "Profile & base currency",

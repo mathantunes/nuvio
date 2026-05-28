@@ -3,6 +3,7 @@ import { AuthService } from "@/lib/auth-service";
 import { fetchPortfolioData } from "@/lib/portfolio-computations";
 import { formatCurrency } from "../planning/currency-format";
 import { PortfolioPositions } from "./portfolio-positions";
+import { CurrencyInput } from "@/components/currency-input";
 import { createPosition } from "./portfolio.actions";
 import { db } from "@/db/client";
 import { accounts } from "@/db/schema";
@@ -115,13 +116,10 @@ export default async function PortfolioPage({ params }: Props) {
               <label className="block text-[11px] font-medium" style={{ color: "var(--color-text-muted)" }}>
                 Currency
               </label>
-              <input
+              <CurrencyInput
                 name="currencyCode"
                 required
-                placeholder="CHF"
-                maxLength={3}
                 className="input"
-                style={{ textTransform: "uppercase" }}
               />
             </div>
             <div className="space-y-1">

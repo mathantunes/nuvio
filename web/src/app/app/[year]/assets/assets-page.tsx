@@ -8,6 +8,7 @@ import {
   recordAssetValuation,
   deleteAsset,
 } from "./assets.actions";
+import { CurrencyInput } from "@/components/currency-input";
 import { IconHome, IconCar, IconBox } from "@/components/icons";
 import type { AssetSummary } from "@/lib/loan-computations";
 
@@ -289,12 +290,10 @@ function AddAssetForm({ year, onDone }: { year: number; onDone: () => void }) {
         </div>
         <div>
           <label className={labelCls} style={labelStyle}>Currency</label>
-          <input
+          <CurrencyInput
             name="currencyCode"
-            type="text"
             required
             defaultValue="BRL"
-            maxLength={3}
             className={inputCls}
           />
         </div>

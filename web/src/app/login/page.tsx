@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { getMessages } from "@/i18n";
+import Image from "next/image";
 
 export default function LoginPage() {
   const messages = getMessages("en");
   const router = useRouter();
+  const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "error">("idle");
@@ -17,7 +19,8 @@ export default function LoginPage() {
     setStatus("submitting");
     setError(null);
 
-    const res = await fetch("/api/auth/login", {
+    const endpoint = mode === "login" ? "/api/auth/login" : "/api/auth/signup";
+    const res = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -25,7 +28,7 @@ export default function LoginPage() {
 
     if (!res.ok) {
       const data = await res.json();
-      setError(data.error ?? "Login failed");
+      setError(data.error ?? (mode === "login" ? "Login failed" : "Sign up failed"));
       setStatus("error");
       return;
     }
@@ -33,19 +36,39 @@ export default function LoginPage() {
     router.push("/app");
   };
 
+  const switchMode = (next: "login" | "signup") => {
+    setMode(next);
+    setError(null);
+    setStatus("idle");
+  };
+
   return (
     <main className="flex min-h-screen items-center justify-center" style={{ backgroundColor: "var(--color-bg)" }}>
       <div className="w-full max-w-md space-y-6 rounded-2xl p-8" style={{ backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
-        <header className="space-y-1">
-          <div className="mb-6">
-            <span className="text-2xl font-bold tracking-tight" style={{ color: "var(--color-brand)" }}>Nuvio</span>
+        <header className="space-y-4">
+          <Image
+            src="/logo.png"
+            alt="Nuvio"
+            width={352}
+            height={116}
+            style={{ width: "auto", height: "32px", objectFit: "contain", objectPosition: "left" }}
+          />
+          <div className="tab-bar">
+            <button
+              type="button"
+              onClick={() => switchMode("login")}
+              className={`tab-btn ${mode === "login" ? "active" : ""}`}
+            >
+              Sign in
+            </button>
+            <button
+              type="button"
+              onClick={() => switchMode("signup")}
+              className={`tab-btn ${mode === "signup" ? "active" : ""}`}
+            >
+              Create account
+            </button>
           </div>
-          <h1 className="text-xl font-semibold" style={{ color: "var(--color-text)" }}>
-            {messages.auth.loginTitle}
-          </h1>
-          <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-            Sign in with your email and password.
-          </p>
         </header>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -84,8 +107,9 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="input"
-              placeholder="••••••••"
-              autoComplete="current-password"
+              placeholder={mode === "signup" ? "At least 8 characters" : "••••••••"}
+              autoComplete={mode === "signup" ? "new-password" : "current-password"}
+              minLength={mode === "signup" ? 8 : undefined}
             />
           </div>
 
@@ -98,7 +122,9 @@ export default function LoginPage() {
             disabled={status === "submitting"}
             className="btn-primary w-full"
           >
-            {status === "submitting" ? "Signing in…" : "Sign in"}
+            {status === "submitting"
+              ? mode === "login" ? "Signing in…" : "Creating account…"
+              : mode === "login" ? "Sign in" : "Create account"}
           </button>
         </form>
 

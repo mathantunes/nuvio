@@ -10,6 +10,10 @@ import { fetchPortfolioData } from "@/lib/portfolio-computations";
 import { fetchLoanData } from "@/lib/loan-computations";
 import { Card, CardHeader, CardTitle, Table, Thead, Tbody, Tfoot, Th, Td, Tr } from "@/components/ui";
 import { formatCurrency } from "./planning/currency-format";
+import { db } from "@/db/client";
+import { categories, budgetLines, transactions, budgets, accounts } from "@/db/schema";
+import { eq, count, inArray, and } from "drizzle-orm";
+import Link from "next/link";
 
 export default async function BudgetDashboardPage({
   params,
@@ -22,6 +26,27 @@ export default async function BudgetDashboardPage({
   const user = await AuthService.getCurrentUser();
 
   try {
+    const budget = await db.query.budgets.findFirst({
+      where: and(eq(budgets.year, year), eq(budgets.userId, user.id)),
+    });
+
+    const [[categoryCount], [budgetLineCount], [accountCount], [transactionCount]] = await Promise.all([
+      db.select({ count: count() }).from(categories).where(eq(categories.userId, user.id)),
+      budget
+        ? db.select({ count: count() }).from(budgetLines).where(eq(budgetLines.budgetId, budget.id))
+        : Promise.resolve([{ count: 0 }]),
+      db.select({ count: count() }).from(accounts).where(eq(accounts.userId, user.id)),
+      db.select({ count: count() }).from(transactions).where(eq(transactions.userId, user.id)),
+    ]);
+
+    const onboardingSteps = [
+      { label: "Add spending categories", done: categoryCount.count > 0, href: `/app/${year}/categories` },
+      { label: "Plan a budget line", done: budgetLineCount.count > 0, href: `/app/${year}/planning` },
+      { label: "Set up an account", done: accountCount.count > 0, href: `/app/${year}/accounts` },
+      { label: "Log your first transaction", done: transactionCount.count > 0, href: `/app/${year}/tracking` },
+    ];
+    const onboardingDone = onboardingSteps.every((s) => s.done);
+
     const [data, portfolio, loanData] = await Promise.all([
       fetchDashboardData(year, user.id),
       fetchPortfolioData(user.id, year),
@@ -36,9 +61,46 @@ export default async function BudgetDashboardPage({
             Dashboard
           </h1>
           <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-            {year} budget overview
+            {year} overview
           </p>
         </header>
+
+        {/* Getting started checklist — shown inside the year until all done */}
+        {!onboardingDone && (
+          <section
+            className="rounded-xl p-4 space-y-3"
+            style={{ backgroundColor: "var(--color-brand-subtle)", border: "1px solid var(--color-brand)" }}
+          >
+            <span className="text-sm font-semibold" style={{ color: "var(--color-brand)" }}>
+              Getting started
+            </span>
+            <ul className="space-y-2 pt-1">
+              {onboardingSteps.map((step, i) => (
+                <li key={i} className="flex items-center gap-3">
+                  <span
+                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold"
+                    style={{
+                      backgroundColor: step.done ? "var(--color-brand)" : "var(--color-surface)",
+                      color: step.done ? "#fff" : "var(--color-text-muted)",
+                      border: step.done ? "none" : "1px solid var(--color-border)",
+                    }}
+                  >
+                    {step.done ? "✓" : i + 2}
+                  </span>
+                  {step.done ? (
+                    <span className="text-sm line-through" style={{ color: "var(--color-text-muted)" }}>
+                      {step.label}
+                    </span>
+                  ) : (
+                    <Link href={step.href} className="text-sm hover:underline" style={{ color: "var(--color-text)" }}>
+                      {step.label} →
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <MultiCurrencyCard
@@ -356,7 +418,12 @@ export default async function BudgetDashboardPage({
       </div>
     );
   } catch (error) {
-    redirect("/app");
+    // Only redirect for "Budget not found" — surface other errors in logs
+    if (error instanceof Error && error.message === "Budget not found") {
+      redirect("/app");
+    }
+    console.error("[nuvio] Dashboard error:", error);
+    throw error;
   }
 }
 

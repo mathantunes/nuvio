@@ -28,6 +28,7 @@ import {
   demoteToSimulation,
 } from "./loans.actions";
 import { RecordAssetValuationForm } from "../assets/assets-page";
+import { CurrencyInput } from "@/components/currency-input";
 import { Card, CardHeader, CardTitle, Table, Thead, Tbody, Tfoot, Th, Td, Tr } from "@/components/ui";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -462,13 +463,11 @@ function AddLoanForm({
           </div>
           <div className="space-y-1">
             <label className={labelCls} style={labelStyle}>Currency</label>
-            <input
+            <CurrencyInput
               name="currencyCode"
               required
-              maxLength={3}
               value={currency}
-              onChange={(e) => setCurrency(e.target.value.toUpperCase())}
-              placeholder="CHF"
+              onChange={setCurrency}
               className={`${inputCls} uppercase`}
             />
           </div>
@@ -667,13 +666,11 @@ function NewSimulationForm({
           </div>
           <div className="space-y-1">
             <label className={labelCls} style={labelStyle}>Currency</label>
-            <input
+            <CurrencyInput
               name="currencyCode"
               required
-              maxLength={3}
               value={currency}
-              onChange={(e) => setCurrency(e.target.value.toUpperCase())}
-              placeholder="CHF"
+              onChange={setCurrency}
               className={`${inputCls} uppercase`}
             />
           </div>
@@ -1022,7 +1019,7 @@ function SimulationCard({
             </div>
             <div>
               <label className={labelCls} style={labelStyle}>Currency</label>
-              <input name="currencyCode" type="text" required defaultValue={loan.currencyCode} maxLength={3} className={inputCls} />
+              <CurrencyInput name="currencyCode" required defaultValue={loan.currencyCode} className={inputCls} />
             </div>
             <div>
               <label className={labelCls} style={labelStyle}>Principal</label>

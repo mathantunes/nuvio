@@ -1,9 +1,10 @@
 import { Card } from "@/components/ui";
 import { db } from "@/db/client";
-import { categories } from "@/db/schema";
+import { budgetLines, budgets, categories } from "@/db/schema";
 import { AuthService } from "@/lib/auth-service";
-import { eq } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { CategoryTabs } from "./category-tabs";
 import { createCategory } from "./categories.actions";
 
@@ -26,11 +27,18 @@ export default async function CategoriesPage({ params, searchParams }: Props) {
 
   const user = await AuthService.getCurrentUser();
 
-  const allCategories = await db
-    .select()
-    .from(categories)
-    .where(eq(categories.userId, user.id))
-    .orderBy(categories.name);
+  const budget = await db.query.budgets.findFirst({
+    where: and(eq(budgets.year, numericYear), eq(budgets.userId, user.id)),
+  });
+
+  const [allCategories, [{ count: budgetLineCount }]] = await Promise.all([
+    db.select().from(categories).where(eq(categories.userId, user.id)).orderBy(categories.name),
+    budget
+      ? db.select({ count: count() }).from(budgetLines).where(eq(budgetLines.budgetId, budget.id))
+      : Promise.resolve([{ count: 0 }]),
+  ]);
+
+  const showPlanningTip = budgetLineCount === 0;
 
   return (
     <div className="space-y-4">
@@ -45,6 +53,27 @@ export default async function CategoriesPage({ params, searchParams }: Props) {
       </header>
 
       <Card>
+        {allCategories.length === 0 && (
+          <div className="mb-4 rounded-lg p-4 space-y-2" style={{ backgroundColor: "var(--color-bg)", border: "1px dashed var(--color-border)" }}>
+            <p className="text-sm font-medium" style={{ color: "var(--color-text)" }}>
+              No categories yet
+            </p>
+            <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+              Categories group your income and expenses — things like <em>Rent</em>, <em>Groceries</em>, or <em>Salary</em>. Create a few to get started, then head to{" "}
+              <Link href={`/app/${yearString}/planning`} className="underline hover:opacity-70" style={{ color: "var(--color-brand)" }}>Planning</Link>
+              {" "}to set monthly amounts.
+            </p>
+          </div>
+        )}
+        {showPlanningTip && allCategories.length > 0 && (
+          <div className="mb-4 rounded-lg p-4 space-y-1" style={{ backgroundColor: "var(--color-brand-subtle)", border: "1px solid var(--color-brand)" }}>
+            <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+              Great start! Now head to{" "}
+              <Link href={`/app/${yearString}/planning`} className="font-medium underline hover:opacity-70" style={{ color: "var(--color-brand)" }}>Planning</Link>
+              {" "}to set monthly amounts for each category.
+            </p>
+          </div>
+        )}
         {allCategories.length > 0 && (
           <div className="mb-6">
             <CategoryTabs
