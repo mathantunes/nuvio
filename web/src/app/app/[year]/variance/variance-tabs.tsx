@@ -13,6 +13,7 @@ import {
   Cell,
   ResponsiveContainer,
 } from "recharts";
+import { Card, CardTitle, Table, Thead, Tbody, Tfoot, Th, Td, Tr } from "@/components/ui";
 import { formatCurrency } from "../planning/currency-format";
 import { SavingsInsightTab } from "./savings-insight-tab";
 import { TrendsTab } from "./trends-tab";
@@ -40,13 +41,11 @@ type MainTab = "monthly" | "ytd" | "savings" | "trends";
 type KindTab = "expenses" | "income";
 type DisplayMode = "chart" | "table";
 
-// Palette for pie chart slices — cycles if there are many categories
 const PIE_COLORS = [
   "#6366f1", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6",
   "#ec4899", "#14b8a6", "#f97316", "#06b6d4", "#84cc16",
 ];
 
-// Aggregate monthly variance data up through `throughMonthIdx` (0-based)
 function computeYtd(
   allMonthlyVariance: MonthlyVarianceData[],
   throughMonthIdx: number
@@ -88,12 +87,10 @@ export function VarianceTabs({
   const [mainTab, setMainTab] = useState<MainTab>("monthly");
   const [kindTab, setKindTab] = useState<KindTab>("expenses");
   const [displayMode, setDisplayMode] = useState<DisplayMode>("chart");
-  const [selectedMonth, setSelectedMonth] = useState(currentMonthIdx); // 0-based
-  // Default YTD to last fully-closed month (never the current in-progress month)
+  const [selectedMonth, setSelectedMonth] = useState(currentMonthIdx);
   const lastClosedMonthIdx = Math.max(0, currentMonthIdx - 1);
-  const [ytdMonthIdx, setYtdMonthIdx] = useState(lastClosedMonthIdx); // 0-based
+  const [ytdMonthIdx, setYtdMonthIdx] = useState(lastClosedMonthIdx);
 
-  // Compute YTD dynamically on the client so the user can change the range
   const ytdVariance = computeYtd(allMonthlyVariance, ytdMonthIdx);
 
   const monthlyData = allMonthlyVariance[selectedMonth];
@@ -103,10 +100,10 @@ export function VarianceTabs({
         ? monthlyData.expenses
         : monthlyData.income
       : kindTab === "expenses"
-      ? ytdVariance.expenses
-      : ytdVariance.income;
+        ? ytdVariance.expenses
+        : ytdVariance.income;
 
-  const TAB_LABELS: Record<MainTab, string> = {
+  const tabLabels: Record<MainTab, string> = {
     monthly: "Monthly",
     ytd: "YTD",
     savings: "Savings",
@@ -115,24 +112,18 @@ export function VarianceTabs({
 
   return (
     <div className="space-y-4">
-      {/* Main tab navigation */}
-      <div className="flex gap-1 border-b border-zinc-200 dark:border-zinc-800 overflow-x-auto">
+      <div className="tab-bar overflow-x-auto">
         {(["monthly", "ytd", "savings", "trends"] as MainTab[]).map((tab) => (
           <button
             key={tab}
             onClick={() => setMainTab(tab)}
-            className={`px-4 py-2 text-sm font-medium transition whitespace-nowrap ${
-              mainTab === tab
-                ? "border-b-2 border-zinc-900 text-zinc-900 dark:border-zinc-50 dark:text-zinc-50"
-                : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
-            }`}
+            className={`tab-btn whitespace-nowrap ${mainTab === tab ? "active" : ""}`}
           >
-            {TAB_LABELS[tab]}
+            {tabLabels[tab]}
           </button>
         ))}
       </div>
 
-      {/* Savings tab */}
       {mainTab === "savings" && (
         <SavingsInsightTab
           savingsTimeline={savingsTimeline}
@@ -141,7 +132,6 @@ export function VarianceTabs({
         />
       )}
 
-      {/* Trends tab */}
       {mainTab === "trends" && (
         <TrendsTab
           categoryTrends={categoryTrends}
@@ -150,32 +140,31 @@ export function VarianceTabs({
         />
       )}
 
-      {/* Monthly / YTD tabs share controls + chart/table */}
       {(mainTab === "monthly" || mainTab === "ytd") && (
         <>
-          {/* Controls row */}
-          <div className="flex flex-wrap items-center gap-3">
-            {mainTab === "monthly" && (
-              <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                className="rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-              >
-                {monthNames.map((name, idx) => (
-                  <option key={idx} value={idx} disabled={idx > currentMonthIdx}>
-                    {name} {idx > currentMonthIdx ? "(future)" : ""}
-                  </option>
-                ))}
-              </select>
-            )}
-
-            {mainTab === "ytd" && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-zinc-500 dark:text-zinc-400">Jan →</span>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium" style={{ color: "var(--color-text)" }}>
+                Month:
+              </label>
+              {mainTab === "monthly" && (
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                  className="input py-1.5"
+                >
+                  {monthNames.map((name, idx) => (
+                    <option key={idx} value={idx} disabled={idx > currentMonthIdx}>
+                      {name} {idx > currentMonthIdx ? "(future)" : ""}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {mainTab === "ytd" && (
                 <select
                   value={ytdMonthIdx}
                   onChange={(e) => setYtdMonthIdx(Number(e.target.value))}
-                  className="rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                  className="input py-1.5"
                 >
                   {monthNames.map((name, idx) => (
                     <option key={idx} value={idx} disabled={idx > currentMonthIdx}>
@@ -186,39 +175,33 @@ export function VarianceTabs({
                     </option>
                   ))}
                 </select>
-              </div>
-            )}
-
-            <div className="flex rounded-md border border-zinc-200 dark:border-zinc-700 overflow-hidden text-sm">
-              {(["expenses", "income"] as KindTab[]).map((k) => (
-                <button
-                  key={k}
-                  onClick={() => setKindTab(k)}
-                  className={`px-3 py-1.5 font-medium transition ${
-                    kindTab === k
-                      ? "bg-zinc-900 text-zinc-50 dark:bg-zinc-50 dark:text-zinc-900"
-                      : "bg-white text-zinc-600 hover:bg-zinc-50 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
-                  }`}
-                >
-                  {k.charAt(0).toUpperCase() + k.slice(1)}
-                </button>
-              ))}
+              )}
             </div>
 
-            <div className="ml-auto flex rounded-md border border-zinc-200 dark:border-zinc-700 overflow-hidden text-sm">
-              {(["chart", "table"] as DisplayMode[]).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setDisplayMode(m)}
-                  className={`px-3 py-1.5 font-medium transition ${
-                    displayMode === m
-                      ? "bg-zinc-900 text-zinc-50 dark:bg-zinc-50 dark:text-zinc-900"
-                      : "bg-white text-zinc-600 hover:bg-zinc-50 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
-                  }`}
-                >
-                  {m === "chart" ? "📊 Chart" : "📋 Table"}
-                </button>
-              ))}
+            <div className="flex items-center gap-6">
+              <div className="tab-bar">
+                {(["expenses", "income"] as KindTab[]).map((k) => (
+                  <button
+                    key={k}
+                    onClick={() => setKindTab(k)}
+                    className={`tab-btn ${kindTab === k ? "active" : ""}`}
+                  >
+                    {k.charAt(0).toUpperCase() + k.slice(1)}
+                  </button>
+                ))}
+              </div>
+
+              <div className="tab-bar">
+                {(["chart", "table"] as DisplayMode[]).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setDisplayMode(m)}
+                    className={`tab-btn ${displayMode === m ? "active" : ""}`}
+                  >
+                    {m === "chart" ? "Chart" : "Table"}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -235,8 +218,6 @@ export function VarianceTabs({
   );
 }
 
-// ─── Chart View ──────────────────────────────────────────────────────────────
-
 function ChartView({
   rows,
   kindTab,
@@ -244,7 +225,6 @@ function ChartView({
   rows: (CategoryVarianceRow | CategoryVarianceSummary)[];
   kindTab: KindTab;
 }) {
-  // Group by currency for separate charts
   const currencies = [...new Set(rows.map((r) => r.currencyCode))].sort();
 
   return (
@@ -293,8 +273,16 @@ function CurrencyCharts({
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     return (
-      <div className="rounded-lg border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
-        <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-50 mb-1">{label}</p>
+      <div
+        className="rounded-lg border p-3"
+        style={{
+          backgroundColor: "var(--color-surface)",
+          borderColor: "var(--color-border)",
+        }}
+      >
+        <p className="mb-1 text-xs font-semibold" style={{ color: "var(--color-text)" }}>
+          {label}
+        </p>
         {payload.map((p: any) => (
           <p key={p.dataKey} className="text-xs" style={{ color: p.fill }}>
             {p.dataKey}: {formatCurrency(p.value, currency)}
@@ -305,12 +293,13 @@ function CurrencyCharts({
   };
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 space-y-6">
-      <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{currency}</h3>
+    <Card className="space-y-6">
+      <CardTitle>{currency}</CardTitle>
 
-      {/* Grouped bar: Planned vs Actual per category */}
       <div>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">Planned vs Actual</p>
+        <p className="mb-2 text-xs" style={{ color: "var(--color-text-subtle)" }}>
+          Planned vs Actual
+        </p>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={barData} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
             <XAxis dataKey="name" tick={{ fontSize: 11 }} />
@@ -318,33 +307,24 @@ function CurrencyCharts({
             <Tooltip content={<CustomTooltip />} />
             <Legend wrapperStyle={{ fontSize: 12 }} />
             <Bar dataKey="Planned" fill="#a1a1aa" radius={[3, 3, 0, 0]} />
-            <Bar
-              dataKey="Actual"
-              radius={[3, 3, 0, 0]}
-              // Color each bar based on over/under individually
-              label={false}
-            >
+            <Bar dataKey="Actual" radius={[3, 3, 0, 0]} label={false}>
               {rows.map((row, idx) => {
                 const over = isExpense ? row.actual > row.planned : row.actual < row.planned;
-                return (
-                  <Cell
-                    key={idx}
-                    fill={over ? "#ef4444" : "#10b981"}
-                  />
-                );
+                return <Cell key={idx} fill={over ? "#ef4444" : "#10b981"} />;
+                {/* Note: SVG fill doesn't support CSS vars. These hex values approximate
+                    --color-off-track and --color-on-track for light mode. */}
               })}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
 
-      {/* Pie: actual spending share */}
       {pieData.length > 0 && (
         <div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
+          <p className="mb-2 text-xs" style={{ color: "var(--color-text-subtle)" }}>
             Actual {isExpense ? "spending" : "income"} breakdown
           </p>
-          <div className="flex flex-col sm:flex-row items-center gap-6">
+          <div className="flex flex-col items-center gap-6 sm:flex-row">
             <ResponsiveContainer width={200} height={200}>
               <PieChart>
                 <Pie
@@ -367,7 +347,6 @@ function CurrencyCharts({
               </PieChart>
             </ResponsiveContainer>
 
-            {/* Legend */}
             <div className="flex flex-col gap-1.5 text-xs">
               {pieData.map((entry, idx) => {
                 const total = pieData.reduce((s, e) => s + e.value, 0);
@@ -375,13 +354,14 @@ function CurrencyCharts({
                 return (
                   <div key={entry.name} className="flex items-center gap-2">
                     <span
-                      className="inline-block h-2.5 w-2.5 rounded-full shrink-0"
+                      className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
                       style={{ backgroundColor: PIE_COLORS[idx % PIE_COLORS.length] }}
                     />
-                    <span className="text-zinc-700 dark:text-zinc-300">
-                      {entry.name}
-                    </span>
-                    <span className="text-zinc-400 dark:text-zinc-500 ml-auto pl-4">
+                    <span style={{ color: "var(--color-text-muted)" }}>{entry.name}</span>
+                    <span
+                      className="ml-auto pl-4"
+                      style={{ color: "var(--color-text-subtle)" }}
+                    >
                       {share}%
                     </span>
                   </div>
@@ -391,11 +371,9 @@ function CurrencyCharts({
           </div>
         </div>
       )}
-    </div>
+    </Card>
   );
 }
-
-// ─── Table View ───────────────────────────────────────────────────────────────
 
 function TableView({
   rows,
@@ -419,28 +397,18 @@ function TableView({
         const totalPct = totalPlanned !== 0 ? (totalActual / totalPlanned) * 100 : 0;
 
         return (
-          <div
-            key={currency}
-            className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 overflow-hidden"
-          >
-            <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800">
-              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{currency}</h3>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-zinc-100 dark:border-zinc-900">
-                    <th className="py-2 px-4 text-left font-medium text-zinc-500 dark:text-zinc-400">Category</th>
-                    <th className="py-2 px-3 text-right font-medium text-zinc-500 dark:text-zinc-400">Planned</th>
-                    <th className="py-2 px-3 text-right font-medium text-zinc-500 dark:text-zinc-400">Actual</th>
-                    <th className="py-2 px-3 text-right font-medium text-zinc-500 dark:text-zinc-400">Variance</th>
-                    <th className="py-2 px-3 text-right font-medium text-zinc-500 dark:text-zinc-400">% Used</th>
-                    {isYtd && (
-                      <th className="py-2 px-3 text-right font-medium text-zinc-500 dark:text-zinc-400">Pace</th>
-                    )}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-50 dark:divide-zinc-900">
+          <Table key={currency} caption={currency}>
+            <Thead>
+              <Tr>
+                <Th>Category</Th>
+                <Th numeric>Planned</Th>
+                <Th numeric>Actual</Th>
+                <Th numeric>Variance</Th>
+                <Th numeric>% Used</Th>
+                {isYtd && <Th className="text-right">Pace</Th>}
+              </Tr>
+            </Thead>
+                <Tbody>
                   {currencyRows.map((row) => {
                     const over = isExpense
                       ? row.actual > row.planned
@@ -448,108 +416,111 @@ function TableView({
                     const paceLabel = row.pct > 100
                       ? "ahead"
                       : row.pct > 80
-                      ? "on track"
-                      : "behind";
+                        ? "on track"
+                        : "behind";
 
                     return (
-                      <tr
-                        key={`${row.categoryId}-${row.currencyCode}`}
-                        className="hover:bg-zinc-50 dark:hover:bg-zinc-900"
-                      >
-                        <td className="py-2 px-4 font-medium text-zinc-900 dark:text-zinc-50">
-                          {row.categoryName}
-                        </td>
-                        <td className="py-2 px-3 text-right tabular-nums text-zinc-500 dark:text-zinc-400">
-                          {formatCurrency(row.planned, currency)}
-                        </td>
-                        <td className="py-2 px-3 text-right tabular-nums text-zinc-700 dark:text-zinc-300">
-                          {formatCurrency(row.actual, currency)}
-                        </td>
-                        <td
-                          className={`py-2 px-3 text-right tabular-nums font-medium ${
-                            over
-                              ? "text-red-600 dark:text-red-400"
-                              : "text-emerald-600 dark:text-emerald-400"
-                          }`}
+                      <Tr key={`${row.categoryId}-${row.currencyCode}`}>
+                        <Td className="font-medium">{row.categoryName}</Td>
+                        <Td numeric>{formatCurrency(row.planned, currency)}</Td>
+                        <Td numeric muted>{formatCurrency(row.actual, currency)}</Td>
+                        <Td
+                          numeric
+                          className="font-medium"
+                          style={{ color: over ? "var(--color-off-track)" : "var(--color-on-track)" }}
                         >
                           {row.variance >= 0 ? "+" : ""}
                           {formatCurrency(row.variance, currency)}
-                        </td>
-                        <td
-                          className={`py-2 px-3 text-right tabular-nums font-medium ${
-                            over
-                              ? "text-red-600 dark:text-red-400"
-                              : "text-zinc-500 dark:text-zinc-400"
-                          }`}
+                        </Td>
+                        <Td
+                          numeric
+                          className="font-medium"
+                          style={{
+                            color: over ? "var(--color-off-track)" : "var(--color-text-subtle)",
+                          }}
                         >
                           {row.pct.toFixed(1)}%
-                        </td>
+                        </Td>
                         {isYtd && (
-                          <td className="py-2 px-3 text-right">
+                          <Td className="text-right">
                             <span
-                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                                paceLabel === "ahead"
-                                  ? over
-                                    ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                                    : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                                  : paceLabel === "on track"
-                                  ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                                  : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
-                              }`}
+                              className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium"
+                              style={{
+                                backgroundColor:
+                                  paceLabel === "ahead"
+                                    ? over
+                                      ? "var(--color-off-track-subtle)"
+                                      : "var(--color-on-track-subtle)"
+                                    : paceLabel === "on track"
+                                      ? "var(--color-brand-subtle)"
+                                      : "var(--color-surface-raised)",
+                                color:
+                                  paceLabel === "ahead"
+                                    ? over
+                                      ? "var(--color-off-track)"
+                                      : "var(--color-on-track)"
+                                    : paceLabel === "on track"
+                                      ? "var(--color-brand)"
+                                      : "var(--color-text-muted)",
+                              }}
                             >
                               {paceLabel}
                             </span>
-                          </td>
+                          </Td>
                         )}
-                      </tr>
+                      </Tr>
                     );
                   })}
-                </tbody>
-                {/* Totals row */}
-                <tfoot>
-                  <tr className="border-t-2 border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900">
-                    <td className="py-2 px-4 font-semibold text-zinc-900 dark:text-zinc-50">
-                      Total
-                    </td>
-                    <td className="py-2 px-3 text-right tabular-nums font-semibold text-zinc-900 dark:text-zinc-50">
+                </Tbody>
+                <Tfoot>
+                  <Tr
+                    separator
+                    className="[&>td]:border-b-0"
+                    style={{ backgroundColor: "var(--color-surface-raised)" }}
+                  >
+                    <Td className="font-semibold">Total</Td>
+                    <Td numeric className="font-semibold">
                       {formatCurrency(totalPlanned, currency)}
-                    </td>
-                    <td className="py-2 px-3 text-right tabular-nums font-semibold text-zinc-900 dark:text-zinc-50">
+                    </Td>
+                    <Td numeric className="font-semibold">
                       {formatCurrency(totalActual, currency)}
-                    </td>
-                    <td
-                      className={`py-2 px-3 text-right tabular-nums font-semibold ${
-                        isExpense
+                    </Td>
+                    <Td
+                      numeric
+                      className="font-semibold"
+                      style={{
+                        color: isExpense
                           ? totalVariance >= 0
-                            ? "text-emerald-600 dark:text-emerald-400"
-                            : "text-red-600 dark:text-red-400"
+                            ? "var(--color-on-track)"
+                            : "var(--color-off-track)"
                           : totalVariance < 0
-                          ? "text-red-600 dark:text-red-400"
-                          : "text-emerald-600 dark:text-emerald-400"
-                      }`}
+                            ? "var(--color-off-track)"
+                            : "var(--color-on-track)",
+                      }}
                     >
                       {totalVariance >= 0 ? "+" : ""}
                       {formatCurrency(totalVariance, currency)}
-                    </td>
-                    <td
-                      className={`py-2 px-3 text-right tabular-nums font-semibold ${
-                        isExpense
-                          ? totalPct > 100
-                            ? "text-red-600 dark:text-red-400"
-                            : "text-zinc-500 dark:text-zinc-400"
-                          : totalPct < 100
-                          ? "text-red-600 dark:text-red-400"
-                          : "text-zinc-500 dark:text-zinc-400"
-                      }`}
+                    </Td>
+                    <Td
+                      numeric
+                      className="font-semibold"
+                      style={{
+                        color:
+                          isExpense
+                            ? totalPct > 100
+                              ? "var(--color-off-track)"
+                              : "var(--color-text-subtle)"
+                            : totalPct < 100
+                              ? "var(--color-off-track)"
+                              : "var(--color-text-subtle)",
+                      }}
                     >
                       {totalPct.toFixed(1)}%
-                    </td>
-                    {isYtd && <td />}
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
+                    </Td>
+                    {isYtd && <Td />}
+                  </Tr>
+                </Tfoot>
+              </Table>
         );
       })}
     </div>
@@ -558,13 +529,13 @@ function TableView({
 
 function EmptyState({ kindTab }: { kindTab: KindTab }) {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-8 text-center dark:border-zinc-800 dark:bg-zinc-950">
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+    <Card className="p-8 text-center">
+      <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
         No {kindTab} budget lines found for this period.
       </p>
-      <p className="text-xs text-zinc-400 dark:text-zinc-600 mt-1">
+      <p className="mt-1 text-xs" style={{ color: "var(--color-text-subtle)" }}>
         Add budget lines in Planning to start tracking.
       </p>
-    </div>
+    </Card>
   );
 }

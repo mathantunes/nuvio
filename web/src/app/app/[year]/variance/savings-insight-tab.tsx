@@ -12,6 +12,7 @@ import {
   ReferenceLine,
 } from "recharts";
 import { formatCurrency } from "../planning/currency-format";
+import { IconCheck, IconWarning } from "@/components/icons";
 import type { SavingsTimeline, MonthlyDisciplineScore } from "@/lib/variance-computations";
 
 type Props = {
@@ -25,24 +26,20 @@ export function SavingsInsightTab({ savingsTimeline, disciplineScores, currentMo
 
   return (
     <div className="space-y-6">
-      {/* Year-end Projection Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {currencies.map((currency) => {
           const projection = savingsTimeline.yearEndProjection[currency];
           const plan = savingsTimeline.yearEndPlan[currency];
           const points = savingsTimeline.byCurrency[currency];
-          // Only completed months (not the current in-progress month)
           const ytdActual = points
             .filter((p) => p.month <= currentMonthIdx)
             .reduce((s, p) => s + p.actualSavings, 0);
-          // Cumulative planned for completed months — used for progress bar
           const cumulativePlannedYTD = points
             .filter((p) => p.month <= currentMonthIdx)
             .reduce((s, p) => s + p.plannedSavings, 0);
           const diff = projection - plan;
           const onTrack = diff >= 0;
 
-          // Latest YTD savings rate (average of past months with income)
           const rateMonths = points.filter((p) => p.isPast && p.actualIncome > 0);
           const avgRate =
             rateMonths.length > 0
@@ -50,103 +47,113 @@ export function SavingsInsightTab({ savingsTimeline, disciplineScores, currentMo
               : 0;
 
           return (
-            <div
-              key={currency}
-              className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 space-y-4"
-            >
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+            <div key={currency} className="card space-y-4">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-sm font-semibold" style={{ color: "var(--color-text)" }}>
                   {currency}
                 </h3>
                 <span
-                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                    onTrack
-                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                      : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                  }`}
+                  className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium"
+                  style={{
+                    backgroundColor: onTrack
+                      ? "var(--color-on-track-subtle)"
+                      : "var(--color-off-track-subtle)",
+                    color: onTrack ? "var(--color-on-track)" : "var(--color-off-track)",
+                  }}
                 >
-                  {onTrack ? "✓ On track" : "⚠ Off track"}
+                  {onTrack ? (
+                    <><IconCheck size={12} /> On track</>
+                  ) : (
+                    <><IconWarning size={12} /> Off track</>
+                  )}
                 </span>
               </div>
 
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-zinc-500 dark:text-zinc-400">YTD saved</span>
-                  <span className="font-semibold text-zinc-900 dark:text-zinc-50">
+                  <span style={{ color: "var(--color-text-subtle)" }}>YTD saved</span>
+                  <span className="font-semibold" style={{ color: "var(--color-text)" }}>
                     {formatCurrency(ytdActual, currency)}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-zinc-500 dark:text-zinc-400">Year plan</span>
-                  <span className="text-zinc-600 dark:text-zinc-400">
+                  <span style={{ color: "var(--color-text-subtle)" }}>Year plan</span>
+                  <span style={{ color: "var(--color-text-muted)" }}>
                     {formatCurrency(plan, currency)}
                   </span>
                 </div>
-                <div className="flex justify-between border-t border-zinc-100 dark:border-zinc-800 pt-2">
-                  <span className="text-zinc-500 dark:text-zinc-400">Dec 31 projection</span>
+                <div
+                  className="flex justify-between border-t pt-2"
+                  style={{ borderColor: "var(--color-border)" }}
+                >
+                  <span style={{ color: "var(--color-text-subtle)" }}>Dec 31 projection</span>
                   <span
-                    className={`font-bold ${
-                      onTrack
-                        ? "text-emerald-600 dark:text-emerald-400"
-                        : "text-red-600 dark:text-red-400"
-                    }`}
+                    className="font-bold"
+                    style={{ color: onTrack ? "var(--color-on-track)" : "var(--color-off-track)" }}
                   >
                     {formatCurrency(projection, currency)}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-zinc-500 dark:text-zinc-400">vs plan</span>
+                  <span style={{ color: "var(--color-text-subtle)" }}>vs plan</span>
                   <span
-                    className={`font-medium ${
-                      onTrack
-                        ? "text-emerald-600 dark:text-emerald-400"
-                        : "text-red-600 dark:text-red-400"
-                    }`}
+                    className="font-medium"
+                    style={{ color: onTrack ? "var(--color-on-track)" : "var(--color-off-track)" }}
                   >
                     {diff >= 0 ? "+" : ""}
                     {formatCurrency(diff, currency)}
                   </span>
                 </div>
-                <div className="flex justify-between border-t border-zinc-100 dark:border-zinc-800 pt-2">
-                  <span className="text-zinc-500 dark:text-zinc-400">Avg savings rate</span>
+                <div
+                  className="flex justify-between border-t pt-2"
+                  style={{ borderColor: "var(--color-border)" }}
+                >
+                  <span style={{ color: "var(--color-text-subtle)" }}>Avg savings rate</span>
                   <span
-                    className={`font-semibold ${
-                      avgRate >= 15
-                        ? "text-emerald-600 dark:text-emerald-400"
-                        : avgRate >= 5
-                        ? "text-amber-600 dark:text-amber-400"
-                        : "text-red-600 dark:text-red-400"
-                    }`}
+                    className="font-semibold"
+                    style={{
+                      color:
+                        avgRate >= 15
+                          ? "var(--color-on-track)"
+                          : avgRate >= 5
+                            ? "var(--color-warning)"
+                            : "var(--color-off-track)",
+                    }}
                   >
                     {avgRate.toFixed(1)}%
                   </span>
                 </div>
               </div>
 
-              {/* Mini progress bar: YTD actual vs plan */}
               {plan > 0 && (
                 <div>
-                  <div className="flex justify-between text-[10px] text-zinc-400 dark:text-zinc-500 mb-1">
+                  <div
+                    className="mb-1 flex justify-between text-[10px]"
+                    style={{ color: "var(--color-text-subtle)" }}
+                  >
                     <span>Year progress</span>
                     <span>{Math.round((ytdActual / plan) * 100)}% of plan</span>
                   </div>
-                  <div className="h-1.5 w-full rounded-full bg-zinc-100 dark:bg-zinc-800">
+                  <div
+                    className="h-1.5 w-full rounded-full"
+                    style={{ backgroundColor: "var(--color-surface-raised)" }}
+                  >
                     <div
-                      className={`h-1.5 rounded-full transition-all ${
-                        ytdActual >= cumulativePlannedYTD
-                          ? "bg-emerald-500"
-                          : "bg-red-400"
-                      }`}
+                      className="h-1.5 rounded-full transition-all"
                       style={{
+                        backgroundColor:
+                          ytdActual >= cumulativePlannedYTD
+                            ? "var(--color-on-track-subtle)"
+                            : "var(--color-off-track-subtle)",
                         width: `${Math.min((ytdActual / plan) * 100, 100)}%`,
                       }}
                     />
                   </div>
-                  {/* Expected progress marker — based on cumulative planned, not linear */}
                   <div className="relative h-0">
                     <div
-                      className="absolute -top-3 w-0.5 h-3 bg-zinc-400 dark:bg-zinc-500"
+                      className="absolute -top-3 h-3 w-0.5"
                       style={{
+                        backgroundColor: "var(--color-text-subtle)",
                         left: `${Math.min((cumulativePlannedYTD / plan) * 100, 100)}%`,
                       }}
                       title={`Expected ${Math.round((cumulativePlannedYTD / plan) * 100)}% by now`}
@@ -159,7 +166,6 @@ export function SavingsInsightTab({ savingsTimeline, disciplineScores, currentMo
         })}
       </div>
 
-      {/* Monthly Savings Timeline Charts */}
       {currencies.map((currency) => {
         const points = savingsTimeline.byCurrency[currency];
         const pastPoints = points.filter((p) => p.isPast);
@@ -179,8 +185,16 @@ export function SavingsInsightTab({ savingsTimeline, disciplineScores, currentMo
         const CustomTooltip = ({ active, payload, label }: any) => {
           if (!active || !payload?.length) return null;
           return (
-            <div className="rounded-lg border border-zinc-200 bg-white p-3 shadow-sm text-xs dark:border-zinc-700 dark:bg-zinc-900 space-y-1 min-w-[180px]">
-              <p className="font-semibold text-zinc-900 dark:text-zinc-50 mb-1">{label}</p>
+            <div
+              className="min-w-[180px] space-y-1 rounded-lg border p-3 text-xs shadow-sm"
+              style={{
+                backgroundColor: "var(--color-surface)",
+                borderColor: "var(--color-border)",
+              }}
+            >
+              <p className="mb-1 font-semibold" style={{ color: "var(--color-text)" }}>
+                {label}
+              </p>
               {payload.map((p: any) => {
                 if (p.value === null || p.value === undefined) return null;
                 const isRate = p.dataKey === "savingsRate";
@@ -206,17 +220,13 @@ export function SavingsInsightTab({ savingsTimeline, disciplineScores, currentMo
             : 0;
 
         return (
-          <div
-            key={currency}
-            className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 space-y-6"
-          >
-            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+          <div key={currency} className="card space-y-6">
+            <h3 className="text-sm font-semibold" style={{ color: "var(--color-text)" }}>
               {currency} — Monthly Savings
             </h3>
 
-            {/* Bar: planned vs actual savings per month */}
             <div>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
+              <p className="mb-2 text-xs" style={{ color: "var(--color-text-subtle)" }}>
                 Planned vs actual savings per month
               </p>
               <ResponsiveContainer width="100%" height={220}>
@@ -232,9 +242,8 @@ export function SavingsInsightTab({ savingsTimeline, disciplineScores, currentMo
               </ResponsiveContainer>
             </div>
 
-            {/* Line: cumulative savings trajectory */}
             <div>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
+              <p className="mb-2 text-xs" style={{ color: "var(--color-text-subtle)" }}>
                 Cumulative savings trajectory
               </p>
               <ResponsiveContainer width="100%" height={200}>
@@ -266,10 +275,9 @@ export function SavingsInsightTab({ savingsTimeline, disciplineScores, currentMo
               </ResponsiveContainer>
             </div>
 
-            {/* Savings rate bar */}
             {pastPoints.some((p) => p.actualIncome > 0) && (
               <div>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
+                <p className="mb-2 text-xs" style={{ color: "var(--color-text-subtle)" }}>
                   Monthly savings rate (% of income saved) · avg {avgSavingsRate.toFixed(1)}%
                 </p>
                 <ResponsiveContainer width="100%" height={140}>

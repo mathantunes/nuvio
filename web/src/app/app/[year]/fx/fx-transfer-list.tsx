@@ -50,19 +50,19 @@ export function FxTransferList({ transfers, onUpdate }: Props) {
 
   if (transfers.length === 0) {
     return (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="text-sm" style={{ color: "var(--color-text-subtle)" }}>
         No transfers yet. Create your first transfer on the left.
       </p>
     );
   }
 
   return (
-    <div className="space-y-3">
+    <div className="flex min-h-0 flex-1 flex-col space-y-3">
       {error && (
-        <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
+        <p className="text-xs" style={{ color: "var(--color-danger)" }}>{error}</p>
       )}
       
-      <div className="space-y-2 max-h-96 overflow-y-auto">
+      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto">
         {transfers.map((transfer) => {
           const isSameCurrency = transfer.sourceCurrencyCode === transfer.targetCurrencyCode;
           const totalCosts = parseFloat(transfer.feeAmount ?? "0") + parseFloat(transfer.taxAmount ?? "0");
@@ -71,17 +71,21 @@ export function FxTransferList({ transfers, onUpdate }: Props) {
           return (
             <div
               key={transfer.id}
-              className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-900"
+              className="rounded-xl border p-3"
+              style={{
+                backgroundColor: "var(--color-surface)",
+                borderColor: "var(--color-border)",
+              }}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 space-y-2">
                   {/* Accounts */}
                   <div className="flex items-center gap-2 text-xs">
-                    <span className="font-medium text-zinc-900 dark:text-zinc-50">
+                    <span className="font-medium" style={{ color: "var(--color-text)" }}>
                       {transfer.sourceAccountName}
                     </span>
-                    <span className="text-zinc-400 dark:text-zinc-600">→</span>
-                    <span className="font-medium text-zinc-900 dark:text-zinc-50">
+                    <span style={{ color: "var(--color-text-subtle)" }}>→</span>
+                    <span className="font-medium" style={{ color: "var(--color-text)" }}>
                       {transfer.targetAccountName}
                     </span>
                   </div>
@@ -89,18 +93,18 @@ export function FxTransferList({ transfers, onUpdate }: Props) {
                   {/* Amounts */}
                   <div className="flex items-center gap-3 text-xs">
                     <div>
-                      <span className="tabular-nums text-zinc-900 dark:text-zinc-50">
+                      <span className="tabular-nums" style={{ color: "var(--color-text)" }}>
                         {formatCurrency(parseFloat(transfer.sourceAmount), transfer.sourceCurrencyCode)}
                       </span>
                       {totalCosts > 0 && (
-                        <span className="ml-1 text-zinc-500 dark:text-zinc-400">
+                        <span className="ml-1" style={{ color: "var(--color-text-subtle)" }}>
                           +{formatCurrency(totalCosts, transfer.sourceCurrencyCode)} fees
                         </span>
                       )}
                     </div>
-                    <span className="text-zinc-400 dark:text-zinc-600">→</span>
+                    <span style={{ color: "var(--color-text-subtle)" }}>→</span>
                     <div>
-                      <span className="tabular-nums text-zinc-900 dark:text-zinc-50">
+                      <span className="tabular-nums" style={{ color: "var(--color-text)" }}>
                         {formatCurrency(parseFloat(transfer.targetAmount), transfer.targetCurrencyCode)}
                       </span>
                     </div>
@@ -108,7 +112,7 @@ export function FxTransferList({ transfers, onUpdate }: Props) {
 
                   {/* FX Rate Info */}
                   {!isSameCurrency && transfer.effectiveFxRate && (
-                    <div className="text-xs text-zinc-600 dark:text-zinc-400">
+                    <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>
                       Effective: 1 {transfer.sourceCurrencyCode} = {parseFloat(transfer.effectiveFxRate).toFixed(6)} {transfer.targetCurrencyCode}
                       {transfer.fxRate && (
                         <span className="ml-2">
@@ -120,13 +124,13 @@ export function FxTransferList({ transfers, onUpdate }: Props) {
 
                   {/* Note */}
                   {transfer.note && (
-                    <div className="text-xs text-zinc-600 dark:text-zinc-400 italic">
+                    <div className="text-xs italic" style={{ color: "var(--color-text-muted)" }}>
                       {transfer.note}
                     </div>
                   )}
 
                   {/* Date */}
-                  <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                  <div className="text-xs" style={{ color: "var(--color-text-subtle)" }}>
                     {new Date(transfer.occurredAt).toLocaleDateString()} at{" "}
                     {new Date(transfer.occurredAt).toLocaleTimeString([], { 
                       hour: '2-digit', 
@@ -139,7 +143,8 @@ export function FxTransferList({ transfers, onUpdate }: Props) {
                 <button
                   onClick={() => handleDelete(transfer.id)}
                   disabled={isPending}
-                  className="shrink-0 rounded-lg p-1.5 text-zinc-400 transition hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950 dark:hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="shrink-0 rounded-lg p-1.5 transition disabled:cursor-not-allowed disabled:opacity-50"
+                  style={{ color: "var(--color-text-subtle)" }}
                   title="Delete transfer"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -150,18 +155,25 @@ export function FxTransferList({ transfers, onUpdate }: Props) {
 
               {/* Cost Impact Indicator */}
               {!isSameCurrency && transfer.fxRate && transfer.effectiveFxRate && (
-                <div className="mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
+                <div
+                  className="mt-2 border-t pt-2"
+                  style={{ borderColor: "var(--color-border)" }}
+                >
                   <div className="flex items-center gap-2 text-xs">
-                    <span className="text-zinc-600 dark:text-zinc-400">Cost impact:</span>
-                    <span className={`font-medium ${
-                      parseFloat(transfer.effectiveFxRate) < parseFloat(transfer.fxRate)
-                        ? "text-red-600 dark:text-red-400"
-                        : "text-emerald-600 dark:text-emerald-400"
-                    }`}>
+                    <span style={{ color: "var(--color-text-muted)" }}>Cost impact:</span>
+                    <span
+                      className="font-medium"
+                      style={{
+                        color:
+                          parseFloat(transfer.effectiveFxRate) < parseFloat(transfer.fxRate)
+                            ? "var(--color-danger)"
+                            : "var(--color-success)",
+                      }}
+                    >
                       {parseFloat(transfer.effectiveFxRate) < parseFloat(transfer.fxRate) ? "↓" : "↑"}{" "}
                       {((Math.abs(parseFloat(transfer.effectiveFxRate) - parseFloat(transfer.fxRate)) / parseFloat(transfer.fxRate)) * 100).toFixed(2)}%
                     </span>
-                    <span className="text-zinc-500 dark:text-zinc-400">
+                    <span style={{ color: "var(--color-text-subtle)" }}>
                       vs market rate
                     </span>
                   </div>

@@ -28,6 +28,7 @@ import {
   demoteToSimulation,
 } from "./loans.actions";
 import { RecordAssetValuationForm } from "../assets/assets-page";
+import { Card, CardHeader, CardTitle, Table, Thead, Tbody, Tfoot, Th, Td, Tr } from "@/components/ui";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -57,32 +58,39 @@ function fmtShortDate(d: Date | string): string {
   return new Date(d).toLocaleDateString("en-US", { month: "short", year: "numeric" });
 }
 
-const inputCls =
-  "block w-full rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 outline-none focus:border-zinc-900 dark:focus:border-zinc-50";
+const inputCls = "input px-3 py-1.5 text-xs";
 
-const labelCls = "block text-[11px] font-medium text-zinc-700 dark:text-zinc-300";
+const labelCls = "block text-[11px] font-medium";
+const labelStyle = { color: "var(--color-text-muted)" } as const;
 
-const submitBtnCls =
-  "inline-flex items-center rounded-full bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-50 hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200 disabled:opacity-50";
+const submitBtnCls = "btn-primary px-3 py-1.5 text-xs";
 
-const ghostBtnCls =
-  "text-xs text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50 underline";
+const ghostBtnCls = "btn-ghost text-xs";
 
-const dangerBtnCls =
-  "text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 underline";
+const dangerBtnCls = "text-xs underline";
 
 // ─── StatusBadge ─────────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: "simulation" | "active" | "closed" }) {
-  const cls =
+  const style =
     status === "simulation"
-      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+      ? {
+          backgroundColor: "var(--color-brand-subtle)",
+          color: "var(--color-brand)",
+        }
       : status === "active"
-      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
-      : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400";
+      ? {
+          backgroundColor: "var(--color-success-subtle)",
+          color: "var(--color-success)",
+        }
+      : {
+          backgroundColor: "var(--color-surface-raised)",
+          color: "var(--color-text-subtle)",
+        };
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest ${cls}`}
+      className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest"
+      style={style}
     >
       {status}
     </span>
@@ -101,50 +109,59 @@ function ScheduleTable({
   currencyCode: string;
 }) {
   return (
-    <div className="overflow-auto max-h-96 rounded-lg border border-zinc-100 dark:border-zinc-800">
-      <table className="w-full text-[11px] tabular-nums">
-        <thead className="sticky top-0 bg-zinc-50 dark:bg-zinc-900 z-10">
-          <tr className="text-zinc-500 dark:text-zinc-400">
-            <th className="px-2 py-1.5 text-left font-medium">#</th>
-            <th className="px-2 py-1.5 text-left font-medium">Date</th>
-            <th className="px-2 py-1.5 text-right font-medium">Principal</th>
-            <th className="px-2 py-1.5 text-right font-medium">Interest</th>
-            <th className="px-2 py-1.5 text-right font-medium">Total</th>
-            <th className="px-2 py-1.5 text-right font-medium">Balance</th>
-          </tr>
-        </thead>
-        <tbody>
+    <div
+      className="max-h-96 overflow-auto rounded-lg border"
+      style={{ borderColor: "var(--color-border)" }}
+    >
+      <Table className="text-[11px] tabular-nums">
+        <Thead
+          className="sticky top-0 z-10"
+          style={{
+            backgroundColor: "var(--color-bg)",
+            color: "var(--color-text-subtle)",
+          }}
+        >
+          <Tr>
+            <Th>#</Th>
+            <Th>Date</Th>
+            <Th numeric>Principal</Th>
+            <Th numeric>Interest</Th>
+            <Th numeric>Total</Th>
+            <Th numeric>Balance</Th>
+          </Tr>
+        </Thead>
+        <Tbody>
           {rows.map((row, i) => (
-            <tr
+            <Tr
               key={i}
-              className={`border-t border-zinc-100 dark:border-zinc-800 ${
-                row.isExtraAmortization
-                  ? "bg-amber-50 dark:bg-amber-900/10"
-                  : "hover:bg-zinc-50 dark:hover:bg-zinc-900/50"
-              }`}
+              className="border-t"
+              style={{
+                borderColor: "var(--color-border)",
+                backgroundColor: row.isExtraAmortization
+                  ? "var(--color-warning-subtle)"
+                  : undefined,
+              }}
             >
-              <td className="px-2 py-1 text-zinc-400">
+              <Td style={{ color: "var(--color-text-subtle)" }}>
                 {row.isExtraAmortization ? "⚡" : row.month}
-              </td>
-              <td className="px-2 py-1 text-zinc-600 dark:text-zinc-300">
-                {fmtShortDate(row.date)}
-              </td>
-              <td className="px-2 py-1 text-right text-zinc-700 dark:text-zinc-300">
+              </Td>
+              <Td muted>{fmtShortDate(row.date)}</Td>
+              <Td numeric muted>
                 {formatCurrency(row.principalAmort, currencyCode)}
-              </td>
-              <td className="px-2 py-1 text-right text-red-500 dark:text-red-400">
+              </Td>
+              <Td numeric style={{ color: "var(--color-danger)" }}>
                 {row.interest > 0 ? formatCurrency(row.interest, currencyCode) : "—"}
-              </td>
-              <td className="px-2 py-1 text-right font-medium text-zinc-800 dark:text-zinc-200">
+              </Td>
+              <Td numeric className="font-medium" style={{ color: "var(--color-text)" }}>
                 {formatCurrency(row.totalPayment, currencyCode)}
-              </td>
-              <td className="px-2 py-1 text-right text-teal-600 dark:text-teal-400">
+              </Td>
+              <Td numeric style={{ color: "var(--color-brand)" }}>
                 {formatCurrency(row.remainingBalance, currencyCode)}
-              </td>
-            </tr>
+              </Td>
+            </Tr>
           ))}
-        </tbody>
-      </table>
+        </Tbody>
+      </Table>
     </div>
   );
 }
@@ -218,22 +235,24 @@ function WhatIfPanel({
   ];
 
   return (
-    <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-900/50 space-y-3">
-      <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+    <div
+      className="space-y-3 rounded-lg border p-3"
+      style={{
+        backgroundColor: "var(--color-surface)",
+        borderColor: "var(--color-border)",
+      }}
+    >
+      <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "var(--color-text-subtle)" }}>
         What-if analysis
       </p>
 
       {/* Tabs */}
-      <div className="flex gap-1">
+      <div className="tab-bar">
         {tabs.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`rounded-full px-3 py-1 text-[11px] font-medium transition ${
-              tab === t.id
-                ? "bg-zinc-900 text-zinc-50 dark:bg-zinc-50 dark:text-zinc-950"
-                : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
-            }`}
+            className={`tab-btn ${tab === t.id ? "active" : ""}`}
           >
             {t.label}
           </button>
@@ -243,7 +262,7 @@ function WhatIfPanel({
       {/* Tab inputs */}
       {tab === "extra" && (
         <div className="space-y-1">
-          <label className={labelCls}>Extra monthly payment ({currencyCode})</label>
+          <label className={labelCls} style={labelStyle}>Extra monthly payment ({currencyCode})</label>
           <input
             type="number"
             min="0"
@@ -258,7 +277,7 @@ function WhatIfPanel({
       {tab === "lump" && (
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
-            <label className={labelCls}>Lump sum amount ({currencyCode})</label>
+            <label className={labelCls} style={labelStyle}>Lump sum amount ({currencyCode})</label>
             <input
               type="number"
               min="0"
@@ -270,7 +289,7 @@ function WhatIfPanel({
             />
           </div>
           <div className="space-y-1">
-            <label className={labelCls}>At month</label>
+            <label className={labelCls} style={labelStyle}>At month</label>
             <input
               type="number"
               min="1"
@@ -285,7 +304,7 @@ function WhatIfPanel({
       {tab === "refi" && (
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
-            <label className={labelCls}>New rate (%/year)</label>
+            <label className={labelCls} style={labelStyle}>New rate (%/year)</label>
             <input
               type="number"
               min="0"
@@ -296,7 +315,7 @@ function WhatIfPanel({
             />
           </div>
           <div className="space-y-1">
-            <label className={labelCls}>New term (months)</label>
+            <label className={labelCls} style={labelStyle}>New term (months)</label>
             <input
               type="number"
               min="1"
@@ -311,47 +330,55 @@ function WhatIfPanel({
       {/* Comparison result */}
       {comparison && (
         <div className="grid grid-cols-2 gap-2 pt-1">
-          <div className="rounded-lg bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-2 space-y-1">
-            <p className="text-[10px] font-semibold uppercase text-zinc-400 dark:text-zinc-500">
+          <div
+            className="space-y-1 rounded-lg border p-2"
+            style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}
+          >
+            <p className="text-[10px] font-semibold uppercase" style={{ color: "var(--color-text-subtle)" }}>
               Base scenario
             </p>
-            <p className="text-xs text-zinc-700 dark:text-zinc-300">
+            <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
               Interest:{" "}
-              <span className="font-medium tabular-nums text-red-500 dark:text-red-400">
+              <span className="font-medium tabular-nums" style={{ color: "var(--color-danger)" }}>
                 {formatCurrency(comparison.base.summary.totalInterest, currencyCode)}
               </span>
             </p>
-            <p className="text-xs text-zinc-700 dark:text-zinc-300">
-              Payoff:{" "}
-              <span className="font-medium">{fmtDate(comparison.base.summary.payoffDate)}</span>
+            <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+              Payoff: <span className="font-medium">{fmtDate(comparison.base.summary.payoffDate)}</span>
             </p>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="text-xs" style={{ color: "var(--color-text-subtle)" }}>
               {comparison.base.summary.actualTermMonths} months
             </p>
           </div>
-          <div className="rounded-lg bg-white dark:bg-zinc-950 border border-emerald-200 dark:border-emerald-800 p-2 space-y-1">
-            <p className="text-[10px] font-semibold uppercase text-emerald-500 dark:text-emerald-400">
+          <div
+            className="space-y-1 rounded-lg border p-2"
+            style={{ backgroundColor: "var(--color-brand-subtle)", borderColor: "var(--color-brand)" }}
+          >
+            <p className="text-[10px] font-semibold uppercase" style={{ color: "var(--color-brand)" }}>
               Scenario
             </p>
-            <p className="text-xs text-zinc-700 dark:text-zinc-300">
+            <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
               Interest:{" "}
-              <span className="font-medium tabular-nums text-red-500 dark:text-red-400">
+              <span className="font-medium tabular-nums" style={{ color: "var(--color-danger)" }}>
                 {formatCurrency(comparison.scenario.summary.totalInterest, currencyCode)}
               </span>
             </p>
-            <p className="text-xs text-zinc-700 dark:text-zinc-300">
+            <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
               Payoff:{" "}
               <span className="font-medium">
                 {fmtDate(comparison.scenario.summary.payoffDate)}
               </span>
             </p>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="text-xs" style={{ color: "var(--color-text-subtle)" }}>
               {comparison.scenario.summary.actualTermMonths} months
             </p>
           </div>
           {(comparison.interestSaved > 0 || comparison.monthsSaved > 0) && (
-            <div className="col-span-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 p-2">
-              <p className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
+            <div
+              className="col-span-2 rounded-lg border p-2"
+              style={{ backgroundColor: "var(--color-success-subtle)", borderColor: "var(--color-success)" }}
+            >
+              <p className="text-[11px] font-semibold" style={{ color: "var(--color-success)" }}>
                 💚 You save{" "}
                 <span className="tabular-nums">
                   {formatCurrency(comparison.interestSaved, currencyCode)}
@@ -363,8 +390,11 @@ function WhatIfPanel({
             </div>
           )}
           {comparison.interestSaved < 0 && (
-            <div className="col-span-2 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-2">
-              <p className="text-[11px] font-semibold text-red-600 dark:text-red-400">
+            <div
+              className="col-span-2 rounded-lg border p-2"
+              style={{ backgroundColor: "var(--color-danger-subtle)", borderColor: "var(--color-danger)" }}
+            >
+              <p className="text-[11px] font-semibold" style={{ color: "var(--color-danger)" }}>
                 ⚠ This scenario costs{" "}
                 <span className="tabular-nums">
                   {formatCurrency(Math.abs(comparison.interestSaved), currencyCode)}
@@ -413,9 +443,9 @@ function AddLoanForm({
   }
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 space-y-4">
-      <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Add Active Loan</h2>
-      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+    <Card className="space-y-4">
+      <h2 className="text-sm font-semibold" style={{ color: "var(--color-text)" }}>Add Active Loan</h2>
+      <p className="text-xs" style={{ color: "var(--color-text-subtle)" }}>
         Enter your existing loan details. The loan will be immediately tracked as active.
       </p>
 
@@ -423,15 +453,15 @@ function AddLoanForm({
         {/* Row 1: Name, Lender, Currency */}
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="space-y-1">
-            <label className={labelCls}>Loan name</label>
+            <label className={labelCls} style={labelStyle}>Loan name</label>
             <input name="name" required placeholder="e.g. Home mortgage" className={inputCls} />
           </div>
           <div className="space-y-1">
-            <label className={labelCls}>Lender (optional)</label>
+            <label className={labelCls} style={labelStyle}>Lender (optional)</label>
             <input name="lender" placeholder="e.g. UBS" className={inputCls} />
           </div>
           <div className="space-y-1">
-            <label className={labelCls}>Currency</label>
+            <label className={labelCls} style={labelStyle}>Currency</label>
             <input
               name="currencyCode"
               required
@@ -447,7 +477,7 @@ function AddLoanForm({
         {/* Row 2: Principal, Rate, Term, Start date */}
         <div className="grid gap-3 sm:grid-cols-4">
           <div className="space-y-1">
-            <label className={labelCls}>Principal ({currency})</label>
+            <label className={labelCls} style={labelStyle}>Principal ({currency})</label>
             <input
               name="principal"
               type="number"
@@ -459,7 +489,7 @@ function AddLoanForm({
             />
           </div>
           <div className="space-y-1">
-            <label className={labelCls}>Annual rate (%)</label>
+            <label className={labelCls} style={labelStyle}>Annual rate (%)</label>
             <input
               name="interestRate"
               type="number"
@@ -471,7 +501,7 @@ function AddLoanForm({
             />
           </div>
           <div className="space-y-1">
-            <label className={labelCls}>Term (months)</label>
+            <label className={labelCls} style={labelStyle}>Term (months)</label>
             <input
               name="termMonths"
               type="number"
@@ -483,7 +513,7 @@ function AddLoanForm({
             />
           </div>
           <div className="space-y-1">
-            <label className={labelCls}>Start date</label>
+            <label className={labelCls} style={labelStyle}>Start date</label>
             <input
               name="startDate"
               type="date"
@@ -497,7 +527,7 @@ function AddLoanForm({
         {/* Row 3: Asset, Notes */}
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
-            <label className={labelCls}>Link to asset (optional)</label>
+            <label className={labelCls} style={labelStyle}>Link to asset (optional)</label>
             <select name="assetId" className={inputCls}>
               <option value="">— no asset linked —</option>
               {availableAssets.map((a) => (
@@ -508,19 +538,23 @@ function AddLoanForm({
             </select>
           </div>
           <div className="space-y-1">
-            <label className={labelCls}>Notes (optional)</label>
+            <label className={labelCls} style={labelStyle}>Notes (optional)</label>
             <input name="notes" placeholder="Any additional notes" className={inputCls} />
           </div>
         </div>
 
         {/* Row 4: Disbursement account + date (optional) */}
-        <div className="rounded-lg border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 p-3 space-y-3">
-          <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
+        <div className="rounded-lg border p-3 space-y-3"
+      style={{ backgroundColor: "var(--color-bg)", borderColor: "var(--color-border)" }}>
+          <p
+            className="text-[11px] font-medium uppercase tracking-widest"
+            style={{ color: "var(--color-text-subtle)" }}
+          >
             Bank disbursement (optional)
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1">
-              <label className={labelCls}>Linked account</label>
+              <label className={labelCls} style={labelStyle}>Linked account</label>
               <select name="accountId" className={inputCls}>
                 <option value="">— skip —</option>
                 {accounts
@@ -533,11 +567,11 @@ function AddLoanForm({
               </select>
             </div>
             <div className="space-y-1">
-              <label className={labelCls}>Disbursement date</label>
+              <label className={labelCls} style={labelStyle}>Disbursement date</label>
               <input name="disbursementDate" type="date" defaultValue={todayISO()} className={inputCls} />
             </div>
           </div>
-          <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
+          <p className="text-[10px]" style={{ color: "var(--color-text-subtle)" }}>
             If set, records the loan proceeds as a cash inflow on the selected account.
           </p>
         </div>
@@ -551,7 +585,7 @@ function AddLoanForm({
           </button>
         </div>
       </form>
-    </div>
+    </Card>
   );
 }
 
@@ -614,24 +648,25 @@ function NewSimulationForm({
   }
 
   return (
-    <div className="rounded-xl border border-dashed border-zinc-300 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-950 space-y-4">
-      <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
-        New loan simulation
-      </h2>
+    <Card
+      className="space-y-4"
+      style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", borderStyle: "dashed" }}
+    >
+      <CardTitle className="tracking-widest">New loan simulation</CardTitle>
 
       <form ref={formRef} action={handleSubmit} className="space-y-4">
         {/* Row 1: Name, Lender, Currency */}
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="space-y-1">
-            <label className={labelCls}>Loan name</label>
+            <label className={labelCls} style={labelStyle}>Loan name</label>
             <input name="name" required placeholder="e.g. Home mortgage" className={inputCls} />
           </div>
           <div className="space-y-1">
-            <label className={labelCls}>Lender</label>
+            <label className={labelCls} style={labelStyle}>Lender</label>
             <input name="lender" required placeholder="e.g. UBS" className={inputCls} />
           </div>
           <div className="space-y-1">
-            <label className={labelCls}>Currency</label>
+            <label className={labelCls} style={labelStyle}>Currency</label>
             <input
               name="currencyCode"
               required
@@ -647,7 +682,7 @@ function NewSimulationForm({
         {/* Row 2: Principal, Rate, Term, Start date */}
         <div className="grid gap-3 sm:grid-cols-4">
           <div className="space-y-1">
-            <label className={labelCls}>Principal ({currency})</label>
+            <label className={labelCls} style={labelStyle}>Principal ({currency})</label>
             <input
               name="principal"
               type="number"
@@ -661,7 +696,7 @@ function NewSimulationForm({
             />
           </div>
           <div className="space-y-1">
-            <label className={labelCls}>Annual rate (%)</label>
+            <label className={labelCls} style={labelStyle}>Annual rate (%)</label>
             <input
               name="interestRate"
               type="number"
@@ -675,7 +710,7 @@ function NewSimulationForm({
             />
           </div>
           <div className="space-y-1">
-            <label className={labelCls}>Term (months)</label>
+            <label className={labelCls} style={labelStyle}>Term (months)</label>
             <input
               name="termMonths"
               type="number"
@@ -689,7 +724,7 @@ function NewSimulationForm({
             />
           </div>
           <div className="space-y-1">
-            <label className={labelCls}>Start date</label>
+            <label className={labelCls} style={labelStyle}>Start date</label>
             <input
               name="startDate"
               type="date"
@@ -704,7 +739,7 @@ function NewSimulationForm({
         {/* Row 3: Asset + Notes */}
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
-            <label className={labelCls}>Link to asset (optional)</label>
+            <label className={labelCls} style={labelStyle}>Link to asset (optional)</label>
             <select name="assetId" className={inputCls}>
               <option value="">— no asset linked —</option>
               {availableAssets.map((a) => (
@@ -715,43 +750,46 @@ function NewSimulationForm({
             </select>
           </div>
           <div className="space-y-1">
-            <label className={labelCls}>Notes (optional)</label>
+            <label className={labelCls} style={labelStyle}>Notes (optional)</label>
             <input name="notes" placeholder="Any additional notes" className={inputCls} />
           </div>
         </div>
 
         {/* Live preview */}
         {preview && (
-          <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div
+            className="grid grid-cols-2 gap-3 rounded-lg border p-3 sm:grid-cols-4"
+            style={{ backgroundColor: "var(--color-brand-subtle)", borderColor: "var(--color-brand)" }}
+          >
             <div>
-              <p className="text-[10px] font-semibold uppercase text-blue-500 dark:text-blue-400">
+              <p className="text-[10px] font-semibold uppercase" style={{ color: "var(--color-brand)" }}>
                 Total interest
               </p>
-              <p className="text-sm font-bold tabular-nums text-red-500 dark:text-red-400">
+              <p className="text-sm font-bold tabular-nums" style={{ color: "var(--color-danger)" }}>
                 {formatCurrency(preview.summary.totalInterest, currency)}
               </p>
             </div>
             <div>
-              <p className="text-[10px] font-semibold uppercase text-blue-500 dark:text-blue-400">
+              <p className="text-[10px] font-semibold uppercase" style={{ color: "var(--color-brand)" }}>
                 Total paid
               </p>
-              <p className="text-sm font-bold tabular-nums text-zinc-800 dark:text-zinc-200">
+              <p className="text-sm font-bold tabular-nums" style={{ color: "var(--color-text)" }}>
                 {formatCurrency(preview.summary.totalPaid, currency)}
               </p>
             </div>
             <div>
-              <p className="text-[10px] font-semibold uppercase text-blue-500 dark:text-blue-400">
+              <p className="text-[10px] font-semibold uppercase" style={{ color: "var(--color-brand)" }}>
                 Payoff date
               </p>
-              <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200">
+              <p className="text-sm font-bold" style={{ color: "var(--color-text)" }}>
                 {fmtDate(preview.summary.payoffDate)}
               </p>
             </div>
             <div>
-              <p className="text-[10px] font-semibold uppercase text-blue-500 dark:text-blue-400">
+              <p className="text-[10px] font-semibold uppercase" style={{ color: "var(--color-brand)" }}>
                 1st / last payment
               </p>
-              <p className="text-xs tabular-nums text-zinc-700 dark:text-zinc-300">
+              <p className="text-xs tabular-nums" style={{ color: "var(--color-text-muted)" }}>
                 {firstPayment ? formatCurrency(firstPayment.totalPayment, currency) : "—"}
                 {" / "}
                 {lastPayment ? formatCurrency(lastPayment.totalPayment, currency) : "—"}
@@ -769,7 +807,7 @@ function NewSimulationForm({
           </button>
         </div>
       </form>
-    </div>
+    </Card>
   );
 }
 
@@ -803,13 +841,13 @@ function PromoteForm({
   }
 
   return (
-    <form action={handleSubmit} className="space-y-3 pt-2 border-t border-zinc-100 dark:border-zinc-800">
-      <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+    <form action={handleSubmit} className="space-y-3 border-t pt-2" style={{ borderColor: "var(--color-border)" }}>
+      <p className="text-xs font-medium" style={{ color: "var(--color-text-muted)" }}>
         Promote to active loan
       </p>
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
-          <label className={labelCls}>Disbursement account (optional)</label>
+          <label className={labelCls} style={labelStyle}>Disbursement account (optional)</label>
           <select name="accountId" className={inputCls}>
             <option value="">— not linked —</option>
             {accounts
@@ -822,7 +860,7 @@ function PromoteForm({
           </select>
         </div>
         <div className="space-y-1">
-          <label className={labelCls}>Disbursement date</label>
+          <label className={labelCls} style={labelStyle}>Disbursement date</label>
           <input name="disbursementDate" type="date" defaultValue={todayISO()} className={inputCls} />
         </div>
       </div>
@@ -881,17 +919,17 @@ function SimulationCard({
   const monthlyFirst = loan.schedule.schedule.find((r) => !r.isExtraAmortization);
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4 space-y-3 dark:border-zinc-800 dark:bg-zinc-950">
+    <Card className="space-y-3">
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="space-y-0.5">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{loan.name}</p>
+            <p className="text-sm font-semibold" style={{ color: "var(--color-text)" }}>{loan.name}</p>
             <StatusBadge status={loan.status} />
           </div>
-          <p className="text-[11px] text-zinc-500 dark:text-zinc-400">{loan.lender}</p>
+          <p className="text-[11px]" style={{ color: "var(--color-text-subtle)" }}>{loan.lender}</p>
         </div>
-        <span className="text-[10px] uppercase tracking-widest font-semibold text-zinc-400 dark:text-zinc-500 mt-0.5">
+        <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-widest" style={{ color: "var(--color-text-subtle)" }}>
           {loan.currencyCode}
         </span>
       </div>
@@ -899,50 +937,50 @@ function SimulationCard({
       {/* Key numbers */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
         <div>
-          <p className="text-zinc-500 dark:text-zinc-400">Principal</p>
-          <p className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
+          <p style={{ color: "var(--color-text-subtle)" }}>Principal</p>
+          <p className="font-semibold tabular-nums" style={{ color: "var(--color-text)" }}>
             {formatCurrency(loan.principal, loan.currencyCode)}
           </p>
         </div>
         <div>
-          <p className="text-zinc-500 dark:text-zinc-400">Rate / Term</p>
-          <p className="font-semibold text-zinc-700 dark:text-zinc-300">
+          <p style={{ color: "var(--color-text-subtle)" }}>Rate / Term</p>
+          <p className="font-semibold" style={{ color: "var(--color-text-muted)" }}>
             {loan.interestRate}% · {loan.termMonths}m
           </p>
         </div>
         <div>
-          <p className="text-zinc-500 dark:text-zinc-400">Total interest</p>
-          <p className="font-semibold tabular-nums text-red-500 dark:text-red-400">
+          <p style={{ color: "var(--color-text-subtle)" }}>Total interest</p>
+          <p className="font-semibold tabular-nums" style={{ color: "var(--color-danger)" }}>
             {formatCurrency(s.totalInterest, loan.currencyCode)}
           </p>
         </div>
         <div>
-          <p className="text-zinc-500 dark:text-zinc-400">Payoff date</p>
-          <p className="font-semibold text-zinc-700 dark:text-zinc-300">{fmtDate(s.payoffDate)}</p>
+          <p style={{ color: "var(--color-text-subtle)" }}>Payoff date</p>
+          <p className="font-semibold" style={{ color: "var(--color-text-muted)" }}>{fmtDate(s.payoffDate)}</p>
         </div>
         {monthlyFirst && (
           <div>
-            <p className="text-zinc-500 dark:text-zinc-400">1st payment</p>
-            <p className="font-medium tabular-nums text-zinc-700 dark:text-zinc-300">
+            <p style={{ color: "var(--color-text-subtle)" }}>1st payment</p>
+            <p className="font-medium tabular-nums" style={{ color: "var(--color-text-muted)" }}>
               {formatCurrency(monthlyFirst.totalPayment, loan.currencyCode)}
             </p>
           </div>
         )}
         <div>
-          <p className="text-zinc-500 dark:text-zinc-400">Total paid</p>
-          <p className="font-medium tabular-nums text-zinc-700 dark:text-zinc-300">
+          <p style={{ color: "var(--color-text-subtle)" }}>Total paid</p>
+          <p className="font-medium tabular-nums" style={{ color: "var(--color-text-muted)" }}>
             {formatCurrency(s.totalPaid, loan.currencyCode)}
           </p>
         </div>
         {loan.notes && (
           <div className="sm:col-span-2">
-            <p className="text-zinc-400 dark:text-zinc-500 italic">{loan.notes}</p>
+            <p className="italic" style={{ color: "var(--color-text-subtle)" }}>{loan.notes}</p>
           </div>
         )}
       </div>
 
       {/* Actions */}
-      <div className="flex flex-wrap gap-3 border-t border-zinc-100 dark:border-zinc-800 pt-2">
+      <div className="flex flex-wrap gap-3 border-t pt-2" style={{ borderColor: "var(--color-border)" }}>
         <button onClick={() => { setShowPromote((v) => !v); setShowEdit(false); }} className={ghostBtnCls}>
           {showPromote ? "Cancel promote" : "✓ Promote to active"}
         </button>
@@ -955,7 +993,7 @@ function SimulationCard({
         <button onClick={() => setShowWhatIf((v) => !v)} className={ghostBtnCls}>
           {showWhatIf ? "Hide what-if" : "What-if analysis"}
         </button>
-        <button onClick={handleDelete} disabled={deleting} className={dangerBtnCls}>
+        <button onClick={handleDelete} disabled={deleting} className={dangerBtnCls} style={{ color: "var(--color-danger)" }}>
           {deleting ? "Deleting…" : "Delete"}
         </button>
       </div>
@@ -964,40 +1002,46 @@ function SimulationCard({
       {showEdit && (
         <form
           action={async (fd) => { fd.set("loanId", loan.id); fd.set("year", String(year)); await updateSimulation(fd); setShowEdit(false); }}
-          className="space-y-3 border-t border-zinc-100 dark:border-zinc-800 pt-3"
+          className="space-y-3 border-t pt-3"
+          style={{ borderColor: "var(--color-border)" }}
         >
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Edit simulation</p>
+          <p
+            className="text-[11px] font-semibold uppercase tracking-widest"
+            style={{ color: "var(--color-text-subtle)" }}
+          >
+            Edit simulation
+          </p>
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
-              <label className={labelCls}>Name</label>
+              <label className={labelCls} style={labelStyle}>Name</label>
               <input name="name" type="text" required defaultValue={loan.name} className={inputCls} />
             </div>
             <div>
-              <label className={labelCls}>Lender</label>
+              <label className={labelCls} style={labelStyle}>Lender</label>
               <input name="lender" type="text" defaultValue={loan.lender ?? ""} className={inputCls} />
             </div>
             <div>
-              <label className={labelCls}>Currency</label>
+              <label className={labelCls} style={labelStyle}>Currency</label>
               <input name="currencyCode" type="text" required defaultValue={loan.currencyCode} maxLength={3} className={inputCls} />
             </div>
             <div>
-              <label className={labelCls}>Principal</label>
+              <label className={labelCls} style={labelStyle}>Principal</label>
               <input name="principal" type="number" min="1" step="0.01" required defaultValue={loan.principal} className={inputCls} />
             </div>
             <div>
-              <label className={labelCls}>Annual rate (%)</label>
+              <label className={labelCls} style={labelStyle}>Annual rate (%)</label>
               <input name="interestRate" type="number" min="0.01" step="0.01" required defaultValue={loan.interestRate} className={inputCls} />
             </div>
             <div>
-              <label className={labelCls}>Term (months)</label>
+              <label className={labelCls} style={labelStyle}>Term (months)</label>
               <input name="termMonths" type="number" min="1" step="1" required defaultValue={loan.termMonths} className={inputCls} />
             </div>
             <div>
-              <label className={labelCls}>Start date</label>
+              <label className={labelCls} style={labelStyle}>Start date</label>
               <input name="startDate" type="date" required defaultValue={new Date(loan.startDate).toISOString().split("T")[0]} className={inputCls} />
             </div>
             <div className="col-span-2">
-              <label className={labelCls}>Notes</label>
+              <label className={labelCls} style={labelStyle}>Notes</label>
               <input name="notes" type="text" defaultValue={loan.notes ?? ""} className={inputCls} />
             </div>
           </div>
@@ -1013,7 +1057,7 @@ function SimulationCard({
       {/* Schedule table */}
       {expanded && (
         <div className="space-y-1">
-          <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
+          <p className="text-[11px] font-medium" style={{ color: "var(--color-text-subtle)" }}>
             Full amortization schedule ({s.actualTermMonths} payments)
           </p>
           <ScheduleTable rows={loan.schedule.schedule} currencyCode={loan.currencyCode} />
@@ -1031,7 +1075,7 @@ function SimulationCard({
           termMonths={loan.termMonths}
         />
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -1070,10 +1114,10 @@ function RecordPaymentForm({
 
   return (
     <form action={handleSubmit} className="space-y-3">
-      <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Record payment</p>
+      <p className="text-xs font-medium" style={{ color: "var(--color-text-muted)" }}>Record payment</p>
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
-          <label className={labelCls}>Total amount ({loan.currencyCode})</label>
+          <label className={labelCls} style={labelStyle}>Total amount ({loan.currencyCode})</label>
           <input
             name="totalAmount"
             type="number"
@@ -1086,7 +1130,7 @@ function RecordPaymentForm({
           />
         </div>
         <div className="space-y-1">
-          <label className={labelCls}>Principal part</label>
+          <label className={labelCls} style={labelStyle}>Principal part</label>
           <input
             name="principalAmount"
             type="number"
@@ -1099,7 +1143,7 @@ function RecordPaymentForm({
           />
         </div>
         <div className="space-y-1">
-          <label className={labelCls}>Interest part</label>
+          <label className={labelCls} style={labelStyle}>Interest part</label>
           <input
             name="interestAmount"
             type="number"
@@ -1112,7 +1156,7 @@ function RecordPaymentForm({
           />
         </div>
         <div className="space-y-1">
-          <label className={labelCls}>Remaining balance after</label>
+          <label className={labelCls} style={labelStyle}>Remaining balance after</label>
           <input
             name="remainingBalance"
             type="number"
@@ -1125,11 +1169,11 @@ function RecordPaymentForm({
           />
         </div>
         <div className="space-y-1">
-          <label className={labelCls}>Payment date</label>
+          <label className={labelCls} style={labelStyle}>Payment date</label>
           <input name="paymentDate" type="date" required defaultValue={todayISO()} className={inputCls} />
         </div>
         <div className="space-y-1">
-          <label className={labelCls}>Account (optional)</label>
+          <label className={labelCls} style={labelStyle}>Account (optional)</label>
           <select name="accountId" className={inputCls}>
             <option value="">— not linked —</option>
             {accounts
@@ -1186,10 +1230,10 @@ function RecordAmortizationForm({
 
   return (
     <form action={handleSubmit} className="space-y-3">
-      <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Record extra amortization</p>
+      <p className="text-xs font-medium" style={{ color: "var(--color-text-muted)" }}>Record extra amortization</p>
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
-          <label className={labelCls}>Amount ({loan.currencyCode})</label>
+          <label className={labelCls} style={labelStyle}>Amount ({loan.currencyCode})</label>
           <input
             name="amount"
             type="number"
@@ -1201,11 +1245,11 @@ function RecordAmortizationForm({
           />
         </div>
         <div className="space-y-1">
-          <label className={labelCls}>Date</label>
+          <label className={labelCls} style={labelStyle}>Date</label>
           <input name="occurredAt" type="date" required defaultValue={todayISO()} className={inputCls} />
         </div>
         <div className="space-y-1 sm:col-span-2">
-          <label className={labelCls}>Account (optional)</label>
+          <label className={labelCls} style={labelStyle}>Account (optional)</label>
           <select name="accountId" className={inputCls}>
             <option value="">— not linked —</option>
             {accounts
@@ -1247,13 +1291,14 @@ function AssetSection({
   const ltv = asset.currentValue > 0 ? (loan.outstandingBalance / asset.currentValue) * 100 : null;
 
   return (
-    <div className="rounded-lg border border-zinc-100 dark:border-zinc-800 p-3 space-y-2">
+    <div className="rounded-lg border p-3 space-y-2"
+      style={{ borderColor: "var(--color-border)" }}>
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+          <p className="text-xs font-semibold" style={{ color: "var(--color-text)" }}>
             🏠 {asset.name}
           </p>
-          <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+          <p className="text-[11px]" style={{ color: "var(--color-text-subtle)" }}>
             {asset.kind} · purchased {fmtDate(asset.purchasedAt)} for{" "}
             {formatCurrency(asset.purchasePrice, asset.currencyCode)}
           </p>
@@ -1261,26 +1306,23 @@ function AssetSection({
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
         <div>
-          <p className="text-zinc-500 dark:text-zinc-400">Current value</p>
-          <p className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
+          <p style={{ color: "var(--color-text-subtle)" }}>Current value</p>
+          <p className="font-semibold tabular-nums" style={{ color: "var(--color-text)" }}>
             {asset.currentValue > 0
               ? formatCurrency(asset.currentValue, asset.currencyCode)
               : "—"}
           </p>
           {asset.latestValuation && (
-            <p className="text-[10px] text-zinc-400">
+            <p className="text-[10px]" style={{ color: "var(--color-text-subtle)" }}>
               as of {fmtDate(asset.latestValuation.valuedAt)}
             </p>
           )}
         </div>
         <div>
-          <p className="text-zinc-500 dark:text-zinc-400">Equity</p>
+          <p style={{ color: "var(--color-text-subtle)" }}>Equity</p>
           <p
-            className={`font-semibold tabular-nums ${
-              equity >= 0
-                ? "text-emerald-600 dark:text-emerald-400"
-                : "text-red-500 dark:text-red-400"
-            }`}
+            className="font-semibold tabular-nums"
+            style={{ color: equity >= 0 ? "var(--color-success)" : "var(--color-danger)" }}
           >
             {equity >= 0 ? "+" : ""}
             {formatCurrency(equity, asset.currencyCode)}
@@ -1288,23 +1330,25 @@ function AssetSection({
         </div>
         {ltv !== null && (
           <div>
-            <p className="text-zinc-500 dark:text-zinc-400">LTV ratio</p>
+            <p style={{ color: "var(--color-text-subtle)" }}>LTV ratio</p>
             <p
-              className={`font-semibold ${
-                ltv > 80
-                  ? "text-red-500 dark:text-red-400"
-                  : ltv > 60
-                  ? "text-amber-500 dark:text-amber-400"
-                  : "text-emerald-600 dark:text-emerald-400"
-              }`}
+              className="font-semibold"
+              style={{
+                color:
+                  ltv > 80
+                    ? "var(--color-danger)"
+                    : ltv > 60
+                    ? "var(--color-warning)"
+                    : "var(--color-success)",
+              }}
             >
               {ltv.toFixed(1)}%
             </p>
           </div>
         )}
         <div>
-          <p className="text-zinc-500 dark:text-zinc-400">Year-start value</p>
-          <p className="font-medium tabular-nums text-zinc-600 dark:text-zinc-300">
+          <p style={{ color: "var(--color-text-subtle)" }}>Year-start value</p>
+          <p className="font-medium tabular-nums" style={{ color: "var(--color-text-muted)" }}>
             {asset.yearStartValue > 0
               ? formatCurrency(asset.yearStartValue, asset.currencyCode)
               : "—"}
@@ -1422,38 +1466,44 @@ function ActiveLoanCard({
   const nextRows = regularRows.slice(loan.payments.length, loan.payments.length + 3);
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4 space-y-3 dark:border-zinc-800 dark:bg-zinc-950">
+    <Card className="space-y-3">
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="space-y-0.5">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{loan.name}</p>
+            <p className="text-sm font-semibold" style={{ color: "var(--color-text)" }}>{loan.name}</p>
             <StatusBadge status={loan.status} />
             {loan.asset && (
-              <span className="text-[10px] bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 px-1.5 py-0.5 rounded">
+              <span className="rounded px-1.5 py-0.5 text-[10px]" style={{ backgroundColor: "var(--color-surface-raised)", color: "var(--color-text-subtle)" }}>
                 🏠 {loan.asset.name}
               </span>
             )}
           </div>
-          <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+          <p className="text-[11px]" style={{ color: "var(--color-text-subtle)" }}>
             {loan.lender} · {loan.interestRate}% · started {fmtDate(loan.startDate)}
           </p>
         </div>
-        <span className="text-[10px] uppercase tracking-widest font-semibold text-zinc-400 dark:text-zinc-500 mt-0.5">
+        <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-widest" style={{ color: "var(--color-text-subtle)" }}>
           {loan.currencyCode}
         </span>
       </div>
 
       {/* Progress bar */}
       <div className="space-y-1">
-        <div className="flex items-center justify-between text-[10px] text-zinc-400 dark:text-zinc-500">
+        <div
+          className="flex items-center justify-between text-[10px]"
+          style={{ color: "var(--color-text-subtle)" }}
+        >
           <span>{progressPct.toFixed(1)}% repaid</span>
           <span>{remainingMonths}m remaining</span>
         </div>
-        <div className="h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+        <div className="h-1.5 overflow-hidden rounded-full" style={{ backgroundColor: "var(--color-surface-raised)" }}>
           <div
-            className="h-full bg-emerald-500 dark:bg-emerald-400 rounded-full transition-all"
-            style={{ width: `${progressPct}%` }}
+            className="h-full rounded-full transition-all"
+            style={{
+              backgroundColor: "var(--color-success)",
+              width: `${progressPct}%`,
+            }}
           />
         </div>
       </div>
@@ -1461,38 +1511,35 @@ function ActiveLoanCard({
       {/* Key numbers */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
         <div>
-          <p className="text-zinc-500 dark:text-zinc-400">Outstanding</p>
-          <p className="font-bold tabular-nums text-red-500 dark:text-red-400">
+          <p style={{ color: "var(--color-text-subtle)" }}>Outstanding</p>
+          <p className="font-bold tabular-nums" style={{ color: "var(--color-danger)" }}>
             {formatCurrency(loan.outstandingBalance, loan.currencyCode)}
           </p>
         </div>
         <div>
-          <p className="text-zinc-500 dark:text-zinc-400">Principal paid</p>
-          <p className="font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+          <p style={{ color: "var(--color-text-subtle)" }}>Principal paid</p>
+          <p className="font-semibold tabular-nums" style={{ color: "var(--color-success)" }}>
             {formatCurrency(loan.principalPaid, loan.currencyCode)}
           </p>
         </div>
         <div>
-          <p className="text-zinc-500 dark:text-zinc-400">Interest YTD</p>
-          <p className="font-semibold tabular-nums text-zinc-700 dark:text-zinc-300">
+          <p style={{ color: "var(--color-text-subtle)" }}>Interest YTD</p>
+          <p className="font-semibold tabular-nums" style={{ color: "var(--color-text-muted)" }}>
             {formatCurrency(loan.interestPaidYTD, loan.currencyCode)}
           </p>
         </div>
         <div>
-          <p className="text-zinc-500 dark:text-zinc-400">Payoff</p>
-          <p className="font-medium text-zinc-600 dark:text-zinc-400">
+          <p style={{ color: "var(--color-text-subtle)" }}>Payoff</p>
+          <p className="font-medium" style={{ color: "var(--color-text-muted)" }}>
             {fmtDate(loan.schedule.summary.payoffDate)}
           </p>
         </div>
         {equity !== null && (
           <div>
-            <p className="text-zinc-500 dark:text-zinc-400">Equity</p>
+            <p style={{ color: "var(--color-text-subtle)" }}>Equity</p>
             <p
-              className={`font-semibold tabular-nums ${
-                equity >= 0
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-red-500 dark:text-red-400"
-              }`}
+              className="font-semibold tabular-nums"
+              style={{ color: equity >= 0 ? "var(--color-success)" : "var(--color-danger)" }}
             >
               {equity >= 0 ? "+" : ""}
               {formatCurrency(equity, loan.currencyCode)}
@@ -1501,15 +1548,17 @@ function ActiveLoanCard({
         )}
         {ltv !== null && (
           <div>
-            <p className="text-zinc-500 dark:text-zinc-400">LTV</p>
+            <p style={{ color: "var(--color-text-subtle)" }}>LTV</p>
             <p
-              className={`font-semibold ${
-                ltv > 80
-                  ? "text-red-500 dark:text-red-400"
-                  : ltv > 60
-                  ? "text-amber-500 dark:text-amber-400"
-                  : "text-emerald-600 dark:text-emerald-400"
-              }`}
+              className="font-semibold"
+              style={{
+                color:
+                  ltv > 80
+                    ? "var(--color-danger)"
+                    : ltv > 60
+                    ? "var(--color-warning)"
+                    : "var(--color-success)",
+              }}
             >
               {ltv.toFixed(1)}%
             </p>
@@ -1519,25 +1568,29 @@ function ActiveLoanCard({
 
       {/* Next 3 months schedule preview */}
       {nextRows.length > 0 && (
-        <div className="rounded-lg border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 p-3 space-y-2">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+        <div className="rounded-lg border p-3 space-y-2"
+          style={{ backgroundColor: "var(--color-bg)", borderColor: "var(--color-border)" }}>
+          <p
+            className="text-[10px] font-semibold uppercase tracking-widest"
+            style={{ color: "var(--color-text-subtle)" }}
+          >
             Upcoming payments
           </p>
           <div className="space-y-1">
             {nextRows.map((row, i) => (
               <div key={i} className="flex items-center justify-between text-[11px] tabular-nums">
-                <span className="text-zinc-500 dark:text-zinc-400 min-w-[80px]">
+                <span className="min-w-[80px]" style={{ color: "var(--color-text-subtle)" }}>
                   {fmtShortDate(row.date)}
                 </span>
-                <span className="text-zinc-700 dark:text-zinc-300 font-medium">
+                <span className="font-medium" style={{ color: "var(--color-text-muted)" }}>
                   {formatCurrency(row.totalPayment, loan.currencyCode)}
                 </span>
-                <span className="text-zinc-400 dark:text-zinc-500 hidden sm:inline">
+                <span className="hidden sm:inline" style={{ color: "var(--color-text-subtle)" }}>
                   P: {formatCurrency(row.principalAmort, loan.currencyCode)}
                   {" · "}
                   I: {formatCurrency(row.interest, loan.currencyCode)}
                 </span>
-                <span className="text-teal-600 dark:text-teal-400">
+                <span style={{ color: "var(--color-brand)" }}>
                   → {formatCurrency(row.remainingBalance, loan.currencyCode)}
                 </span>
               </div>
@@ -1565,7 +1618,7 @@ function ActiveLoanCard({
       )}
 
       {/* Secondary actions */}
-      <div className="flex flex-wrap gap-3 border-t border-zinc-100 dark:border-zinc-800 pt-2">
+      <div className="flex flex-wrap gap-3 border-t pt-2" style={{ borderColor: "var(--color-border)" }}>
         <button
           onClick={() => { setShowAmortForm((v) => !v); setShowPayForm(false); setShowValForm(false); }}
           className={ghostBtnCls}
@@ -1592,7 +1645,7 @@ function ActiveLoanCard({
         <button onClick={() => setShowWhatIf((v) => !v)} className={ghostBtnCls}>
           {showWhatIf ? "Hide what-if" : "What-if analysis"}
         </button>
-        <button onClick={handleClose} disabled={closing} className={dangerBtnCls}>
+        <button onClick={handleClose} disabled={closing} className={dangerBtnCls} style={{ color: "var(--color-danger)" }}>
           {closing ? "Closing…" : "Close loan"}
         </button>
         <button onClick={handleDemote} className={ghostBtnCls}>
@@ -1624,9 +1677,13 @@ function ActiveLoanCard({
       {showLinkAsset && (
         <form
           action={async (fd) => { fd.set("loanId", loan.id); fd.set("year", String(year)); await linkAssetToLoan(fd); setShowLinkAsset(false); }}
-          className="space-y-2 border-t border-zinc-100 dark:border-zinc-800 pt-3"
+          className="space-y-2 border-t pt-3"
+          style={{ borderColor: "var(--color-border)" }}
         >
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+          <p
+            className="text-[11px] font-semibold uppercase tracking-widest"
+            style={{ color: "var(--color-text-subtle)" }}
+          >
             Link asset to this loan
           </p>
           <select name="assetId" className={inputCls}>
@@ -1637,7 +1694,7 @@ function ActiveLoanCard({
               </option>
             ))}
           </select>
-          <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
+          <p className="text-[10px]" style={{ color: "var(--color-text-subtle)" }}>
             Linking shows equity (asset value − outstanding balance) on this loan card.
           </p>
           <button type="submit" className={submitBtnCls}>Save link</button>
@@ -1654,7 +1711,7 @@ function ActiveLoanCard({
 
           {/* Remaining schedule */}
           <div className="space-y-1">
-            <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
+            <p className="text-[11px] font-medium" style={{ color: "var(--color-text-subtle)" }}>
               Full remaining schedule
             </p>
             <ScheduleTable
@@ -1666,34 +1723,38 @@ function ActiveLoanCard({
           {/* Payment history */}
           {loan.payments.length > 0 && (
             <div className="space-y-1">
-              <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
+              <p className="text-[11px] font-medium" style={{ color: "var(--color-text-subtle)" }}>
                 Payment history ({loan.payments.length})
               </p>
               <ul className="space-y-1">
                 {[...loan.payments].reverse().map((p) => (
-                  <li key={p.id} className="flex items-center justify-between gap-2 text-xs border-b border-zinc-50 dark:border-zinc-900 pb-1">
-                    <span className="text-zinc-400 dark:text-zinc-500 min-w-[80px]">
+                  <li
+                    key={p.id}
+                    className="flex items-center justify-between gap-2 border-b pb-1 text-xs"
+                    style={{ borderColor: "var(--color-border)" }}
+                  >
+                    <span className="min-w-[80px]" style={{ color: "var(--color-text-subtle)" }}>
                       {fmtDate(p.paymentDate)}
                     </span>
-                    <span className="font-medium tabular-nums text-zinc-800 dark:text-zinc-200">
+                    <span className="font-medium tabular-nums" style={{ color: "var(--color-text)" }}>
                       {formatCurrency(p.totalAmount, loan.currencyCode)}
                     </span>
-                    <span className="text-zinc-400 dark:text-zinc-500 tabular-nums text-[11px]">
+                    <span className="tabular-nums text-[11px]" style={{ color: "var(--color-text-subtle)" }}>
                       P:{formatCurrency(p.principalAmount, loan.currencyCode)}{" "}
                       I:{formatCurrency(p.interestAmount, loan.currencyCode)}
                     </span>
-                    <span className="text-teal-600 dark:text-teal-400 tabular-nums text-[11px]">
+                    <span className="tabular-nums text-[11px]" style={{ color: "var(--color-brand)" }}>
                       → {formatCurrency(p.remainingBalance, loan.currencyCode)}
                     </span>
                     {p.notes && (
-                      <span className="text-zinc-400 dark:text-zinc-500 italic truncate max-w-[120px]">
+                      <span className="max-w-[120px] truncate italic" style={{ color: "var(--color-text-subtle)" }}>
                         {p.notes}
                       </span>
                     )}
                     <button
                       type="button"
                       onClick={() => handleDeletePayment(p.id)}
-                      className="ml-auto text-red-400 hover:text-red-600 dark:text-red-500 dark:hover:text-red-400 text-[11px] shrink-0"
+                      className="ml-auto shrink-0 text-[11px]" style={{ color: "var(--color-danger)" }}
                       title="Delete payment"
                     >
                       ✕
@@ -1707,28 +1768,32 @@ function ActiveLoanCard({
           {/* Extra amortization history */}
           {loan.amortizations.length > 0 && (
             <div className="space-y-1">
-              <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
+              <p className="text-[11px] font-medium" style={{ color: "var(--color-text-subtle)" }}>
                 Extra amortizations ({loan.amortizations.length})
               </p>
               <ul className="space-y-1">
                 {[...loan.amortizations].reverse().map((a) => (
-                  <li key={a.id} className="flex items-center gap-2 text-xs border-b border-zinc-50 dark:border-zinc-900 pb-1">
-                    <span className="text-zinc-400 dark:text-zinc-500 min-w-[80px]">
+                  <li
+                    key={a.id}
+                    className="flex items-center gap-2 border-b pb-1 text-xs"
+                    style={{ borderColor: "var(--color-border)" }}
+                  >
+                    <span className="min-w-[80px]" style={{ color: "var(--color-text-subtle)" }}>
                       {fmtDate(a.occurredAt)}
                     </span>
-                    <span className="font-semibold tabular-nums text-amber-600 dark:text-amber-400">
+                    <span className="font-semibold tabular-nums" style={{ color: "var(--color-warning)" }}>
                       {formatCurrency(a.amount, loan.currencyCode)}
                     </span>
-                    <span className="text-zinc-400 dark:text-zinc-500">{a.kind}</span>
+                    <span style={{ color: "var(--color-text-subtle)" }}>{a.kind}</span>
                     {a.notes && (
-                      <span className="text-zinc-400 dark:text-zinc-500 italic truncate max-w-[160px]">
+                      <span className="max-w-[160px] truncate italic" style={{ color: "var(--color-text-subtle)" }}>
                         {a.notes}
                       </span>
                     )}
                     <button
                       type="button"
                       onClick={() => handleDeleteAmortization(a.id)}
-                      className="ml-auto text-red-400 hover:text-red-600 dark:text-red-500 dark:hover:text-red-400 text-[11px] shrink-0"
+                      className="ml-auto shrink-0 text-[11px]" style={{ color: "var(--color-danger)" }}
                       title="Delete amortization"
                     >
                       ✕
@@ -1742,16 +1807,16 @@ function ActiveLoanCard({
           {/* Asset valuation history */}
           {loan.asset && loan.asset.latestValuation && (
             <div className="space-y-1">
-              <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
+              <p className="text-[11px] font-medium" style={{ color: "var(--color-text-subtle)" }}>
                 Latest asset valuation
               </p>
-              <p className="text-xs text-zinc-600 dark:text-zinc-300">
+              <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
                 <span className="font-medium tabular-nums">
                   {formatCurrency(loan.asset.latestValuation.value, loan.asset.currencyCode)}
                 </span>{" "}
                 as of {fmtDate(loan.asset.latestValuation.valuedAt)}
                 {loan.asset.latestValuation.notes && (
-                  <span className="text-zinc-400 dark:text-zinc-500 ml-1">
+                  <span className="ml-1" style={{ color: "var(--color-text-subtle)" }}>
                     · {loan.asset.latestValuation.notes}
                   </span>
                 )}
@@ -1772,7 +1837,7 @@ function ActiveLoanCard({
           termMonths={remainingMonths}
         />
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -1841,15 +1906,15 @@ export function LoanList({ loanData, accounts, availableAssets, year }: LoanList
       {/* ── Active Loans (primary section) ── */}
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+          <h2
+            className="text-xs font-semibold uppercase tracking-widest"
+            style={{ color: "var(--color-text-subtle)" }}
+          >
             Active Loans {activeLoans.length > 0 && `(${activeLoans.length})`}
           </h2>
           {!showAddLoan && !activatingName && (
-            <button
-              onClick={() => setShowAddLoan(true)}
-              className="inline-flex items-center gap-2 rounded-full bg-zinc-900 px-4 py-2 text-xs font-medium text-zinc-50 hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200"
-            >
-              + Add Loan
+            <button onClick={() => setShowAddLoan(true)} className="btn-primary gap-2 text-xs">
+              Add Loan
             </button>
           )}
         </div>
@@ -1867,9 +1932,9 @@ export function LoanList({ loanData, accounts, availableAssets, year }: LoanList
 
         {/* Activating banner */}
         {activatingName && (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-900/20 px-4 py-3 flex items-center gap-3">
-            <span className="inline-block h-3 w-3 rounded-full bg-emerald-400 animate-pulse" />
-            <p className="text-sm text-emerald-700 dark:text-emerald-300">
+          <div className="flex items-center gap-3 rounded-xl border px-4 py-3" style={{ backgroundColor: "var(--color-success-subtle)", borderColor: "var(--color-success)" }}>
+            <span className="inline-block h-3 w-3 animate-pulse rounded-full" style={{ backgroundColor: "var(--color-success)" }} />
+            <p className="text-sm" style={{ color: "var(--color-success)" }}>
               Activating <span className="font-medium">{activatingName}</span>…
             </p>
           </div>
@@ -1884,11 +1949,11 @@ export function LoanList({ loanData, accounts, availableAssets, year }: LoanList
           </div>
         ) : (
           !showAddLoan && !activatingName && (
-            <div className="rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800 p-8 text-center">
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            <div className="rounded-xl border border-dashed p-8 text-center" style={{ borderColor: "var(--color-border)" }}>
+              <p className="text-sm" style={{ color: "var(--color-text-subtle)" }}>
                 No active loans yet.
               </p>
-              <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
+              <p className="mt-1 text-xs" style={{ color: "var(--color-text-subtle)" }}>
                 Add your first loan to start tracking payments and balance.
               </p>
             </div>
@@ -1901,7 +1966,7 @@ export function LoanList({ loanData, accounts, availableAssets, year }: LoanList
         <div className="flex items-center justify-between gap-3">
           <button
             onClick={() => setShowSimulations((v) => !v)}
-            className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300"
+            className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--color-text-subtle)" }}
           >
             <span>{showSimulations ? "▼" : "▶"}</span>
             Simulations {simulations.length > 0 && `(${simulations.length})`}
@@ -1909,7 +1974,7 @@ export function LoanList({ loanData, accounts, availableAssets, year }: LoanList
           {showSimulations && !showNewSim && (
             <button
               onClick={() => setShowNewSim(true)}
-              className="text-xs border border-zinc-300 dark:border-zinc-700 rounded-full px-3 py-1.5 font-medium text-zinc-600 dark:text-zinc-400 hover:border-zinc-500 dark:hover:border-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 transition"
+              className="btn-ghost text-xs"
             >
               + New Simulation
             </button>
@@ -1935,7 +2000,7 @@ export function LoanList({ loanData, accounts, availableAssets, year }: LoanList
               </div>
             ) : (
               !showNewSim && (
-                <p className="text-xs text-zinc-400 dark:text-zinc-500 py-2">
+                <p className="py-2 text-xs" style={{ color: "var(--color-text-subtle)" }}>
                   No simulations. Use simulations to model loans before committing.
                 </p>
               )
@@ -1949,25 +2014,25 @@ export function LoanList({ loanData, accounts, availableAssets, year }: LoanList
         <section className="space-y-3">
           <button
             onClick={() => setShowClosed((v) => !v)}
-            className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300"
+            className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--color-text-subtle)" }}
           >
             <span>{showClosed ? "▼" : "▶"}</span>
             Closed loans ({closedLoans.length})
           </button>
           {showClosed && (
-            <div className="rounded-xl border border-zinc-100 dark:border-zinc-800 divide-y divide-zinc-100 dark:divide-zinc-800">
+            <div className="rounded-xl border divide-y" style={{ borderColor: "var(--color-border)" }}>
               {closedLoans.map((loan) => (
                 <div key={loan.id} className="flex items-center justify-between gap-3 px-4 py-3">
                   <div>
-                    <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{loan.name}</p>
-                    <p className="text-[11px] text-zinc-400 dark:text-zinc-500">
+                    <p className="text-sm font-medium" style={{ color: "var(--color-text-muted)" }}>{loan.name}</p>
+                    <p className="text-[11px]" style={{ color: "var(--color-text-subtle)" }}>
                       {loan.lender} · {formatCurrency(loan.principal, loan.currencyCode)} ·{" "}
                       {loan.interestRate}% · started {fmtDate(loan.startDate)}
                     </p>
                   </div>
                   <div className="text-right">
                     <StatusBadge status="closed" />
-                    <p className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5">
+                    <p className="mt-0.5 text-[11px]" style={{ color: "var(--color-text-subtle)" }}>
                       {loan.payments.length} payments · interest paid{" "}
                       {formatCurrency(loan.interestPaidTotal, loan.currencyCode)}
                     </p>

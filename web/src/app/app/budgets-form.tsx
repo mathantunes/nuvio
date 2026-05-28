@@ -36,7 +36,7 @@ export function BudgetsForm({ suggestedYear }: Props) {
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <div className="space-y-1">
-        <label className="block text-xs font-medium text-zinc-900 dark:text-zinc-50">
+        <label className="block text-xs font-medium" style={{ color: "var(--color-text)" }}>
           Year
         </label>
         <input
@@ -46,22 +46,19 @@ export function BudgetsForm({ suggestedYear }: Props) {
           max={3000}
           value={year}
           onChange={(event) => setYear(event.target.value)}
-          className="block w-32 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 shadow-sm outline-none ring-0 transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+          className="input w-32 text-xs"
         />
       </div>
 
       {error ? (
-        <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
+        <p className="text-xs" style={{ color: "var(--color-danger)" }}>
+          {error}
+        </p>
       ) : null}
 
-      <button
-        type="submit"
-        disabled={isPending}
-        className="inline-flex items-center justify-center rounded-full bg-zinc-900 px-4 py-2 text-xs font-medium text-zinc-50 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-400 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200"
-      >
+      <button type="submit" disabled={isPending} className="btn-primary text-xs">
         {isPending ? "Creating…" : "Create budget"}
       </button>
     </form>
   );
 }
-

@@ -19,38 +19,58 @@ export default async function AppHomePage() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-4 py-16 text-center dark:bg-black">
-      <div className="w-full max-w-3xl space-y-6 rounded-2xl bg-white p-8 shadow-sm dark:bg-zinc-900">
-        <header className="space-y-2 text-left">
-          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+    <main
+      className="flex min-h-screen flex-col items-center justify-center px-4 py-16 text-center"
+      style={{ backgroundColor: "var(--color-bg)" }}
+    >
+      <div
+        className="w-full max-w-3xl space-y-6 rounded-2xl p-8 text-left shadow-sm"
+        style={{
+          backgroundColor: "var(--color-surface)",
+          border: "1px solid var(--color-border)",
+        }}
+      >
+        <header className="space-y-2">
+          <p
+            className="text-xs font-medium uppercase tracking-wide"
+            style={{ color: "var(--color-text-subtle)" }}
+          >
             {messages.common.appName}
           </p>
-          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+          <h1 className="text-2xl font-semibold" style={{ color: "var(--color-text)" }}>
             {messages.app.budgetsListTitle}
           </h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
             {messages.app.budgetsListSubtitle}
           </p>
         </header>
 
-        <section className="space-y-4 text-left">
-          <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950">
+        <section className="space-y-4">
+          <div
+            className="rounded-xl p-4"
+            style={{
+              backgroundColor: "var(--color-bg)",
+              border: "1px solid var(--color-border)",
+            }}
+          >
             {userBudgets.length === 0 ? (
-              <p className="text-xs text-zinc-600 dark:text-zinc-400">
+              <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
                 {messages.app.budgetsEmptyState}
               </p>
             ) : (
-              <ul className="divide-y divide-zinc-200 text-sm dark:divide-zinc-800">
-                {userBudgets.map((budget) => (
-                  <li key={budget.id} className="py-2">
+              <ul className="text-sm">
+                {userBudgets.map((budget, index) => (
+                  <li
+                    key={budget.id}
+                    className="py-2"
+                    style={index > 0 ? { borderTop: "1px solid var(--color-border)" } : undefined}
+                  >
                     <Link
                       href={`/app/${budget.year}`}
-                      className="flex items-center justify-between gap-3 rounded-lg px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      className="flex items-center justify-between gap-3 rounded-lg px-2 py-1 transition-opacity hover:opacity-80"
                     >
-                      <span className="text-zinc-900 dark:text-zinc-50">
-                        {budget.year}
-                      </span>
-                      <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                      <span style={{ color: "var(--color-text)" }}>{budget.year}</span>
+                      <span className="text-xs" style={{ color: "var(--color-text-subtle)" }}>
                         Open
                       </span>
                     </Link>
@@ -60,13 +80,19 @@ export default async function AppHomePage() {
             )}
           </div>
 
-          <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950">
+          <div
+            className="rounded-xl border border-dashed p-4"
+            style={{
+              backgroundColor: "var(--color-bg)",
+              borderColor: "var(--color-border)",
+            }}
+          >
             <div className="flex items-center justify-between gap-2">
               <div>
-                <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                <h2 className="text-sm font-semibold" style={{ color: "var(--color-text)" }}>
                   {messages.app.budgetsCreateLabel}
                 </h2>
-                <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                <p className="mt-1 text-xs" style={{ color: "var(--color-text-muted)" }}>
                   {messages.app.budgetsCreateHelper}
                 </p>
               </div>
@@ -80,4 +106,3 @@ export default async function AppHomePage() {
     </main>
   );
 }
-

@@ -1,13 +1,14 @@
 import { redirect } from "next/navigation";
 import { AuthService } from "@/lib/auth-service";
-import { 
-  fetchDashboardData, 
-  calculateSavingsData, 
+import {
+  fetchDashboardData,
+  calculateSavingsData,
   getYtdTotals,
-  type CurrencyTotals 
+  type CurrencyTotals,
 } from "@/lib/dashboard-computations";
 import { fetchPortfolioData } from "@/lib/portfolio-computations";
 import { fetchLoanData } from "@/lib/loan-computations";
+import { Card, CardHeader, CardTitle, Table, Thead, Tbody, Tfoot, Th, Td, Tr } from "@/components/ui";
 import { formatCurrency } from "./planning/currency-format";
 
 export default async function BudgetDashboardPage({
@@ -31,12 +32,15 @@ export default async function BudgetDashboardPage({
     return (
       <div className="space-y-6">
         <header className="space-y-1">
-          <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">Dashboard</h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">{year} budget overview</p>
+          <h1 className="text-xl font-semibold" style={{ color: "var(--color-text)" }}>
+            Dashboard
+          </h1>
+          <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
+            {year} budget overview
+          </p>
         </header>
 
-        {/* KPI Cards — YTD plan vs actual, per currency with percentage */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <MultiCurrencyCard
             label="Income"
             ytdPlanned={ytdTotals.income.planned}
@@ -51,338 +55,293 @@ export default async function BudgetDashboardPage({
           />
         </div>
 
-        {/* Monthly Breakdown */}
-        <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-          <h2 className="mb-3 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-            Monthly Breakdown
+        <Card>
+          <h2 className="mb-3 text-sm font-semibold" style={{ color: "var(--color-text)" }}>
+            Year at a Glance
           </h2>
           <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-zinc-200 dark:border-zinc-800">
-                  <th className="py-2 pr-3 text-left font-medium text-zinc-500 dark:text-zinc-400 w-12">
-                    Month
-                  </th>
-                  <th className="py-2 px-2 text-right font-medium text-zinc-500 dark:text-zinc-400">
-                    Income
-                  </th>
-                  <th className="py-2 px-2 text-right font-medium text-zinc-500 dark:text-zinc-400">
-                    Expenses
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-900">
+            <div style={{ minWidth: "640px" }}>
+              {/* Month headers */}
+              <div className="grid grid-cols-12 gap-px mb-1">
                 {data.monthlyData.map((m) => {
-                  const isFuture = m.month - 1 > data.currentMonthIdx;
-                  const hasActivity =
-                    Object.keys(m.actualIncome).length > 0 ||
-                    Object.keys(m.actualExpenses).length > 0;
-                  const currencies = Object.keys(m.plannedIncome);
-
+                  const isCurrent = m.month - 1 === data.currentMonthIdx;
                   return (
-                    <tr
+                    <div
                       key={m.month}
+                      className="px-1 py-1 text-center text-[10px] font-semibold uppercase tracking-wider rounded"
+                      style={{
+                        color: isCurrent ? "var(--color-brand)" : "var(--color-text-subtle)",
+                        backgroundColor: isCurrent ? "var(--color-brand-subtle)" : "transparent",
+                      }}
                     >
-                      <td className="py-2 pr-3 font-medium text-zinc-900 dark:text-zinc-50 whitespace-nowrap">
-                        {m.name}
-                      </td>
-                      <td className="py-2 px-2 text-right text-zinc-500 dark:text-zinc-400">
-                        <div className={`grid grid-rows-${currencies.length} items-start`}>
-                          {currencies.length > 0 &&
-                            (Object.entries(m.plannedIncome).map(([currency, plannedIncome]) =>
-                              <div key={currency} className={`px-2 text-right ${isFuture ? "opacity-30" : ""}`}>
-                                <span className={`${(m.actualIncome[currency] ?? 0) > (plannedIncome as number)
-                                  ? "text-emerald-600 dark:text-emerald-400"
-                                  : "font-semibold text-red-400 dark:text-red-400"}`}>{formatCurrency(m.actualIncome[currency] ?? 0, currency)}</span> / {formatCurrency(plannedIncome as number, currency)}
-                              </div>
-                            ))}
-                        </div>
-                      </td>
-                      <td className="py-2 px-2 text-right text-zinc-500 dark:text-zinc-400">
-                        <div className={`grid grid-rows-${currencies.length} items-start`}>
-                          {currencies.length > 0 &&
-                            (Object.entries(m.plannedExpenses).map(([currency, plannedExpenses]) =>
-                              <div key={currency} className={`px-2 text-right ${isFuture ? "opacity-30" : ""}`}>
-                                <span className={`${(m.actualExpenses[currency] ?? 0) < (plannedExpenses as number)
-                                  ? "text-emerald-600 dark:text-emerald-400"
-                                  : "font-semibold text-red-400 dark:text-red-400"}`}>{formatCurrency(m.actualExpenses[currency] ?? 0, currency)}</span> / {formatCurrency(plannedExpenses as number, currency)}
-                              </div>
-                            ))}
-                        </div>
-                      </td>
-                    </tr>
+                      {m.name.slice(0, 3)}
+                    </div>
                   );
                 })}
-              </tbody>
-              <tfoot>
-                <tr className="border-t-2 border-zinc-300 font-semibold text-zinc-900 dark:border-zinc-800 dark:text-zinc-50">
-                  <td className="py-2 pr-3">Total</td>
-                  <td className="py-2 px-2 text-right">
-                    <div className={`grid grid-rows-${Object.keys(data.yearIncomePlanned).length} items-start`}>
-                      {Object.entries(data.yearIncomePlanned).map(([currency, yearIncomePlanned]) =>
-                        <div key={currency} className={`px-2 text-right`}>
-                          <span className={`${(data.yearIncomeActual[currency] ?? 0) > (yearIncomePlanned as number)
-                            ? "text-emerald-600 dark:text-emerald-400"
-                            : "font-semibold text-red-400 dark:text-red-400"}`}>{formatCurrency(data.yearIncomeActual[currency] ?? 0, currency)}</span> / {formatCurrency(yearIncomePlanned as number, currency)}
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="py-2 px-2 text-right">
-                    <div className={`grid grid-rows-${Object.keys(data.yearExpensesPlanned).length} items-start`}>
-                      {Object.entries(data.yearExpensesPlanned).map(([currency, yearExpensesPlanned]) =>
-                        <div key={currency} className={`px-2 text-right`}>
-                          <span className={`${(data.yearExpensesActual[currency] ?? 0) < (yearExpensesPlanned as number)
-                            ? "text-emerald-600 dark:text-emerald-400"
-                            : "font-semibold text-red-400 dark:text-red-400"}`}>{formatCurrency(data.yearExpensesActual[currency] ?? 0, currency)}</span> / {formatCurrency(yearExpensesPlanned as number, currency)}
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </div>
+              </div>
 
-        {/* Net Balance + Savings + Transfers */}
-        <div className="grid gap-3">
-          <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">FX Transfers</p>
-              <a
-                href={`/app/${year}/fx`}
-                className="text-xs text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50 underline"
-              >
-                Manage →
-              </a>
-            </div>
-            {data.yearTransfers.length > 0 ? (
-              <div className="mt-3 space-y-2">
-                {/* Individual transfer lines */}
-                <div className="space-y-1 max-h-32 overflow-y-auto">
-                  {data.yearTransfers.map((transfer) => {
-                    const totalFees = Number(transfer.feeAmount || 0) + Number(transfer.taxAmount || 0);
+              {/* Income row */}
+              <div className="mb-1">
+                <div className="grid grid-cols-12 gap-px rounded-lg overflow-hidden" style={{ backgroundColor: "var(--color-border)" }}>
+                  {data.monthlyData.map((m) => {
+                    const isFuture = m.month - 1 > data.currentMonthIdx;
+                    const currencies = Object.keys(m.plannedIncome);
                     return (
-                      <div key={transfer.id} className="flex items-center gap-2 text-xs">
-                        <span className="tabular-nums text-zinc-900 dark:text-zinc-50">
-                          {formatCurrency(Number(transfer.sourceAmount), transfer.sourceCurrencyCode)}
-                        </span>
-                        <span className="text-zinc-400 dark:text-zinc-600">→</span>
-                        <span className="tabular-nums text-emerald-600 dark:text-emerald-400">
-                          +{formatCurrency(Number(transfer.targetAmount), transfer.targetCurrencyCode)}
-                        </span>
-                        {totalFees > 0 && (
-                          <span className="text-zinc-500 dark:text-zinc-400">
-                            (fees: {formatCurrency(totalFees, transfer.sourceCurrencyCode)})
-                          </span>
-                        )}
+                      <div
+                        key={m.month}
+                        className="px-1.5 py-2 text-[10px] tabular-nums"
+                        style={{ backgroundColor: "var(--color-surface)", opacity: isFuture ? 0.4 : 1 }}
+                      >
+                        <div className="mb-0.5 text-[9px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-subtle)" }}>Inc</div>
+                        {currencies.length === 0 ? <span style={{ color: "var(--color-text-subtle)" }}>—</span> : currencies.map((cur) => {
+                          const actual = m.actualIncome[cur] ?? 0;
+                          const planned = m.plannedIncome[cur] as number ?? 0;
+                          const ok = actual >= planned;
+                          return (
+                           <div key={cur} className="truncate" style={{ color: ok ? "var(--color-text)" : "var(--color-off-track)" }}>
+                              {formatCurrency(actual, cur)}
+                            </div>
+                          );
+                        })}
                       </div>
                     );
                   })}
                 </div>
+              </div>
 
-                {/* Net impact by currency */}
-                <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800">
-                  <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Net Transfer Impact</p>
-                  <div className="space-y-1">
-                    {Object.entries(data.transferImpacts).map(([currency, impact]) => (
-                      <div key={currency} className="flex items-center justify-between">
-                        <span className="text-xs text-zinc-600 dark:text-zinc-400">{currency}</span>
-                        <span className={`text-xs tabular-nums font-semibold ${
-                          impact > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
-                        }`}>
-                          {impact > 0 ? "+" : ""}{formatCurrency(impact, currency)}
-                        </span>
+              {/* Expenses row */}
+              <div>
+                <div className="grid grid-cols-12 gap-px rounded-lg overflow-hidden" style={{ backgroundColor: "var(--color-border)" }}>
+                  {data.monthlyData.map((m) => {
+                    const isFuture = m.month - 1 > data.currentMonthIdx;
+                    const currencies = Object.keys(m.plannedExpenses);
+                    return (
+                      <div
+                        key={m.month}
+                        className="px-1.5 py-2 text-[10px] tabular-nums"
+                        style={{ backgroundColor: "var(--color-surface)", opacity: isFuture ? 0.4 : 1 }}
+                      >
+                        <div className="mb-0.5 text-[9px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-subtle)" }}>Exp</div>
+                        {currencies.length === 0 ? <span style={{ color: "var(--color-text-subtle)" }}>—</span> : currencies.map((cur) => {
+                          const actual = m.actualExpenses[cur] ?? 0;
+                          const planned = m.plannedExpenses[cur] as number ?? 0;
+                          const ok = actual <= planned;
+                          return (
+                           <div key={cur} className="truncate" style={{ color: ok ? "var(--color-text)" : "var(--color-off-track)" }}>
+                              {formatCurrency(actual, cur)}
+                            </div>
+                          );
+                        })}
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
               </div>
-            ) : (
-              <div className="mt-1">
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">No FX transfers this year.</p>
-                <a
-                  href={`/app/${year}/fx`}
-                  className="mt-1 inline-flex items-center text-xs text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50 underline"
-                >
-                  Create first transfer →
-                </a>
-              </div>
-            )}
+            </div>
           </div>
+        </Card>
 
-          <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-            <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Year snapshot</p>
+        <div className="grid gap-6">
+          <Card>
+            <CardHeader>
+              <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-subtle)" }}>
+                Net Worth Movement
+              </p>
+              <a
+                href={`/app/${year}/savings`}
+                className="text-xs underline transition-opacity hover:opacity-80"
+                style={{ color: "var(--color-text-muted)" }}
+              >
+                Details →
+              </a>
+            </CardHeader>
             {data.allSavingsLines.length > 0 ? (
-              <div className="mt-1 space-y-1">
-                {/* Column headers - responsive */}
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-4 text-xs mb-2">
-                  <div className="text-zinc-500 dark:text-zinc-400">Start</div>
-                  <div className="text-zinc-500 dark:text-zinc-400">Savings</div>
-                  <div className="hidden sm:block text-zinc-500 dark:text-zinc-400">FX</div>
-                  <div className="hidden sm:block text-zinc-500 dark:text-zinc-400">Portfolio</div>
-                  <div className="text-zinc-500 dark:text-zinc-400">Final</div>
-                </div>
-                {/* Currency rows - responsive */}
+              <div className="space-y-1">
                 {data.allSavingsLines.map(({ currencyCode, amount }) => {
                   const savingsData = calculateSavingsData(
                     currencyCode!,
                     amount,
                     data.yearNetActual,
                     data.transferImpacts,
-                    data.instrumentTransferImpacts
+                    data.instrumentTransferImpacts,
                   );
-                  
+                  const netChange = savingsData.finalBalance - savingsData.startingBalance;
+                  const isUp = netChange >= 0;
+
                   return (
-                    <div key={currencyCode} className="space-y-1 sm:space-y-0">
-                      {/* Mobile layout - stacked */}
-                      <div className="sm:hidden grid grid-cols-2 gap-2 text-xs">
-                        <div className="text-zinc-500 dark:text-zinc-400">Start:</div>
-                        <div className="tabular-nums text-zinc-900 dark:text-zinc-50 text-right">
-                          {formatCurrency(savingsData.startingBalance, currencyCode!)}
+                    <details key={currencyCode} className="group">
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-[var(--color-surface-raised)]">
+                        <div className="flex items-center gap-2 tabular-nums text-sm">
+                          <span style={{ color: "var(--color-text-subtle)" }} className="text-[10px] font-semibold uppercase tracking-wider w-8">{currencyCode}</span>
+                          <span className="hidden sm:inline" style={{ color: "var(--color-text)" }}>{formatCurrency(savingsData.startingBalance, currencyCode!)}</span>
+                          <span className="hidden sm:inline" style={{ color: "var(--color-text-subtle)" }}>→</span>
+                          <span className="font-semibold" style={{ color: isUp ? "var(--color-success)" : "var(--color-danger)" }}>
+                            {formatCurrency(savingsData.finalBalance, currencyCode!)}
+                          </span>
                         </div>
-                        <div className="text-zinc-500 dark:text-zinc-400">Income:</div>
-                        <div className={`tabular-nums text-right ${savingsData.netIncome > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                          {savingsData.netIncome > 0 ? "+" : ""}{formatCurrency(savingsData.netIncome, currencyCode!)}
-                        </div>
-                        <div className="text-zinc-500 dark:text-zinc-400">FX:</div>
-                        <div className={`tabular-nums text-right ${savingsData.transferImpact > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                          {savingsData.transferImpact > 0 ? "+" : ""}{formatCurrency(savingsData.transferImpact, currencyCode!)}
-                        </div>
-                        {savingsData.instrumentTransferImpact !== 0 && (
-                          <>
-                            <div className="text-zinc-500 dark:text-zinc-400">Portfolio:</div>
-                            <div className={`tabular-nums text-right ${savingsData.instrumentTransferImpact > 0 ? "text-teal-600 dark:text-teal-400" : "text-orange-600 dark:text-orange-400"}`}>
-                              {savingsData.instrumentTransferImpact > 0 ? "+" : ""}{formatCurrency(savingsData.instrumentTransferImpact, currencyCode!)}
-                            </div>
-                          </>
-                        )}
-                        <div className="text-zinc-500 dark:text-zinc-400">Final:</div>
-                        <div className={`tabular-nums font-semibold text-right ${savingsData.finalBalance > savingsData.startingBalance ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                          {formatCurrency(savingsData.finalBalance, currencyCode!)}
-                        </div>
+                        <span className="text-xs font-medium tabular-nums" style={{ color: isUp ? "var(--color-success)" : "var(--color-danger)" }}>
+                          {isUp ? "+" : ""}{formatCurrency(netChange, currencyCode!)}
+                        </span>
+                      </summary>
+                      <div className="mt-1 space-y-1 px-3 pb-2 pt-1" style={{ borderTop: "1px dashed var(--color-border)" }}>
+                        {[
+                          { label: "Net income", value: savingsData.netIncome },
+                          ...(savingsData.transferImpact !== 0 ? [{ label: "FX transfers", value: savingsData.transferImpact }] : []),
+                          ...(savingsData.instrumentTransferImpact !== 0 ? [{ label: "Portfolio moves", value: savingsData.instrumentTransferImpact }] : []),
+                        ].map(({ label, value }) => (
+                          <div key={label} className="flex items-center justify-between text-xs">
+                            <span style={{ color: "var(--color-text-subtle)" }}>{label}</span>
+                            <span className="tabular-nums font-medium" style={{ color: value >= 0 ? "var(--color-success)" : "var(--color-danger)" }}>
+                              {value > 0 ? "+" : ""}{formatCurrency(value, currencyCode!)}
+                            </span>
+                          </div>
+                        ))}
                       </div>
-                      {/* Desktop layout - horizontal */}
-                      <div className="hidden sm:grid grid-cols-5 gap-4 text-xs">
-                        <div className="tabular-nums text-zinc-900 dark:text-zinc-50">
-                          {formatCurrency(savingsData.startingBalance, currencyCode!)}
-                        </div>
-                        <div className={`tabular-nums ${savingsData.netIncome > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                          {savingsData.netIncome > 0 ? "+" : ""}{formatCurrency(savingsData.netIncome, currencyCode!)}
-                        </div>
-                        <div className={`tabular-nums ${savingsData.transferImpact > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                          {savingsData.transferImpact > 0 ? "+" : ""}{formatCurrency(savingsData.transferImpact, currencyCode!)}
-                        </div>
-                        <div className={`tabular-nums ${savingsData.instrumentTransferImpact > 0 ? "text-teal-600 dark:text-teal-400" : savingsData.instrumentTransferImpact < 0 ? "text-orange-600 dark:text-orange-400" : "text-zinc-400 dark:text-zinc-600"}`}>
-                          {savingsData.instrumentTransferImpact !== 0
-                            ? `${savingsData.instrumentTransferImpact > 0 ? "+" : ""}${formatCurrency(savingsData.instrumentTransferImpact, currencyCode!)}`
-                            : "—"}
-                        </div>
-                        <div className={`tabular-nums font-semibold ${savingsData.finalBalance > savingsData.startingBalance ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                          {formatCurrency(savingsData.finalBalance, currencyCode!)}
-                        </div>
-                      </div>
-                    </div>
+                    </details>
                   );
                 })}
               </div>
             ) : (
-              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+              <p className="mt-1 text-xs" style={{ color: "var(--color-text-subtle)" }}>
                 No savings recorded.{" "}
-                <a href={`/app/${year}/savings`} className="underline hover:text-zinc-700 dark:hover:text-zinc-300">
+                <a href={`/app/${year}/savings`} className="underline transition-opacity hover:opacity-80" style={{ color: "var(--color-text-muted)" }}>
                   Add →
                 </a>
               </p>
             )}
-          </div>
+          </Card>
 
-          {/* Portfolio summary */}
-          {portfolio.positions.length > 0 && (
-            <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Portfolio</p>
-                <a
-                  href={`/app/${year}/portfolio`}
-                  className="text-xs text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50 underline"
-                >
-                  Manage →
-                </a>
-              </div>
-              <div className="space-y-2">
-                {(["invest", "pension", "crypto"] as const).map((kind) => {
-                  const positions = portfolio.byKind[kind];
-                  if (!positions || positions.length === 0) return null;
-                  const kindLabels = { invest: "Investments", pension: "Pension", crypto: "Crypto" };
+          {portfolio.positions.length > 0 && (() => {
+            const kindLabels = { invest: "Investments", pension: "Pension", crypto: "Crypto" };
+            const activeKinds = (["invest", "pension", "crypto"] as const).filter(
+              (k) => (portfolio.byKind[k]?.length ?? 0) > 0
+            );
+            const smCols = (["", "sm:grid-cols-1", "sm:grid-cols-2", "sm:grid-cols-3"] as const)[activeKinds.length];
+            const maxCurrencies = Math.max(...activeKinds.map((k) => {
+              const t: Record<string, unknown> = {};
+              for (const p of portfolio.byKind[k]!) { t[p.currencyCode] = true; }
+              return Object.keys(t).length;
+            }));
+            return (
+              <div className={`grid grid-cols-1 gap-6 ${smCols}`} style={{ alignItems: "start" }}>
+                {activeKinds.map((kind) => {
+                  const positions = portfolio.byKind[kind]!;
+                  const totals: Record<string, { value: number; gain: number }> = {};
+                  for (const pos of positions) {
+                    if (!totals[pos.currencyCode]) totals[pos.currencyCode] = { value: 0, gain: 0 };
+                    totals[pos.currencyCode].value += pos.latestValue;
+                    totals[pos.currencyCode].gain += pos.marketReturn;
+                  }
+                  const hasAnyGain = Object.values(totals).some((t) => t.gain !== 0);
+                  const hasStale = positions.some((p) => p.isStale);
                   return (
-                    <div key={kind}>
-                      <p className="text-[10px] uppercase tracking-widest font-semibold text-zinc-400 dark:text-zinc-500 mb-1">
-                        {kindLabels[kind]}
-                      </p>
-                      {positions.map((pos) => (
-                        <div key={pos.id} className="flex items-center justify-between text-xs py-0.5">
-                          <span className="text-zinc-700 dark:text-zinc-300">
-                            {pos.name}
-                            {pos.isStale && (
-                              <span className="ml-1 text-amber-500 dark:text-amber-400">⚠</span>
-                            )}
+                    <details key={kind} className="group" style={{ border: "1px solid var(--color-border)", borderRadius: "0.75rem", overflow: "hidden", backgroundColor: "var(--color-surface)" }}>
+                      <summary className="flex cursor-pointer list-none flex-col gap-1.5 px-3 py-2 transition-colors hover:bg-[var(--color-surface-raised)]">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-subtle)" }}>
+                            {kindLabels[kind]}
+                            {hasStale && <span className="ml-1" style={{ color: "var(--color-warning)" }}>⚠</span>}
                           </span>
-                          <div className="flex items-center gap-2 tabular-nums">
-                            <span className="text-zinc-900 dark:text-zinc-50 font-medium">
-                              {pos.latestValue > 0
-                                ? formatCurrency(pos.latestValue, pos.currencyCode)
-                                : "—"}
-                            </span>
-                            {pos.marketReturn !== 0 && (
-                              <span className={`text-[10px] font-semibold ${pos.marketReturn >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
-                                {pos.marketReturn >= 0 ? "+" : ""}{formatCurrency(pos.marketReturn, pos.currencyCode)}
+                          <a href={`/app/${year}/portfolio`} className="text-xs underline transition-opacity hover:opacity-80" style={{ color: "var(--color-text-muted)" }}>
+                            Manage →
+                          </a>
+                        </div>
+                        {Object.entries(totals).map(([currency, { value, gain }]) => (
+                          <div key={currency} className="flex items-center gap-3 tabular-nums text-sm">
+                            <span className="w-8 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-subtle)" }}>{currency}</span>
+                            <span style={{ color: "var(--color-text)" }}>{formatCurrency(value, currency)}</span>
+                            {hasAnyGain && gain !== 0 && (
+                              <span className="ml-auto text-xs font-medium" style={{ color: gain >= 0 ? "var(--color-success)" : "var(--color-danger)" }}>
+                                {gain >= 0 ? "+" : ""}{formatCurrency(gain, currency)}
                               </span>
                             )}
                           </div>
+                        ))}
+                        {Array.from({ length: maxCurrencies - Object.keys(totals).length }).map((_, i) => (
+                          <div key={`pad-${i}`} className="flex items-center gap-3 text-sm opacity-0 select-none" aria-hidden>
+                            <span className="w-8">—</span><span>—</span>
+                          </div>
+                        ))}
+                      </summary>
+                        <div className="space-y-0.5 px-3 py-2" style={{ borderTop: "1px dashed var(--color-border)" }}>
+                        {positions.map((pos) => (
+                          <div key={pos.id} className="flex items-center justify-between text-xs">
+                            <span style={{ color: "var(--color-text-muted)" }}>
+                              {pos.name}
+                              {pos.isStale && <span className="ml-1" style={{ color: "var(--color-warning)" }}>⚠</span>}
+                            </span>
+                            <div className="flex items-center gap-1.5 tabular-nums">
+                              <span style={{ color: "var(--color-text)" }}>
+                                {pos.latestValue > 0 ? formatCurrency(pos.latestValue, pos.currencyCode) : "—"}
+                              </span>
+                              {pos.marketReturn !== 0 && (
+                                <span className="text-[10px] font-semibold" style={{ color: pos.marketReturn >= 0 ? "var(--color-success)" : "var(--color-danger)" }}>
+                                  {pos.marketReturn >= 0 ? "+" : ""}{formatCurrency(pos.marketReturn, pos.currencyCode)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                         </div>
-                      ))}
-                    </div>
+                    </details>
                   );
                 })}
               </div>
-            </div>
-          )}
-          {/* Loans & Assets summary */}
-          {loanData.loans.filter(l => l.status === "active").length > 0 && (
-            <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Loans & Assets</p>
+            );
+          })()}
+
+          {loanData.loans.filter((l) => l.status === "active").length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xs font-medium normal-case tracking-normal">
+                  Loans & Assets
+                </CardTitle>
                 <a
                   href={`/app/${year}/loans`}
-                  className="text-xs text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50 underline"
+                  className="text-xs underline transition-opacity hover:opacity-80"
+                  style={{ color: "var(--color-text-muted)" }}
                 >
                   Manage →
                 </a>
-              </div>
+              </CardHeader>
               <div className="space-y-2">
-                {loanData.loans.filter(l => l.status === "active").map((loan) => {
+                {loanData.loans.filter((l) => l.status === "active").map((loan) => {
                   const equity = loan.asset
                     ? loan.asset.currentValue - loan.outstandingBalance
                     : null;
                   return (
                     <div key={loan.id} className="text-xs">
                       <div className="flex items-center justify-between py-0.5">
-                        <span className="text-zinc-700 dark:text-zinc-300 font-medium">{loan.name}</span>
+                        <span className="font-medium" style={{ color: "var(--color-text-muted)" }}>
+                          {loan.name}
+                        </span>
                         <div className="flex items-center gap-2 tabular-nums">
-                          <span className="text-red-600 dark:text-red-400">
+                          <span style={{ color: "var(--color-danger)" }}>
                             −{formatCurrency(loan.outstandingBalance, loan.currencyCode)}
                           </span>
                           {equity !== null && (
-                            <span className={`text-[10px] font-semibold ${equity >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                              equity {equity >= 0 ? "+" : ""}{formatCurrency(equity, loan.currencyCode)}
+                            <span
+                              className="text-[10px] font-semibold"
+                              style={{
+                                color:
+                                  equity >= 0
+                                    ? "var(--color-success)"
+                                    : "var(--color-danger)",
+                              }}
+                            >
+                              equity {equity >= 0 ? "+" : ""}
+                              {formatCurrency(equity, loan.currencyCode)}
                             </span>
                           )}
                         </div>
                       </div>
                       {loan.asset && (
-                        <div className="flex items-center justify-between py-0.5 pl-2 text-zinc-500 dark:text-zinc-400">
+                        <div
+                          className="flex items-center justify-between py-0.5 pl-2"
+                          style={{ color: "var(--color-text-subtle)" }}
+                        >
                           <span>{loan.asset.name}</span>
-                          <span className="text-emerald-600 dark:text-emerald-400 tabular-nums">
+                          <span className="tabular-nums" style={{ color: "var(--color-success)" }}>
                             {formatCurrency(loan.asset.currentValue, loan.asset.currencyCode)}
                           </span>
                         </div>
@@ -391,7 +350,7 @@ export default async function BudgetDashboardPage({
                   );
                 })}
               </div>
-            </div>
+            </Card>
           )}
         </div>
       </div>
@@ -401,10 +360,6 @@ export default async function BudgetDashboardPage({
   }
 }
 
-/**
- * KPI card showing YTD plan vs actual amounts per currency, with percentage and arrows.
- * Follows the same pattern as the tracking page: ↑/↓ with color based on direction.
- */
 function MultiCurrencyCard({
   label,
   ytdPlanned,
@@ -416,72 +371,75 @@ function MultiCurrencyCard({
   ytdActual: CurrencyTotals;
   positiveWhenActualHigher: boolean;
 }) {
-  const allCurrencies = Array.from(
-    new Set([...Object.keys(ytdPlanned), ...Object.keys(ytdActual)])
-  ).sort();
+  const allCurrencies = Array.from(new Set([...Object.keys(ytdPlanned), ...Object.keys(ytdActual)])).sort();
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-      <p className="mb-3 text-xs font-medium text-zinc-500 dark:text-zinc-400">
-        {label} <span className="text-zinc-400 dark:text-zinc-600">(to date)</span>
+    <Card>
+      <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-subtle)" }}>
+        {label} · YTD
       </p>
       {allCurrencies.length > 0 ? (
-        <div className="divide-y divide-zinc-100 dark:divide-zinc-900">
-          {allCurrencies.map((currency) => {
+        <div>
+          {allCurrencies.map((currency, index) => {
             const planned = ytdPlanned[currency] ?? 0;
             const actual = ytdActual[currency] ?? 0;
             const pct = planned > 0 && actual > 0 ? Math.round((actual / planned) * 100) : null;
             const isActualHigher = actual > planned;
+            const actualColor =
+              actual > 0
+                ? positiveWhenActualHigher
+                  ? actual >= planned && planned > 0
+                    ? "var(--color-on-track)"
+                    : "var(--color-text)"
+                  : actual > planned && planned > 0
+                    ? "var(--color-off-track)"
+                    : "var(--color-text)"
+                : "var(--color-text-subtle)";
 
             return (
-              <div key={currency} className="grid grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-0.5 py-2 first:pt-0 last:pb-0">
-                {/* Currency badge */}
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 w-8">
-                  {currency}
-                </span>
-
-                {/* Expected (plan) + Actual */}
-                <div>
-                  <div className="text-[11px] text-zinc-400 dark:text-zinc-600">
-                    plan {planned > 0 ? formatCurrency(planned, currency) : "—"}
-                  </div>
-                  <div className={`text-sm font-bold tabular-nums ${actual > 0
-                    ? positiveWhenActualHigher
-                      ? actual >= planned && planned > 0
-                        ? "text-emerald-600 dark:text-emerald-400"
-                        : "text-zinc-900 dark:text-zinc-50"
-                      : actual > planned && planned > 0
-                        ? "text-red-600 dark:text-red-400"
-                        : "text-zinc-900 dark:text-zinc-50"
-                    : "text-zinc-400 dark:text-zinc-600"
-                    }`}>
-                    {actual > 0 ? formatCurrency(actual, currency) : "—"}
-                  </div>
+              <div
+                key={currency}
+                className="py-2 first:pt-0 last:pb-0"
+                style={index > 0 ? { borderTop: "1px solid var(--color-border)" } : undefined}
+              >
+                <div className="flex items-baseline justify-between gap-2">
+                  <span
+                    className="text-[10px] font-semibold uppercase tracking-wider"
+                    style={{ color: "var(--color-text-subtle)" }}
+                  >
+                    {currency}
+                  </span>
+                  {pct !== null && (
+                    <span
+                      className="text-xs font-semibold tabular-nums"
+                      style={{
+                        color: positiveWhenActualHigher
+                          ? isActualHigher ? "var(--color-on-track)" : "var(--color-off-track)"
+                          : isActualHigher ? "var(--color-off-track)" : "var(--color-on-track)",
+                      }}
+                    >
+                      {isActualHigher ? "↑" : "↓"} {pct}%
+                    </span>
+                  )}
                 </div>
-
-                {/* Percentage with arrow (only when same currency can be compared) */}
-                {pct !== null ? (
-                  <div className={`text-right text-sm font-semibold ${positiveWhenActualHigher
-                    ? isActualHigher
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : "text-red-600 dark:text-red-400"
-                    : isActualHigher
-                      ? "text-red-600 dark:text-red-400"
-                      : "text-emerald-600 dark:text-emerald-400"
-                    }`}>
-                    {isActualHigher ? "↑" : "↓"} {pct}%
-                  </div>
-                ) : (
-                  <div />
-                )}
+                <div
+                  className="mt-0.5 text-xl font-bold tabular-nums leading-tight"
+                  style={{ color: actualColor }}
+                >
+                  {actual > 0 ? formatCurrency(actual, currency) : "—"}
+                </div>
+                <div className="mt-0.5 text-[11px]" style={{ color: "var(--color-text-subtle)" }}>
+                  of {planned > 0 ? formatCurrency(planned, currency) : "—"} planned
+                </div>
               </div>
             );
           })}
         </div>
       ) : (
-        <p className="text-xs text-zinc-400 dark:text-zinc-600">No data yet.</p>
+        <p className="text-xs" style={{ color: "var(--color-text-subtle)" }}>
+          No data yet.
+        </p>
       )}
-    </div>
+    </Card>
   );
 }
-

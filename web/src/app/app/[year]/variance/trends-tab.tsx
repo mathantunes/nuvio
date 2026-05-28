@@ -17,6 +17,7 @@ import type {
   CategoryTrendRow,
   MonthlyDisciplineScore,
 } from "@/lib/variance-computations";
+import { Card, CardHeader, CardTitle, Table, Thead, Tbody, Tfoot, Th, Td, Tr } from "@/components/ui";
 
 type Props = {
   categoryTrends: CategoryTrends;
@@ -27,6 +28,7 @@ type Props = {
 const MONTH_LABELS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
 
 type KindTab = "expenses" | "income";
+type InsightTone = "danger" | "success" | "brand";
 
 export function TrendsTab({ categoryTrends, disciplineScores, currentMonthIdx }: Props) {
   const [kindTab, setKindTab] = useState<KindTab>("expenses");
@@ -35,7 +37,6 @@ export function TrendsTab({ categoryTrends, disciplineScores, currentMonthIdx }:
   const currencies = [...new Set(rows.map((r) => r.currencyCode))].sort();
   const pastMonths = currentMonthIdx + 1;
 
-  // Discipline score chart data (only past months)
   const disciplineData = disciplineScores
     .filter((d) => d.isPast)
     .map((d) => ({ name: d.monthName, score: d.score, count: `${d.onBudgetCount}/${d.totalCount}` }));
@@ -47,30 +48,33 @@ export function TrendsTab({ categoryTrends, disciplineScores, currentMonthIdx }:
 
   return (
     <div className="space-y-6">
-      {/* Discipline Score */}
-      <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 space-y-4">
+    <Card className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+            <h3 className="text-sm font-semibold" style={{ color: "var(--color-text)" }}>
               Budget Discipline Score
             </h3>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+            <p className="mt-0.5 text-xs" style={{ color: "var(--color-text-subtle)" }}>
               % of expense categories within budget each month
             </p>
           </div>
           <div className="text-right">
             <p
-              className={`text-2xl font-bold ${
-                avgScore >= 80
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : avgScore >= 60
-                  ? "text-amber-600 dark:text-amber-400"
-                  : "text-red-600 dark:text-red-400"
-              }`}
+              className="text-2xl font-bold"
+              style={{
+                color:
+                  avgScore >= 80
+                    ? "var(--color-on-track)"
+                    : avgScore >= 60
+                      ? "var(--color-warning)"
+                      : "var(--color-off-track)",
+              }}
             >
               {avgScore.toFixed(0)}%
             </p>
-            <p className="text-[10px] text-zinc-400 dark:text-zinc-500">YTD avg</p>
+            <p className="text-[10px]" style={{ color: "var(--color-text-subtle)" }}>
+              YTD avg
+            </p>
           </div>
         </div>
 
@@ -96,7 +100,7 @@ export function TrendsTab({ categoryTrends, disciplineScores, currentMonthIdx }:
                 strokeDasharray="4 2"
                 label={{ value: "avg", fontSize: 10, fill: "#6366f1", position: "right" }}
               />
-              {disciplineData.map((_entry, idx) => null) /* satisfy recharts */}
+              {disciplineData.map((_entry, idx) => null)}
               <Bar dataKey="score" radius={[3, 3, 0, 0]}>
                 {disciplineData.map((entry, idx) => (
                   <Cell
@@ -105,8 +109,8 @@ export function TrendsTab({ categoryTrends, disciplineScores, currentMonthIdx }:
                       entry.score >= 80
                         ? "#10b981"
                         : entry.score >= 60
-                        ? "#f59e0b"
-                        : "#ef4444"
+                          ? "#f59e0b"
+                          : "#ef4444"
                     }
                   />
                 ))}
@@ -114,47 +118,52 @@ export function TrendsTab({ categoryTrends, disciplineScores, currentMonthIdx }:
             </BarChart>
           </ResponsiveContainer>
         ) : (
-          <p className="text-xs text-zinc-400 dark:text-zinc-500 text-center py-6">
+          <p className="py-6 text-center text-xs" style={{ color: "var(--color-text-subtle)" }}>
             No data yet for this year.
           </p>
         )}
-      </div>
+      </Card>
 
-      {/* Category Heatmap */}
-      <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-2">
+      <Card className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+            <h3 className="text-sm font-semibold" style={{ color: "var(--color-text)" }}>
               Category Trends
             </h3>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+            <p className="mt-0.5 text-xs" style={{ color: "var(--color-text-subtle)" }}>
               Month-by-month budget adherence per category
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Kind toggle */}
-            <div className="flex rounded-md border border-zinc-200 dark:border-zinc-700 overflow-hidden text-xs">
+            <div className="tab-bar">
               {(["expenses", "income"] as KindTab[]).map((k) => (
                 <button
                   key={k}
                   onClick={() => setKindTab(k)}
-                  className={`px-3 py-1.5 font-medium transition ${
-                    kindTab === k
-                      ? "bg-zinc-900 text-zinc-50 dark:bg-zinc-50 dark:text-zinc-900"
-                      : "bg-white text-zinc-600 hover:bg-zinc-50 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
-                  }`}
+                  className={`tab-btn ${kindTab === k ? "active" : ""}`}
                 >
                   {k.charAt(0).toUpperCase() + k.slice(1)}
                 </button>
               ))}
             </div>
 
-            {/* Legend */}
-            <div className="flex items-center gap-2 text-[10px] text-zinc-500 dark:text-zinc-400">
-              <span className="inline-block h-3 w-3 rounded-sm bg-emerald-500 opacity-80" /> Within
-              <span className="inline-block h-3 w-3 rounded-sm bg-red-400 opacity-80 ml-1" /> Over
-              <span className="inline-block h-3 w-3 rounded-sm bg-zinc-100 dark:bg-zinc-800 ml-1" /> No data
+            <div className="flex items-center gap-2 text-[10px]" style={{ color: "var(--color-text-subtle)" }}>
+              <span
+                className="inline-block h-3 w-3 rounded-sm"
+                style={{ backgroundColor: "var(--color-on-track)" }}
+              />
+              Within
+              <span
+                className="ml-1 inline-block h-3 w-3 rounded-sm"
+                style={{ backgroundColor: "var(--color-off-track)" }}
+              />
+              Over
+              <span
+                className="ml-1 inline-block h-3 w-3 rounded-sm"
+                style={{ backgroundColor: "var(--color-surface-raised)" }}
+              />
+              No data
             </div>
           </div>
         </div>
@@ -163,7 +172,6 @@ export function TrendsTab({ categoryTrends, disciplineScores, currentMonthIdx }:
           const currencyRows = rows
             .filter((r) => r.currencyCode === currency)
             .sort((a, b) => {
-              // Sort by most problematic (lowest on-budget ratio) first
               const aRate = pastMonths > 0 ? a.onBudgetCount / pastMonths : 0;
               const bRate = pastMonths > 0 ? b.onBudgetCount / pastMonths : 0;
               return aRate - bRate;
@@ -173,38 +181,34 @@ export function TrendsTab({ categoryTrends, disciplineScores, currentMonthIdx }:
 
           return (
             <div key={currency} className="space-y-1">
-              <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">
+              <p className="mb-2 text-xs font-medium" style={{ color: "var(--color-text-subtle)" }}>
                 {currency}
               </p>
 
               <div className="overflow-x-auto">
-                <table className="w-full text-xs border-separate border-spacing-y-0.5">
-                  <thead>
-                    <tr>
-                      <th className="py-1 pr-3 text-left font-medium text-zinc-400 dark:text-zinc-500 w-36">
-                        Category
-                      </th>
+                <Table className="border-separate border-spacing-y-0.5 text-xs">
+                  <Thead>
+                    <Tr>
+                      <Th className="w-36 pr-3">Category</Th>
                       {MONTH_LABELS.map((m, idx) => (
-                        <th
+                        <Th
                           key={idx}
-                          className={`py-1 px-0.5 text-center font-medium w-7 ${
-                            idx <= currentMonthIdx
-                              ? "text-zinc-500 dark:text-zinc-400"
-                              : "text-zinc-300 dark:text-zinc-700"
-                          }`}
+                          className="w-7 px-0.5 text-center"
+                          style={{
+                            color:
+                              idx <= currentMonthIdx
+                                ? "var(--color-text-muted)"
+                                : "var(--color-text-subtle)",
+                          }}
                         >
                           {m}
-                        </th>
+                        </Th>
                       ))}
-                      <th className="py-1 pl-3 text-right font-medium text-zinc-400 dark:text-zinc-500">
-                        YTD
-                      </th>
-                      <th className="py-1 pl-2 text-right font-medium text-zinc-400 dark:text-zinc-500">
-                        vs plan
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                      <Th numeric className="pl-3">YTD</Th>
+                      <Th numeric className="pl-2">vs plan</Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
                     {currencyRows.map((row) => {
                       const ytdVariance = row.ytdPlanned - row.ytdActual;
                       const isExpense = row.categoryKind !== "income";
@@ -223,21 +227,20 @@ export function TrendsTab({ categoryTrends, disciplineScores, currentMonthIdx }:
                         />
                       );
                     })}
-                  </tbody>
-                </table>
+                  </Tbody>
+                </Table>
               </div>
             </div>
           );
         })}
 
         {rows.length === 0 && (
-          <p className="text-xs text-zinc-400 dark:text-zinc-500 text-center py-6">
+          <p className="py-6 text-center text-xs" style={{ color: "var(--color-text-subtle)" }}>
             No {kindTab} categories found. Add budget lines in Planning.
           </p>
         )}
-      </div>
+      </Card>
 
-      {/* Top performers & offenders */}
       {pastMonths > 0 && (
         <TopPerformers
           categoryTrends={categoryTrends}
@@ -247,8 +250,6 @@ export function TrendsTab({ categoryTrends, disciplineScores, currentMonthIdx }:
     </div>
   );
 }
-
-// ─── Heatmap Row ──────────────────────────────────────────────────────────────
 
 function HeatmapRow({
   row,
@@ -270,55 +271,55 @@ function HeatmapRow({
   const [hovered, setHovered] = useState<number | null>(null);
 
   return (
-    <tr className="group">
-      <td className="pr-3 py-0.5 font-medium text-zinc-700 dark:text-zinc-300 max-w-[9rem] truncate">
+    <Tr className="group">
+      <Td muted className="max-w-[9rem] truncate py-0.5 pr-3 font-medium">
         {row.categoryName}
-      </td>
+      </Td>
       {row.months.map((m, idx) => {
         const isFuture = idx > currentMonthIdx;
         const isHovered = hovered === idx;
 
-        let bg = "bg-zinc-100 dark:bg-zinc-800"; // none / future
-        if (!isFuture && m.status === "good") bg = "bg-emerald-500";
-        if (!isFuture && m.status === "over") bg = "bg-red-400";
+        let backgroundColor = "var(--color-surface-raised)";
+        if (!isFuture && m.status === "good") backgroundColor = "var(--color-on-track)";
+        if (!isFuture && m.status === "over") backgroundColor = "var(--color-off-track)";
 
         return (
-          <td key={idx} className="px-0.5 py-0.5 text-center relative">
+          <Td key={idx} className="relative px-0.5 py-0.5 text-center">
             <div
-              className={`mx-auto h-5 w-5 rounded-sm ${bg} opacity-${isFuture ? "20" : "80"} cursor-default transition-transform ${
-                isHovered ? "scale-125 opacity-100 z-10" : ""
-              }`}
+              className="relative mx-auto h-5 w-5 rounded-sm cursor-default transition-transform"
+              style={{
+                backgroundColor,
+                opacity: isHovered ? 1 : isFuture ? 0.2 : 0.8,
+                transform: isHovered ? "scale(1.25)" : undefined,
+                zIndex: isHovered ? 10 : undefined,
+              }}
               onMouseEnter={() => setHovered(idx)}
               onMouseLeave={() => setHovered(null)}
               title={
                 isFuture
                   ? "Future"
                   : m.planned > 0 || m.actual > 0
-                  ? `Planned: ${formatCurrency(m.planned, currency)}\nActual: ${formatCurrency(m.actual, currency)}`
-                  : "No data"
+                    ? `Planned: ${formatCurrency(m.planned, currency)}\nActual: ${formatCurrency(m.actual, currency)}`
+                    : "No data"
               }
             />
-          </td>
+          </Td>
         );
       })}
-      <td className="pl-3 py-0.5 text-right tabular-nums text-zinc-700 dark:text-zinc-300">
+      <Td numeric muted className="py-0.5 pl-3 tabular-nums">
         {formatCurrency(row.ytdActual, currency)}
-      </td>
-      <td
-        className={`pl-2 py-0.5 text-right tabular-nums font-medium ${
-          varGood
-            ? "text-emerald-600 dark:text-emerald-400"
-            : "text-red-600 dark:text-red-400"
-        }`}
+      </Td>
+      <Td
+        numeric
+        className="py-0.5 pl-2 font-medium tabular-nums"
+        style={{ color: varGood ? "var(--color-on-track)" : "var(--color-off-track)" }}
       >
         {ytdVariance >= 0 ? "+" : ""}
         {formatCurrency(ytdVariance, currency)}
-      </td>
-    </tr>
+      </Td>
+    </Tr>
   );
 }
-
-// ─── Top Performers / Offenders ───────────────────────────────────────────────
 
 function TopPerformers({
   categoryTrends,
@@ -327,19 +328,16 @@ function TopPerformers({
   categoryTrends: CategoryTrends;
   currentMonthIdx: number;
 }) {
-  // Top over-budget expense categories (sorted by absolute overspend)
   const overspenders = [...categoryTrends.expenses]
     .filter((r) => r.ytdPlanned > 0 && r.ytdActual > r.ytdPlanned)
     .sort((a, b) => b.ytdActual - b.ytdPlanned - (a.ytdActual - a.ytdPlanned))
     .slice(0, 3);
 
-  // Top consistent categories (highest on-budget streak)
   const disciplined = [...categoryTrends.expenses]
     .filter((r) => r.ytdPlanned > 0)
     .sort((a, b) => b.onBudgetCount - a.onBudgetCount)
     .slice(0, 3);
 
-  // Top income over-achievers
   const incomeChamps = [...categoryTrends.income]
     .filter((r) => r.ytdActual > r.ytdPlanned && r.ytdPlanned > 0)
     .sort((a, b) => b.ytdActual - b.ytdPlanned - (a.ytdActual - a.ytdPlanned))
@@ -355,7 +353,7 @@ function TopPerformers({
         <InsightCard
           title="Over budget"
           emoji="⚠️"
-          colorClass="border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-950/20"
+          tone="danger"
           items={overspenders.map((r) => ({
             name: r.categoryName,
             currency: r.currencyCode,
@@ -370,7 +368,7 @@ function TopPerformers({
         <InsightCard
           title="Most disciplined"
           emoji="🏆"
-          colorClass="border-emerald-200 bg-emerald-50 dark:border-emerald-900/40 dark:bg-emerald-950/20"
+          tone="success"
           items={disciplined.map((r) => ({
             name: r.categoryName,
             currency: r.currencyCode,
@@ -385,7 +383,7 @@ function TopPerformers({
         <InsightCard
           title="Income champions"
           emoji="💰"
-          colorClass="border-indigo-200 bg-indigo-50 dark:border-indigo-900/40 dark:bg-indigo-950/20"
+          tone="brand"
           items={incomeChamps.map((r) => ({
             name: r.categoryName,
             currency: r.currencyCode,
@@ -402,39 +400,51 @@ function TopPerformers({
 function InsightCard({
   title,
   emoji,
-  colorClass,
+  tone,
   items,
 }: {
   title: string;
   emoji: string;
-  colorClass: string;
+  tone: InsightTone;
   items: Array<{ name: string; currency: string; detail: string; sub: string; bad: boolean }>;
 }) {
+  const style =
+    tone === "danger"
+      ? {
+          backgroundColor: "var(--color-off-track-subtle)",
+          borderColor: "var(--color-off-track)",
+        }
+      : tone === "success"
+        ? {
+            backgroundColor: "var(--color-on-track-subtle)",
+            borderColor: "var(--color-on-track)",
+          }
+        : {
+            backgroundColor: "var(--color-brand-subtle)",
+            borderColor: "var(--color-brand)",
+          };
+
   return (
-    <div className={`rounded-xl border p-4 ${colorClass} space-y-3`}>
+    <Card className="space-y-3" style={style}>
       <div className="flex items-center gap-2">
         <span>{emoji}</span>
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{title}</h3>
+        <h3 className="text-sm font-semibold" style={{ color: "var(--color-text)" }}>
+          {title}
+        </h3>
       </div>
       <ol className="space-y-2">
         {items.map((item, idx) => (
           <li key={idx} className="text-xs">
-            <span className="font-medium text-zinc-800 dark:text-zinc-200">
+            <span className="font-medium" style={{ color: "var(--color-text)" }}>
               {idx + 1}. {item.name}
             </span>
-            <p
-              className={`${
-                item.bad
-                  ? "text-red-700 dark:text-red-400"
-                  : "text-emerald-700 dark:text-emerald-400"
-              }`}
-            >
+            <p style={{ color: item.bad ? "var(--color-off-track)" : "var(--color-on-track)" }}>
               {item.detail}
             </p>
-            <p className="text-zinc-500 dark:text-zinc-400">{item.sub}</p>
+            <p style={{ color: "var(--color-text-muted)" }}>{item.sub}</p>
           </li>
         ))}
       </ol>
-    </div>
+    </Card>
   );
 }

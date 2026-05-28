@@ -49,10 +49,10 @@ export default async function LoansPage({ params }: Props) {
   return (
     <div className="space-y-6">
       <header className="space-y-1">
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
+        <h1 className="text-xl font-semibold" style={{ color: "var(--color-text)" }}>
           Loans &amp; Mortgages
         </h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
           Simulate, track, and manage your loans. Monitor outstanding balances and
           linked asset equity.
         </p>
@@ -66,14 +66,14 @@ export default async function LoansPage({ params }: Props) {
             const assetValue = loanData.assetValueByCurrency[currency] ?? 0;
             const equity = assetValue - outstanding;
             return (
-              <div
-                key={currency}
-                className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
-              >
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-2">
+              <div key={currency} className="card p-4">
+                <p
+                  className="mb-2 text-[10px] font-semibold uppercase tracking-widest"
+                  style={{ color: "var(--color-text-subtle)" }}
+                >
                   {currency} Debt Overview
                 </p>
-                <p className="text-xl font-bold tabular-nums text-red-500 dark:text-red-400">
+                <p className="text-xl font-bold tabular-nums" style={{ color: "var(--color-danger)" }}>
                   −
                   {new Intl.NumberFormat("en-US", {
                     style: "currency",
@@ -82,13 +82,16 @@ export default async function LoansPage({ params }: Props) {
                     maximumFractionDigits: 0,
                   }).format(outstanding)}
                 </p>
-                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                <p className="mt-0.5 text-[11px]" style={{ color: "var(--color-text-subtle)" }}>
                   outstanding balance
                 </p>
                 {assetValue > 0 && (
-                  <div className="mt-2 pt-2 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs">
-                    <span className="text-zinc-500 dark:text-zinc-400">Asset value</span>
-                    <span className="font-medium text-zinc-700 dark:text-zinc-300 tabular-nums">
+                  <div
+                    className="mt-2 flex items-center justify-between border-t pt-2 text-xs"
+                    style={{ borderColor: "var(--color-border)" }}
+                  >
+                    <span style={{ color: "var(--color-text-subtle)" }}>Asset value</span>
+                    <span className="font-medium tabular-nums" style={{ color: "var(--color-text-muted)" }}>
                       {new Intl.NumberFormat("en-US", {
                         style: "currency",
                         currency,
@@ -99,14 +102,13 @@ export default async function LoansPage({ params }: Props) {
                   </div>
                 )}
                 {assetValue > 0 && (
-                  <div className="flex items-center justify-between text-xs mt-1">
-                    <span className="text-zinc-500 dark:text-zinc-400">Equity</span>
+                  <div className="mt-1 flex items-center justify-between text-xs">
+                    <span style={{ color: "var(--color-text-subtle)" }}>Equity</span>
                     <span
-                      className={`font-semibold tabular-nums ${
-                        equity >= 0
-                          ? "text-emerald-600 dark:text-emerald-400"
-                          : "text-red-500 dark:text-red-400"
-                      }`}
+                      className="font-semibold tabular-nums"
+                      style={{
+                        color: equity >= 0 ? "var(--color-success)" : "var(--color-danger)",
+                      }}
                     >
                       {equity >= 0 ? "+" : ""}
                       {new Intl.NumberFormat("en-US", {

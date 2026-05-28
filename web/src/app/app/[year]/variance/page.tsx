@@ -8,6 +8,7 @@ import {
   getDisciplineScores,
 } from "@/lib/variance-computations";
 import { VarianceTabs } from "./variance-tabs";
+import { Card } from "@/components/ui";
 
 export default async function VariancePage({
   params,
@@ -37,23 +38,25 @@ export default async function VariancePage({
     return (
       <div className="space-y-6">
         <header className="space-y-1">
-          <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
+          <h1 className="text-xl font-semibold" style={{ color: "var(--color-text)" }}>
             Budget vs Actual
           </h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
             {year} — spending, savings and trends
           </p>
         </header>
 
-        <VarianceTabs
-          allMonthlyVariance={allMonthlyVariance}
-          currentMonthIdx={currentMonthIdx}
-          monthNames={monthNames}
-          year={year}
-          savingsTimeline={savingsTimeline}
-          categoryTrends={categoryTrends}
-          disciplineScores={disciplineScores}
-        />
+        <Card>
+          <VarianceTabs
+            allMonthlyVariance={allMonthlyVariance}
+            currentMonthIdx={currentMonthIdx}
+            monthNames={monthNames}
+            year={year}
+            savingsTimeline={savingsTimeline}
+            categoryTrends={categoryTrends}
+            disciplineScores={disciplineScores}
+          />
+        </Card>
       </div>
     );
   } catch {

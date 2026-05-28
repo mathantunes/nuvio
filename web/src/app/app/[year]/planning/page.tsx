@@ -5,6 +5,7 @@ import { budgets, budgetLines, categories, profiles } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { PlanningTabs } from "./planning-tabs";
 import { AuthService } from "@/lib/auth-service";
+import { Card } from "@/components/ui";
 
 type Props = {
   params: Promise<{ year: string }>;
@@ -20,7 +21,6 @@ export default async function BudgetPlanningPage({ params }: Props) {
 
   const user = await AuthService.getCurrentUser();
 
-  // Get budget
   const budget = await db.query.budgets.findFirst({
     where: and(eq(budgets.year, year), eq(budgets.userId, user.id)),
   });
@@ -29,14 +29,12 @@ export default async function BudgetPlanningPage({ params }: Props) {
     redirect("/app");
   }
 
-  // Get profile for base currency
   const profile = await db.query.profiles.findFirst({
     where: eq(profiles.id, user.id),
   });
 
   const baseCurrency = profile?.baseCurrency ?? "USD";
 
-  // Get all budget lines for this budget with categories
   const allBudgetLines = await db
     .select({
       id: budgetLines.id,
@@ -62,7 +60,6 @@ export default async function BudgetPlanningPage({ params }: Props) {
     .where(eq(budgetLines.budgetId, budget.id))
     .orderBy(budgetLines.month);
 
-  // Separate into income and expense
   const incomeLines = allBudgetLines.filter(
     (line) => line.category.kind === "income"
   );
@@ -73,16 +70,16 @@ export default async function BudgetPlanningPage({ params }: Props) {
   return (
     <div className="space-y-4">
       <header className="space-y-1">
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
+        <h1 className="text-xl font-semibold" style={{ color: "var(--color-text)" }}>
           Planning
         </h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
           Define your {year} budget: income and expenses per month. Categories are
           created automatically when you add your first budget line.
         </p>
       </header>
 
-      <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-left dark:border-zinc-800 dark:bg-zinc-950">
+      <Card className="text-left">
         <PlanningTabs
           budgetId={budget.id}
           year={year}
@@ -90,7 +87,7 @@ export default async function BudgetPlanningPage({ params }: Props) {
           expenseLines={expenseLines}
           baseCurrency={baseCurrency}
         />
-      </div>
+      </Card>
     </div>
   );
 }

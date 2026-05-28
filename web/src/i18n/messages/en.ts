@@ -1,11 +1,11 @@
 export const en = {
   common: {
-    appName: "Globudget",
+    appName: "Nuvio",
   },
   landing: {
     title: "Plan, track, and analyze your multi-currency budget.",
     subtitle:
-      "Globudget helps you manage accounts across currencies, plan budgets, and understand the true cost of FX transfers, fees, and taxes.",
+      "Nuvio helps you manage accounts across currencies, plan budgets, and understand the true cost of FX transfers, fees, and taxes.",
     ctaSignIn: "Sign in to get started",
     featureBudgetsTitle: "Budgets & actuals",
     featureBudgetsBody:
@@ -18,7 +18,7 @@ export const en = {
       "Record transfers, fees, and taxes to see the effective FX rates you actually pay.",
   },
   auth: {
-    loginTitle: "Sign in to Globudget",
+    loginTitle: "Sign in to Nuvio",
     loginSubtitle: "Enter your email to receive a one-time sign-in link.",
     emailLabel: "Email",
     emailPlaceholder: "you@example.com",
@@ -54,7 +54,7 @@ export const en = {
       "Soon you'll be able to define your base currency, create accounts in multiple currencies, and set up your first budget.",
     fxSectionTitle: "FX & transfers",
     fxSectionBody:
-      "Globudget will track cross-currency moves, fees, taxes, and effective FX rates so you can see the true cost of transfers.",
+      "Nuvio will track cross-currency moves, fees, taxes, and effective FX rates so you can see the true cost of transfers.",
   },
 } as const;
 
