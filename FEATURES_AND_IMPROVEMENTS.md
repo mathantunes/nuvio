@@ -2,21 +2,21 @@
 
 ## Overview
 
-Globudget is a multi-currency personal budgeting application built with Next.js, TypeScript, and Supabase. The application follows strict multi-tenancy principles with comprehensive support for international currencies and foreign exchange tracking.
+Nuvio is a self-hostable, open-source, multi-currency personal budgeting application built with Next.js, TypeScript, Drizzle ORM, and Postgres. The application follows strict multi-tenancy principles with comprehensive support for international currencies and foreign exchange tracking.
 
 ## Tech Stack
 
 - **Frontend**: Next.js 16.1.6 (App Router), React 19.2.3, TypeScript
-- **Backend**: Supabase (PostgreSQL + Auth)
+- **Backend**: Postgres + Drizzle ORM. Custom auth (bcrypt + iron-session).
 - **ORM**: Drizzle ORM
 - **Styling**: Tailwind CSS v4
 - **Validation**: Zod
-- **Deployment**: Vercel (Next.js) + Supabase
+- **Deployment**: Self-hosted (Docker + Postgres) or Vercel + any Postgres provider
 
 ## Current Features
 
 ### 🏠 User Management & Profiles
-- **Authentication**: Supabase-based SSO with email support
+- **Authentication**: Email/password with bcrypt + iron-session cookies
 - **User Profiles**: Per-user settings including:
   - Base currency configuration (defaults to USD)
   - Locale preferences (defaults to en-US)

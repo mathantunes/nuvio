@@ -1,10 +1,10 @@
-## Globudget – Agents Baseline
+## Nuvio – Agents Baseline
 
 ### Tech stack & scope
 - **Frontend**: Next.js (App Router, SSR/ISR), TypeScript, React.
-- **Backend**: Supabase (Postgres + Auth). No separate custom backend service unless explicitly introduced later.
-- **Auth**: Supabase-based SSO (and/or email) with multi-tenant support. All user data must be strictly isolated by `user_id` (and later `household_id`).
-- **Hosting**: Vercel (Next.js) + Supabase.
+- **Backend**: Postgres + Drizzle ORM. Custom auth via bcrypt + iron-session. No Supabase.
+- **Auth**: Email/password with iron-session cookies. All user data must be strictly isolated by `user_id` (and later `household_id`).
+- **Hosting**: Self-hosted (Docker + Postgres) or Vercel (Next.js) + any Postgres provider.
 
 ### Core domain principles
 - **Base currency reporting**: Every user has a configurable base currency used for budgets and summary reporting.
@@ -23,7 +23,7 @@
 - Store **timestamps in UTC** in the database; convert to user locale in the UI.
 
 ### API & backend rules
-- Use **Supabase client/server helpers** rather than writing raw HTTP calls when possible.
+- Use **Drizzle ORM** with the shared `db` client (`@/db/client`) for all database access.
 - Never expose another user’s data; enforce filters by `user_id` in all DB queries.
 - When computing financial aggregates, prefer **server-side queries** over client-side aggregation for correctness and performance.
 
@@ -40,8 +40,8 @@
 
 ### Performance & security
 - Only load the minimum data needed per page. Paginate transaction lists.
-- Never log or expose secrets (access tokens, API keys). Use environment variables and Supabase config.
-- Use RLS (Row Level Security) policies in Supabase to protect per-user data.
+- Never log or expose secrets (access tokens, API keys). Use environment variables.
+- Enforce per-user data isolation in all DB queries (`where eq(table.userId, user.id)`).
 
 ### Color signals & financial semantics
 
@@ -73,7 +73,7 @@ A value of exactly `0` or `100%` counts as on-track (use `>=` / `<=`, never stri
 Always reference CSS tokens (`var(--color-on-track)` etc.). Never use raw hex values (`#15803D`) in component code — they break dark mode and theming.
 
 
-- Agents must **not** introduce new major dependencies or external services without explaining why and ensuring they fit Vercel/Supabase.
+- Agents must **not** introduce new major dependencies or external services without explaining why and ensuring they fit the self-hosted / Vercel deployment model.
 - Prefer incremental, well-scoped changes with clear migration plans for Postgres.
 - When adding features, always consider:
   1. Impact on multi-currency correctness.
