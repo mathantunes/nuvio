@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Card, DataList, DataListRow, RowAction } from "@/components/ui";
 import { TransactionForm } from "./transaction-form";
 import { formatAmount } from "../planning/currency-format";
-import { deleteTransaction, createUnplannedTransaction } from "./transactions.actions";
+import { deleteTransaction, createUnplannedTransaction, confirmAsPaid } from "./transactions.actions";
 
 type BudgetLine = {
   id: string;
@@ -43,6 +43,7 @@ type Account = {
   id: string;
   name: string;
   currencyCode: string;
+  isPrimary: boolean;
 };
 
 type Category = {
@@ -84,6 +85,7 @@ export function TrackingTabs({
     useState<Transaction | null>(null);
   const [openPopupId, setOpenPopupId] = useState<string | null>(null);
   const [formAnchorPos, setFormAnchorPos] = useState<{ x: number; y: number } | null>(null);
+  const [confirmStatus, setConfirmStatus] = useState<Record<string, "pending" | "error">>({});
 
   function anchorFromEvent(e: { clientX: number; clientY: number }) {
     const FORM_WIDTH = 320;
@@ -230,7 +232,36 @@ export function TrackingTabs({
     });
   };
 
+  const handleTogglePaid = (line: BudgetLineWithActuals) => {
+    setConfirmStatus((s) => ({ ...s, [line.id]: "pending" }));
+    startTransition(async () => {
+      let result: { error?: string } | undefined;
+      if (line.transactions.length > 0) {
+        for (const tx of line.transactions) {
+          result = await deleteTransaction(tx.id, year) ?? undefined;
+        }
+        setSelectedBudgetLine(null);
+        setEditingTransaction(null);
+        setOpenPopupId(null);
+      } else {
+        result = await confirmAsPaid(line.id, year, selectedMonth) ?? undefined;
+      }
+      if (result?.error) {
+        setConfirmStatus((s) => ({ ...s, [line.id]: "error" }));
+        setTimeout(
+          () => setConfirmStatus((s) => { const n = { ...s }; delete n[line.id]; return n; }),
+          3000
+        );
+      } else {
+        setConfirmStatus((s) => { const n = { ...s }; delete n[line.id]; return n; });
+      }
+    });
+  };
+
   const currentCategories = activeTab === "income" ? incomeCategories : expenseCategories;
+
+  // Currencies for which the user has at least one active account (enables ✓ shortcut)
+  const accountedCurrencies = new Set(accounts.map((a) => a.currencyCode));
 
   return (
     <div className="space-y-4">
@@ -304,7 +335,6 @@ export function TrackingTabs({
                   <div className="w-32 shrink-0 text-right">Expected</div>
                   <div className="w-32 shrink-0 text-right">Actual</div>
                   <div className="w-24 shrink-0 text-right">%</div>
-                  <div className="w-24 shrink-0 text-right">Actions</div>
                 </>
               }
             >
@@ -369,6 +399,45 @@ export function TrackingTabs({
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-3">
+                      {accountedCurrencies.has(line.currencyCode) ? (
+                        <button
+                          type="button"
+                          title={line.transactions.length > 0 ? "Clear transactions for this line" : "Mark as paid — records a transaction for the planned amount"}
+                          disabled={confirmStatus[line.id] === "pending"}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTogglePaid(line);
+                          }}
+                          className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded transition-all"
+                          style={{
+                            border: confirmStatus[line.id] === "error"
+                              ? "1.5px solid var(--color-danger)"
+                              : line.transactions.length > 0
+                                ? "1.5px solid var(--color-brand)"
+                                : "1.5px solid var(--color-border)",
+                            backgroundColor: line.transactions.length > 0 && confirmStatus[line.id] !== "error"
+                              ? "var(--color-brand)"
+                              : "transparent",
+                            color: confirmStatus[line.id] === "error"
+                              ? "var(--color-danger)"
+                              : "white",
+                            fontSize: "9px",
+                          }}
+                        >
+                          {confirmStatus[line.id] === "pending"
+                            ? "…"
+                            : confirmStatus[line.id] === "error"
+                              ? "✗"
+                              : line.transactions.length > 0
+                                ? "✓"
+                                : ""}
+                        </button>
+                      ) : (
+                        <span
+                          className="flex h-4 w-4 flex-shrink-0 rounded"
+                          style={{ border: "1.5px solid var(--color-border)", opacity: 0.3 }}
+                        />
+                      )}
                       <span className="text-sm font-medium" style={{ color: "var(--color-text)" }}>
                         {line.category.name}
                       </span>
@@ -504,48 +573,8 @@ export function TrackingTabs({
                     )}
                   </div>
 
-                  <div className="relative hidden w-24 shrink-0 justify-end gap-3 sm:flex" data-transaction-popup>
-                    <RowAction
-                      type="button"
-                      onClick={(e) => {
-                        if (selectedBudgetLine?.id === line.id) {
-                          closeForm();
-                        } else {
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          openForm(line, anchorFromEvent({ clientX: rect.left, clientY: rect.bottom }));
-                        }
-                      }}
-                    >
-                      {selectedBudgetLine?.id === line.id ? "Cancel" : "Add"}
-                    </RowAction>
-                    <RowAction
-                      type="button"
-                      danger
-                      onClick={() => {
-                        clearLine(line);
-                        closeForm();
-                      }}
-                    >
-                      Clear
-                    </RowAction>
-                  </div>
-
                   <div className="space-y-3 border-t pt-3 sm:hidden" style={{ borderColor: "var(--color-border)" }}>
                     <div className="flex items-center gap-4">
-                      <RowAction
-                        type="button"
-                        onClick={() => {
-                          if (editingTransaction && selectedBudgetLine?.id === line.id) {
-                            setEditingTransaction(null);
-                            setSelectedBudgetLine(null);
-                          } else {
-                            setEditingTransaction(null);
-                            setSelectedBudgetLine(line);
-                          }
-                        }}
-                      >
-                        {editingTransaction && selectedBudgetLine?.id === line.id ? "Cancel" : "Add"}
-                      </RowAction>
                       <RowAction
                         type="button"
                         danger
@@ -674,6 +703,7 @@ export function TrackingTabs({
           className="shadow-xl"
         >
           <TransactionForm
+            key={selectedBudgetLine.id}
             budgetLineId={selectedBudgetLine.id}
             year={year}
             month={selectedMonth}

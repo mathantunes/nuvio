@@ -5,9 +5,9 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { db } from "@/db/client";
-import { transactions, budgetLines, categories, budgets } from "@/db/schema";
+import { transactions, budgetLines, categories, budgets, accounts } from "@/db/schema";
 import { AuthService } from "@/lib/auth-service";
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 
 const createTransactionSchema = z.object({
   budgetLineId: z.string().uuid(),
@@ -359,4 +359,79 @@ export async function createUnplannedTransaction(formData: FormData) {
 
   revalidatePath(`/app/${year}/tracking`);
   revalidatePath(`/app/${year}`);
+}
+
+/**
+ * One-click "paid as planned" shortcut.
+ * Creates a transaction for a budget line using the planned amount and the
+ * user's primary account for the line's currency (falls back to the first
+ * account in that currency). Uses the last day of the given month as the date.
+ */
+export async function confirmAsPaid(budgetLineId: string, year: number, month: number) {
+  try {
+    const user = await AuthService.getCurrentUser();
+
+    // Fetch budget line with category info
+    const lineResult = await db
+      .select({
+        plannedAmount: budgetLines.plannedAmount,
+        currencyCode: budgetLines.currencyCode,
+        categoryId: budgetLines.categoryId,
+        categoryKind: categories.kind,
+      })
+      .from(budgetLines)
+      .innerJoin(categories, eq(budgetLines.categoryId, categories.id))
+      .where(and(eq(budgetLines.id, budgetLineId), eq(categories.userId, user.id)))
+      .limit(1);
+
+    if (lineResult.length === 0) {
+      return { error: "Budget line not found." };
+    }
+
+    const { plannedAmount, currencyCode, categoryId, categoryKind } = lineResult[0];
+
+    // Find primary account for this currency, falling back to first account in that currency
+    const userAccounts = await db
+      .select({ id: accounts.id, isPrimary: accounts.isPrimary })
+      .from(accounts)
+      .where(
+        and(
+          eq(accounts.userId, user.id),
+          eq(accounts.currencyCode, currencyCode),
+          eq(accounts.isActive, true)
+        )
+      )
+      .orderBy(asc(accounts.createdAt));
+
+    if (userAccounts.length === 0) {
+      return { error: `No account found for currency ${currencyCode}.` };
+    }
+
+    const primaryAccount =
+      userAccounts.find((a) => a.isPrimary) ?? userAccounts[0];
+
+    // Last day of the given month
+    const occurredAt = new Date(year, month, 0); // day 0 of next month = last day of this month
+
+    const transactionType = categoryKind === "income" ? "income" : "expense";
+
+    await db.insert(transactions).values({
+      userId: user.id,
+      accountId: primaryAccount.id,
+      categoryId,
+      budgetLineId,
+      transactionType,
+      amount: plannedAmount,
+      currencyCode,
+      occurredAt,
+    });
+
+    revalidatePath(`/app/${year}/tracking`);
+    revalidatePath(`/app/${year}`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to confirm as paid:", error);
+    return { error: error instanceof Error ? error.message : "Failed to create transaction." };
+  }
 }

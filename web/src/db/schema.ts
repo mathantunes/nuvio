@@ -30,6 +30,7 @@ export const accounts = pgTable("accounts", {
   currencyCode: text("currency_code").notNull(),
   institution: text("institution"),
   isActive: boolean("is_active").notNull().default(true),
+  isPrimary: boolean("is_primary").notNull().default(false),
   liquidityType: text("liquidity_type").notNull().default("liquid"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()

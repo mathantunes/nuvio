@@ -5,7 +5,7 @@ import { AuthService } from "@/lib/auth-service";
 import { AccountsForm } from "../../accounts-form";
 import { and, desc, eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
-import { deleteAccount } from "../../accounts.actions";
+import { deleteAccount, setAccountPrimary } from "../../accounts.actions";
 import Link from "next/link";
 import { getOnboardingCounts } from "@/lib/onboarding";
 
@@ -65,6 +65,12 @@ export default async function BudgetAccountsPage({ params }: Props) {
               <>
                 <span className="flex-1">Name</span>
                 <span className="w-20">Currency</span>
+                <span
+                  className="w-20 text-center"
+                  title="The primary account is used automatically when you confirm a budget line as paid with one click."
+                >
+                  Primary
+                </span>
                 <span className="w-16 text-right">Actions</span>
               </>
             }
@@ -87,6 +93,21 @@ export default async function BudgetAccountsPage({ params }: Props) {
                 >
                   {account.currencyCode}
                 </span>
+                <div className="w-20 text-center">
+                  <form action={async () => {
+                    "use server";
+                    await setAccountPrimary(account.id, account.currencyCode);
+                  }}>
+                    <button
+                      type="submit"
+                      title={account.isPrimary ? "Primary account for this currency" : "Set as primary for this currency"}
+                      className="text-base leading-none transition-opacity hover:opacity-70"
+                      style={{ color: account.isPrimary ? "var(--color-brand)" : "var(--color-text-subtle)" }}
+                    >
+                      {account.isPrimary ? "★" : "☆"}
+                    </button>
+                  </form>
+                </div>
                 <div className="w-16 text-right">
                   <form action={async () => {
                     "use server";

@@ -8,6 +8,7 @@ type Account = {
   id: string;
   name: string;
   currencyCode: string;
+  isPrimary: boolean;
 };
 
 type Transaction = {
@@ -57,7 +58,10 @@ export function TransactionForm({
   }
   
   const [accountId, setAccountId] = useState(
-    transaction?.account.id ?? accounts[0]?.id ?? ""
+    transaction?.account.id ??
+    accounts.find((a) => a.currencyCode === expectedCurrency && a.isPrimary)?.id ??
+    accounts.find((a) => a.currencyCode === expectedCurrency)?.id ??
+    accounts[0]?.id ?? ""
   );
   const [amount, setAmount] = useState(
     transaction?.amount ?? ""

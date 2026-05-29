@@ -114,6 +114,7 @@ export default async function BudgetTrackingMonthPage({ params }: Props) {
       id: accounts.id,
       name: accounts.name,
       currencyCode: accounts.currencyCode,
+      isPrimary: accounts.isPrimary,
     })
     .from(accounts)
     .where(and(eq(accounts.userId, user.id), eq(accounts.isActive, true)));

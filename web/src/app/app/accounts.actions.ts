@@ -6,7 +6,7 @@ import { z } from "zod";
 import { db } from "@/db/client";
 import { accounts, savingsSnapshots, savingsSnapshotLines } from "@/db/schema";
 import { AuthService } from "@/lib/auth-service";
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, count, eq, gte, lte } from "drizzle-orm";
 
 const createAccountSchema = z.object({
   name: z.string().min(1).max(120),
@@ -48,11 +48,20 @@ export async function createAccount(formData: FormData) {
 
     const { name, currencyCode, institution, openingBalance, year } = parsed.data;
 
+    // Auto-set as primary if this is the first account for this currency
+    const [{ count: existingCount }] = await db
+      .select({ count: count() })
+      .from(accounts)
+      .where(and(eq(accounts.userId, user.id), eq(accounts.currencyCode, currencyCode)));
+
+    const isPrimary = Number(existingCount) === 0;
+
     const [account] = await db.insert(accounts).values({
       userId: user.id,
       name,
       currencyCode,
       institution,
+      isPrimary,
     }).returning({ id: accounts.id });
 
     // If an opening balance was provided, record it as a savings snapshot line for Jan 1.
@@ -107,5 +116,30 @@ export async function deleteAccount(accountId: string) {
   } catch (error) {
     console.error("Failed to delete account:", error);
     return { error: error instanceof Error ? error.message : "Failed to delete account." };
+  }
+}
+
+export async function setAccountPrimary(accountId: string, currencyCode: string) {
+  try {
+    const user = await AuthService.getCurrentUser();
+
+    // Unset primary for all accounts of this currency for the user
+    await db
+      .update(accounts)
+      .set({ isPrimary: false })
+      .where(and(eq(accounts.userId, user.id), eq(accounts.currencyCode, currencyCode)));
+
+    // Set this account as primary
+    await db
+      .update(accounts)
+      .set({ isPrimary: true })
+      .where(and(eq(accounts.id, accountId), eq(accounts.userId, user.id)));
+
+    revalidatePath("/app");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to set primary account:", error);
+    return { error: error instanceof Error ? error.message : "Failed to update account." };
   }
 }
