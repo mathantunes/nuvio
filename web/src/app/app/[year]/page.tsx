@@ -11,9 +11,10 @@ import { fetchLoanData } from "@/lib/loan-computations";
 import { Card, CardHeader, CardTitle, Table, Thead, Tbody, Tfoot, Th, Td, Tr } from "@/components/ui";
 import { formatCurrency } from "./planning/currency-format";
 import { db } from "@/db/client";
-import { categories, budgetLines, transactions, budgets, accounts } from "@/db/schema";
-import { eq, count, inArray, and } from "drizzle-orm";
+import { budgets } from "@/db/schema";
+import { eq, inArray, and } from "drizzle-orm";
 import Link from "next/link";
+import { getOnboardingCounts } from "@/lib/onboarding";
 
 export default async function BudgetDashboardPage({
   params,
@@ -30,20 +31,14 @@ export default async function BudgetDashboardPage({
       where: and(eq(budgets.year, year), eq(budgets.userId, user.id)),
     });
 
-    const [[categoryCount], [budgetLineCount], [accountCount], [transactionCount]] = await Promise.all([
-      db.select({ count: count() }).from(categories).where(eq(categories.userId, user.id)),
-      budget
-        ? db.select({ count: count() }).from(budgetLines).where(eq(budgetLines.budgetId, budget.id))
-        : Promise.resolve([{ count: 0 }]),
-      db.select({ count: count() }).from(accounts).where(eq(accounts.userId, user.id)),
-      db.select({ count: count() }).from(transactions).where(eq(transactions.userId, user.id)),
-    ]);
+    const { categoryCount, budgetLineCount, accountCount, transactionCount } =
+      await getOnboardingCounts(user.id, budget?.id ?? null);
 
     const onboardingSteps = [
-      { label: "Add spending categories", done: categoryCount.count > 0, href: `/app/${year}/categories` },
-      { label: "Plan a budget line", done: budgetLineCount.count > 0, href: `/app/${year}/planning` },
-      { label: "Set up an account", done: accountCount.count > 0, href: `/app/${year}/accounts` },
-      { label: "Log your first transaction", done: transactionCount.count > 0, href: `/app/${year}/tracking` },
+      { label: "Add spending categories", done: categoryCount > 0, href: `/app/${year}/categories` },
+      { label: "Plan a budget line", done: budgetLineCount > 0, href: `/app/${year}/planning` },
+      { label: "Set up an account", done: accountCount > 0, href: `/app/${year}/accounts` },
+      { label: "Log your first transaction", done: transactionCount > 0, href: `/app/${year}/tracking` },
     ];
     const onboardingDone = onboardingSteps.every((s) => s.done);
 

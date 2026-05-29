@@ -1,12 +1,13 @@
 import { redirect } from "next/navigation";
 
 import { db } from "@/db/client";
-import { accounts, budgets, budgetLines, categories, profiles } from "@/db/schema";
-import { and, count, eq } from "drizzle-orm";
+import { budgets, budgetLines, categories, profiles } from "@/db/schema";
+import { and, eq } from "drizzle-orm";
 import { PlanningTabs } from "./planning-tabs";
 import { AuthService } from "@/lib/auth-service";
 import { Card } from "@/components/ui";
 import Link from "next/link";
+import { getOnboardingCounts } from "@/lib/onboarding";
 
 type Props = {
   params: Promise<{ year: string }>;
@@ -36,7 +37,7 @@ export default async function BudgetPlanningPage({ params }: Props) {
 
   const baseCurrency = profile?.baseCurrency ?? "USD";
 
-  const [allBudgetLines, allCategories, [{ count: accountCount }]] = await Promise.all([
+  const [allBudgetLines, allCategories, { accountCount }] = await Promise.all([
     db
       .select({
         id: budgetLines.id,
@@ -63,7 +64,7 @@ export default async function BudgetPlanningPage({ params }: Props) {
       .from(categories)
       .where(eq(categories.userId, user.id))
       .orderBy(categories.name),
-    db.select({ count: count() }).from(accounts).where(eq(accounts.userId, user.id)),
+    getOnboardingCounts(user.id, budget.id),
   ]);
 
   const incomeLines = allBudgetLines.filter(

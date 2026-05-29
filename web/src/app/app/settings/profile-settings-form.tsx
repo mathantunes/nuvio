@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition, useState } from "react";
+import { useActionState, useState } from "react";
 import { updateProfile } from "./settings.actions";
 import { CurrencyInput } from "@/components/currency-input";
 
@@ -10,26 +10,10 @@ type Props = {
 
 export function ProfileSettingsForm({ currentBaseCurrency }: Props) {
   const [baseCurrency, setBaseCurrency] = useState(currentBaseCurrency);
-  const [isPending, startTransition] = useTransition();
-  const [message, setMessage] = useState<{ kind: "success" | "error"; text: string } | null>(null);
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setMessage(null);
-    const formData = new FormData(e.currentTarget);
-
-    startTransition(async () => {
-      const result = await updateProfile(formData);
-      if (result?.error) {
-        setMessage({ kind: "error", text: result.error });
-      } else {
-        setMessage({ kind: "success", text: "Preferences saved." });
-      }
-    });
-  };
+  const [state, formAction, isPending] = useActionState(updateProfile, null);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form action={formAction} className="space-y-4">
       <div className="space-y-1">
         <label className="block text-xs font-medium" style={{ color: "var(--color-text)" }}>
           Primary (base) currency
@@ -47,12 +31,14 @@ export function ProfileSettingsForm({ currentBaseCurrency }: Props) {
         </div>
       </div>
 
-      {message && (
-        <p
-          className="text-xs"
-          style={{ color: message.kind === "success" ? "var(--color-brand)" : "var(--color-danger)" }}
-        >
-          {message.text}
+      {state?.error && (
+        <p className="text-xs" style={{ color: "var(--color-danger)" }}>
+          {state.error}
+        </p>
+      )}
+      {state?.success && (
+        <p className="text-xs" style={{ color: "var(--color-brand)" }}>
+          Preferences saved.
         </p>
       )}
 

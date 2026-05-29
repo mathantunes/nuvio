@@ -1,12 +1,13 @@
 import { Card, DataList, DataListHeader, DataListRow, RowAction } from "@/components/ui";
 import { db } from "@/db/client";
-import { accounts, profiles, transactions } from "@/db/schema";
+import { accounts, profiles } from "@/db/schema";
 import { AuthService } from "@/lib/auth-service";
 import { AccountsForm } from "../../accounts-form";
-import { and, count, desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { deleteAccount } from "../../accounts.actions";
 import Link from "next/link";
+import { getOnboardingCounts } from "@/lib/onboarding";
 
 type Props = {
   params: Promise<{ year: string }>;
@@ -25,13 +26,13 @@ export default async function BudgetAccountsPage({ params }: Props) {
     where: eq(profiles.id, user.id),
   });
 
-  const [userAccounts, [{ count: transactionCount }]] = await Promise.all([
+  const [userAccounts, { transactionCount }] = await Promise.all([
     db
       .select()
       .from(accounts)
       .where(and(eq(accounts.userId, user.id), eq(accounts.isActive, true)))
       .orderBy(desc(accounts.createdAt)),
-    db.select({ count: count() }).from(transactions).where(eq(transactions.userId, user.id)),
+    getOnboardingCounts(user.id, null),
   ]);
 
   return (
