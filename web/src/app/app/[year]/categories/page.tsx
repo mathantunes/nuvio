@@ -1,12 +1,13 @@
 import { Card } from "@/components/ui";
 import { db } from "@/db/client";
-import { budgetLines, budgets, categories } from "@/db/schema";
+import { budgets, categories } from "@/db/schema";
 import { AuthService } from "@/lib/auth-service";
-import { and, count, eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { CategoryTabs } from "./category-tabs";
 import { createCategory } from "./categories.actions";
+import { getOnboardingCounts } from "@/lib/onboarding";
 
 type Props = {
   params: Promise<{ year: string }>;
@@ -31,11 +32,9 @@ export default async function CategoriesPage({ params, searchParams }: Props) {
     where: and(eq(budgets.year, numericYear), eq(budgets.userId, user.id)),
   });
 
-  const [allCategories, [{ count: budgetLineCount }]] = await Promise.all([
+  const [allCategories, { budgetLineCount }] = await Promise.all([
     db.select().from(categories).where(eq(categories.userId, user.id)).orderBy(categories.name),
-    budget
-      ? db.select({ count: count() }).from(budgetLines).where(eq(budgetLines.budgetId, budget.id))
-      : Promise.resolve([{ count: 0 }]),
+    getOnboardingCounts(user.id, budget?.id ?? null),
   ]);
 
   const showPlanningTip = budgetLineCount === 0;

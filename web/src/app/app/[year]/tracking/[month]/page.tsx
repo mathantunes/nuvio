@@ -10,10 +10,11 @@ import {
   transactions,
   accounts,
 } from "@/db/schema";
-import { and, count, eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { TrackingTabs } from "../tracking-tabs";
 
 import Link from "next/link";
+import { getOnboardingCounts } from "@/lib/onboarding";
 
 type Props = {
   params: Promise<{ year: string; month: string }>;
@@ -117,17 +118,14 @@ export default async function BudgetTrackingMonthPage({ params }: Props) {
     .from(accounts)
     .where(and(eq(accounts.userId, user.id), eq(accounts.isActive, true)));
 
-  // Count all year trackers for this user — used to detect onboarding vs established users.
-  const [{ count: budgetCount }] = await db
-    .select({ count: count() })
-    .from(budgets)
-    .where(eq(budgets.userId, user.id));
-
   // Get all user categories split by kind for the unplanned form
-  const allCategories = await db
-    .select({ id: categories.id, name: categories.name, kind: categories.kind })
-    .from(categories)
-    .where(eq(categories.userId, user.id));
+  const [allCategories, { budgetCount }] = await Promise.all([
+    db
+      .select({ id: categories.id, name: categories.name, kind: categories.kind })
+      .from(categories)
+      .where(eq(categories.userId, user.id)),
+    getOnboardingCounts(user.id, budget.id),
+  ]);
 
   const incomeCategories = allCategories.filter((c) => c.kind === "income");
   const expenseCategories = allCategories.filter(

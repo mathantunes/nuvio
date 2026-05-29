@@ -15,7 +15,7 @@ const updateProfileSchema = z.object({
     .regex(/^[A-Z]{3}$/, "Currency must be a 3-letter ISO code."),
 });
 
-export async function updateProfile(formData: FormData) {
+export async function updateProfile(_prevState: unknown, formData: FormData) {
   const user = await AuthService.getCurrentUser();
 
   const raw = {
