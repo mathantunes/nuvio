@@ -197,6 +197,7 @@ export function PlanningTabs({
         </div>
         <button
           type="button"
+          data-testid="import-from-spreadsheet"
           onClick={() => {
             navigator.clipboard.readText().then((text) => {
               if (text.trim()) setClipboardText(text);

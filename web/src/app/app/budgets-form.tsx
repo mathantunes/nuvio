@@ -80,7 +80,7 @@ export function CreateYearTrackerForm({ currentYear, showCurrencyField }: Props)
         </p>
       ) : null}
 
-      <button type="submit" disabled={isPending} className="btn-primary text-xs">
+      <button type="submit" disabled={isPending} className="btn-primary text-xs" data-testid="create-budget-submit">
         {isPending ? "Creating…" : "Create year tracker"}
       </button>
     </form>

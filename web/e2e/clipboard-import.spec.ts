@@ -6,11 +6,10 @@ const TEST_YEAR = new Date().getFullYear();
 
 test.describe("Clipboard import flow", () => {
   test.beforeEach(async ({ page }) => {
-    // Log in with the seeded test user
     await page.goto("/login");
-    await page.getByLabel("Email").fill(TEST_EMAIL);
-    await page.getByLabel("Password").fill(TEST_PASSWORD);
-    await page.getByRole("button", { name: /sign in/i }).click();
+    await page.locator("[data-testid='email-input']").fill(TEST_EMAIL);
+    await page.locator("[data-testid='password-input']").fill(TEST_PASSWORD);
+    await page.locator("[data-testid='auth-submit']").click();
     await page.waitForURL("/app");
   });
 
@@ -18,17 +17,13 @@ test.describe("Clipboard import flow", () => {
     await expect(page).toHaveURL("/app");
   });
 
-  test("can create a budget for the current year", async ({ page }) => {
-    // If budget already exists (from a previous run) skip creation
-    const existingLink = page.getByRole("link", { name: String(TEST_YEAR) });
+  test("can create or open a budget for the current year", async ({ page }) => {
+    const existingLink = page.locator(`[data-testid='budget-link-${TEST_YEAR}']`);
+
     if (await existingLink.isVisible()) {
       await existingLink.click();
     } else {
-      // Fill the year tracker creation form
-      const yearInput = page.getByRole("spinbutton");
-      await yearInput.fill(String(TEST_YEAR));
-      await page.getByRole("button", { name: /add|create/i }).first().click();
-      // Should redirect to /app/{year}
+      await page.locator("[data-testid='create-budget-submit']").click();
       await page.waitForURL(`/app/${TEST_YEAR}*`);
     }
 
@@ -36,14 +31,11 @@ test.describe("Clipboard import flow", () => {
   });
 
   test("clipboard import modal opens and parses pasted rows", async ({ page, context }) => {
-    // Grant clipboard permissions so readText() works
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
-    // Navigate to the planning tab
     await page.goto(`/app/${TEST_YEAR}/planning`);
     await page.waitForLoadState("networkidle");
 
-    // Write test CSV data to the clipboard
     const clipboardData = [
       "Salary\t5000\t5000\t5000",
       "Rent\t1200\t1200\t1200",
@@ -51,12 +43,9 @@ test.describe("Clipboard import flow", () => {
     ].join("\n");
     await page.evaluate((text) => navigator.clipboard.writeText(text), clipboardData);
 
-    // Click the "Import from spreadsheet" button
-    await page.getByTitle("Paste rows from a spreadsheet to bulk-import budget lines").click();
+    await page.locator("[data-testid='import-from-spreadsheet']").click();
 
-    // Modal should appear with parsed rows
-    await expect(page.getByText("Salary")).toBeVisible();
-    await expect(page.getByText("Rent")).toBeVisible();
-    await expect(page.getByText("Groceries")).toBeVisible();
+    await expect(page.locator("[data-testid='clipboard-import-modal']")).toBeVisible();
+    await expect(page.locator("[data-testid='import-rows'] [data-testid='import-row']")).toHaveCount(3);
   });
 });

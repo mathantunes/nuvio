@@ -67,6 +67,7 @@ export function ClipboardImportModal({ budgetId, year, baseCurrency, defaultKind
 
   return createPortal(
     <div
+      data-testid="clipboard-import-modal"
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
@@ -127,9 +128,9 @@ export function ClipboardImportModal({ budgetId, year, baseCurrency, defaultKind
                   <th className="px-4 py-2" style={{ minWidth: 32 }} />
                 </tr>
               </thead>
-              <tbody>
+              <tbody data-testid="import-rows">
                 {rows.map((row) => (
-                  <tr key={row.key} className="border-t" style={{ borderColor: "var(--color-border)" }}>
+                  <tr key={row.key} data-testid="import-row" className="border-t" style={{ borderColor: "var(--color-border)" }}>
                     <td className="px-4 py-2" style={{ position: "sticky", left: 0, backgroundColor: "var(--color-surface)", zIndex: 1 }}>
                       <input
                         className="input w-full text-sm py-1"

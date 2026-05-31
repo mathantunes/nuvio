@@ -109,6 +109,7 @@ export default async function AppHomePage() {
             <li key={budget.id}>
               <Link
                 href={`/app/${budget.year}`}
+                data-testid={`budget-link-${budget.year}`}
                 className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm transition-opacity hover:opacity-80"
                 style={{ backgroundColor: "var(--color-bg)", border: "1px solid var(--color-border)" }}
               >

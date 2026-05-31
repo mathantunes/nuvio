@@ -90,6 +90,7 @@ export default function LoginPage() {
               className="input"
               placeholder={messages.auth.emailPlaceholder}
               autoComplete="email"
+              data-testid="email-input"
             />
           </div>
 
@@ -111,6 +112,7 @@ export default function LoginPage() {
               placeholder={mode === "signup" ? "At least 8 characters" : "••••••••"}
               autoComplete={mode === "signup" ? "new-password" : "current-password"}
               minLength={mode === "signup" ? 8 : undefined}
+              data-testid="password-input"
             />
           </div>
 
@@ -122,6 +124,7 @@ export default function LoginPage() {
             type="submit"
             disabled={status === "submitting"}
             className="btn-primary w-full"
+            data-testid="auth-submit"
           >
             {status === "submitting"
               ? mode === "login" ? "Signing in…" : "Creating account…"
