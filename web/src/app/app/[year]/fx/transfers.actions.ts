@@ -117,7 +117,7 @@ export async function getTransfers(year?: number) {
   try {
     const user = await AuthService.getCurrentUser();
 
-    let baseQuery = db
+    const baseQuery = db
       .select({
         id: transfers.id,
         sourceAccountId: transfers.sourceAccountId,

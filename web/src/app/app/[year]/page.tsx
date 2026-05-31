@@ -8,11 +8,11 @@ import {
 } from "@/lib/dashboard-computations";
 import { fetchPortfolioData } from "@/lib/portfolio-computations";
 import { fetchLoanData } from "@/lib/loan-computations";
-import { Card, CardHeader, CardTitle, Table, Thead, Tbody, Tfoot, Th, Td, Tr } from "@/components/ui";
+import { Card, CardHeader, CardTitle } from "@/components/ui";
 import { formatCurrency } from "./planning/currency-format";
 import { db } from "@/db/client";
 import { budgets } from "@/db/schema";
-import { eq, inArray, and } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import Link from "next/link";
 import { getOnboardingCounts } from "@/lib/onboarding";
 

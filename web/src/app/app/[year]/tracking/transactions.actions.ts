@@ -176,7 +176,7 @@ export async function updateTransaction(formData: FormData) {
     }
 
     // Prepare update data
-    const updateData: any = {
+    const updateData: Partial<typeof transactions.$inferInsert> = {
       updatedAt: new Date(),
     };
 

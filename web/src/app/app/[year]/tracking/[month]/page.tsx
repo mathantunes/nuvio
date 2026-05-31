@@ -167,7 +167,6 @@ export default async function BudgetTrackingMonthPage({ params }: Props) {
           </div>
         )}
         <TrackingTabs
-          budgetId={budget.id}
           year={year}
           selectedMonth={selectedMonth}
           incomeLines={incomeLines}

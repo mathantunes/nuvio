@@ -1,4 +1,4 @@
-import { CurrencyTotals, addTo } from "./dashboard-computations";
+import { CurrencyTotals } from "./dashboard-computations";
 
 export interface GrowthData {
   currency: string;

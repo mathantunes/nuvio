@@ -11,13 +11,57 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { formatCurrency } from "../planning/currency-format";
-import { GrowthAnalytics, GrowthData } from "@/lib/growth-computations";
-import { Card, CardHeader, CardTitle, Table, Thead, Tbody, Tfoot, Th, Td, Tr } from "@/components/ui";
+import type { GrowthAnalytics, GrowthData } from "@/lib/growth-computations";
+import { Card, Table, Thead, Tbody, Th, Td, Tr } from "@/components/ui";
 
 const cardStyle = {
   backgroundColor: "var(--color-surface)",
   borderColor: "var(--color-border)",
 };
+
+type GrowthTooltipEntry = {
+  dataKey?: string | number;
+  name?: string | number;
+  value?: string | number;
+  color?: string;
+  stroke?: string;
+};
+
+function MonthlyProgressTooltip({
+  active,
+  payload,
+  label,
+  currencyCode,
+}: {
+  active?: boolean;
+  payload?: GrowthTooltipEntry[];
+  label?: string | number;
+  currencyCode: string;
+}) {
+  if (!active || !payload?.length) return null;
+
+  return (
+    <div
+      className="space-y-1 rounded-lg border p-3 text-xs shadow-sm"
+      style={{
+        backgroundColor: "var(--color-surface)",
+        borderColor: "var(--color-border)",
+        color: "var(--color-text)",
+      }}
+    >
+      <p className="font-semibold" style={{ color: "var(--color-text)" }}>{label}</p>
+      {payload.map((entry) => {
+        const tooltipEntry = entry as GrowthTooltipEntry;
+        if (tooltipEntry.value === null || tooltipEntry.value === undefined) return null;
+
+        return (
+          <p key={String(tooltipEntry.dataKey ?? tooltipEntry.name)} style={{ color: tooltipEntry.color ?? tooltipEntry.stroke }}>
+            {tooltipEntry.name}: {formatCurrency(Number(tooltipEntry.value), currencyCode)}
+          </p>
+        );      })}
+    </div>
+  );
+}
 
 interface GrowthTabProps {
   growthAnalytics: GrowthAnalytics;
@@ -408,27 +452,6 @@ function MonthlyProgressChart({
   const formatYAxis = (v: number) =>
     Math.abs(v) >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v);
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (!active || !payload?.length) return null;
-    return (
-      <div
-        className="space-y-1 rounded-lg border p-3 text-xs shadow-sm"
-        style={{
-          backgroundColor: "var(--color-surface)",
-          borderColor: "var(--color-border)",
-          color: "var(--color-text)",
-        }}
-      >
-        <p className="font-semibold" style={{ color: "var(--color-text)" }}>{label}</p>
-        {payload.map((p: any) => (
-          <p key={p.dataKey} style={{ color: p.color ?? p.stroke }}>
-            {p.name}: {formatCurrency(p.value, currency.currency)}
-          </p>
-        ))}
-      </div>
-    );
-  };
-
   return (
     <div>
       <div className="mb-3 flex items-center justify-between">
@@ -444,7 +467,7 @@ function MonthlyProgressChart({
         <ComposedChart data={data} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
           <XAxis dataKey="name" tick={{ fontSize: 11, fill: "var(--color-text-muted)" }} />
           <YAxis tickFormatter={formatYAxis} tick={{ fontSize: 11, fill: "var(--color-text-muted)" }} width={48} />
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip content={<MonthlyProgressTooltip currencyCode={currency.currency} />} />
           <Legend wrapperStyle={{ fontSize: 12, color: "var(--color-text-muted)" }} />
 
           <Bar dataKey="Income" name="Income" fill="var(--color-success)" radius={[3, 3, 0, 0]} opacity={0.85} />

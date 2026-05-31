@@ -1,6 +1,6 @@
 import { db } from "@/db/client";
 import { loans, loanPayments, loanAmortizations, assets, assetValuations } from "@/db/schema";
-import { and, asc, desc, eq, lte } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { simulateSAC, type ExtraAmortization, type SimulationResult } from "./loan-simulation";
 
 export type LoanStatus = "simulation" | "active" | "closed";

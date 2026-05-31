@@ -17,7 +17,7 @@ import type {
   CategoryTrendRow,
   MonthlyDisciplineScore,
 } from "@/lib/variance-computations";
-import { Card, CardHeader, CardTitle, Table, Thead, Tbody, Tfoot, Th, Td, Tr } from "@/components/ui";
+import { Card, Table, Thead, Tbody, Th, Td, Tr } from "@/components/ui";
 
 type Props = {
   categoryTrends: CategoryTrends;
@@ -100,7 +100,6 @@ export function TrendsTab({ categoryTrends, disciplineScores, currentMonthIdx }:
                 strokeDasharray="4 2"
                 label={{ value: "avg", fontSize: 10, fill: "#6366f1", position: "right" }}
               />
-              {disciplineData.map((_entry, idx) => null)}
               <Bar dataKey="score" radius={[3, 3, 0, 0]}>
                 {disciplineData.map((entry, idx) => (
                   <Cell
@@ -220,10 +219,8 @@ export function TrendsTab({ categoryTrends, disciplineScores, currentMonthIdx }:
                           row={row}
                           currency={currency}
                           currentMonthIdx={currentMonthIdx}
-                          pastMonths={pastMonths}
                           ytdVariance={ytdVariance}
                           varGood={varGood}
-                          isExpense={isExpense}
                         />
                       );
                     })}
@@ -255,18 +252,14 @@ function HeatmapRow({
   row,
   currency,
   currentMonthIdx,
-  pastMonths,
   ytdVariance,
   varGood,
-  isExpense,
 }: {
   row: CategoryTrendRow;
   currency: string;
   currentMonthIdx: number;
-  pastMonths: number;
   ytdVariance: number;
   varGood: boolean;
-  isExpense: boolean;
 }) {
   const [hovered, setHovered] = useState<number | null>(null);
 

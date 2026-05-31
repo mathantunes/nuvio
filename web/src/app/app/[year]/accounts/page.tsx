@@ -1,4 +1,4 @@
-import { Card, DataList, DataListHeader, DataListRow, RowAction } from "@/components/ui";
+import { Card, DataList, DataListRow, RowAction } from "@/components/ui";
 import { db } from "@/db/client";
 import { accounts, profiles } from "@/db/schema";
 import { AuthService } from "@/lib/auth-service";

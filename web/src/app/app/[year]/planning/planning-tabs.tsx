@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { BudgetLineForm } from "./budget-line-form";
 import { formatAmount } from "./currency-format";
-import { CardTitle, Table, Thead, Tbody, Th, Td, Tr } from "@/components/ui";
+import { Table, Thead, Tbody, Th, Td, Tr } from "@/components/ui";
 import { ClipboardImportModal } from "./clipboard-import-modal";
 
 type BudgetLine = {
@@ -415,6 +415,7 @@ export function PlanningTabs({
 
       {clipboardText && (
         <ClipboardImportModal
+          key={clipboardText}
           budgetId={budgetId}
           year={year}
           baseCurrency={baseCurrency}

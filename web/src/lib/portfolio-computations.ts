@@ -4,7 +4,7 @@ import {
   investmentValuations,
   investmentFlows,
 } from "@/db/schema";
-import { and, asc, desc, eq, gte, lte, sum } from "drizzle-orm";
+import { and, asc, eq, gte, lte } from "drizzle-orm";
 
 export type InvestmentKind = "invest" | "pension" | "crypto";
 

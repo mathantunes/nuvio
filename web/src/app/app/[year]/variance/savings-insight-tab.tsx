@@ -13,15 +13,63 @@ import {
 } from "recharts";
 import { formatCurrency } from "../planning/currency-format";
 import { IconCheck, IconWarning } from "@/components/icons";
-import type { SavingsTimeline, MonthlyDisciplineScore } from "@/lib/variance-computations";
+import type { SavingsTimeline } from "@/lib/variance-computations";
 
 type Props = {
   savingsTimeline: SavingsTimeline;
-  disciplineScores: MonthlyDisciplineScore[];
   currentMonthIdx: number;
 };
 
-export function SavingsInsightTab({ savingsTimeline, disciplineScores, currentMonthIdx }: Props) {
+type SavingsTooltipEntry = {
+  dataKey?: string | number;
+  name?: string | number;
+  value?: string | number;
+  color?: string;
+  stroke?: string;
+};
+
+function SavingsProjectionTooltip({
+  active,
+  payload,
+  label,
+  currency,
+}: {
+  active?: boolean;
+  payload?: SavingsTooltipEntry[];
+  label?: string | number;
+  currency: string;
+}) {
+  if (!active || !payload?.length) return null;
+
+  return (
+    <div
+      className="min-w-[180px] space-y-1 rounded-lg border p-3 text-xs shadow-sm"
+      style={{
+        backgroundColor: "var(--color-surface)",
+        borderColor: "var(--color-border)",
+      }}
+    >
+      <p className="mb-1 font-semibold" style={{ color: "var(--color-text)" }}>
+        {label}
+      </p>
+      {payload.map((entry) => {
+        if (entry.value === null || entry.value === undefined) return null;
+
+        const isRate = entry.dataKey === "savingsRate";
+        return (
+          <p key={String(entry.dataKey ?? entry.name)} style={{ color: entry.color ?? entry.stroke }}>
+            {entry.name}:{" "}
+            {isRate
+              ? `${Number(entry.value).toFixed(1)}%`
+              : formatCurrency(Number(entry.value), currency)}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
+export function SavingsInsightTab({ savingsTimeline, currentMonthIdx }: Props) {
   const currencies = Object.keys(savingsTimeline.byCurrency).sort();
 
   return (
@@ -182,35 +230,6 @@ export function SavingsInsightTab({ savingsTimeline, disciplineScores, currentMo
         const formatYAxis = (v: number) =>
           Math.abs(v) >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v);
 
-        const CustomTooltip = ({ active, payload, label }: any) => {
-          if (!active || !payload?.length) return null;
-          return (
-            <div
-              className="min-w-[180px] space-y-1 rounded-lg border p-3 text-xs shadow-sm"
-              style={{
-                backgroundColor: "var(--color-surface)",
-                borderColor: "var(--color-border)",
-              }}
-            >
-              <p className="mb-1 font-semibold" style={{ color: "var(--color-text)" }}>
-                {label}
-              </p>
-              {payload.map((p: any) => {
-                if (p.value === null || p.value === undefined) return null;
-                const isRate = p.dataKey === "savingsRate";
-                return (
-                  <p key={p.dataKey} style={{ color: p.color ?? p.stroke }}>
-                    {p.name}:{" "}
-                    {isRate
-                      ? `${Number(p.value).toFixed(1)}%`
-                      : formatCurrency(p.value, currency)}
-                  </p>
-                );
-              })}
-            </div>
-          );
-        };
-
         const avgSavingsRate =
           pastPoints.filter((p) => p.actualIncome > 0).length > 0
             ? pastPoints
@@ -233,7 +252,7 @@ export function SavingsInsightTab({ savingsTimeline, disciplineScores, currentMo
                 <ComposedChart data={chartData} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                   <YAxis tickFormatter={formatYAxis} tick={{ fontSize: 11 }} width={48} />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip content={<SavingsProjectionTooltip currency={currency} />} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                   <ReferenceLine y={0} stroke="#a1a1aa" strokeDasharray="3 3" />
                   <Bar dataKey="Planned savings" fill="#a1a1aa" radius={[3, 3, 0, 0]} opacity={0.6} />
@@ -250,7 +269,7 @@ export function SavingsInsightTab({ savingsTimeline, disciplineScores, currentMo
                 <ComposedChart data={chartData} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                   <YAxis tickFormatter={formatYAxis} tick={{ fontSize: 11 }} width={48} />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip content={<SavingsProjectionTooltip currency={currency} />} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                   <ReferenceLine y={0} stroke="#a1a1aa" strokeDasharray="3 3" />
                   <Line

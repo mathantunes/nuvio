@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { AuthService } from "@/lib/auth-service";
 import { fetchDashboardData } from "@/lib/dashboard-computations";
 import { calculateGrowthAnalytics } from "@/lib/growth-computations";
@@ -16,14 +15,13 @@ export default async function WealthPage({
 
   const user = await AuthService.getCurrentUser();
 
-  try {
-    const [dashboardData, portfolioData, loanData] = await Promise.all([
-      fetchDashboardData(year, user.id),
-      fetchPortfolioData(user.id, year),
-      fetchLoanData(user.id, year),
-    ]);
+  const [dashboardData, portfolioData, loanData] = await Promise.all([
+    fetchDashboardData(year, user.id),
+    fetchPortfolioData(user.id, year),
+    fetchLoanData(user.id, year),
+  ]);
 
-    const growthAnalytics = calculateGrowthAnalytics(
+  const growthAnalytics = calculateGrowthAnalytics(
       dashboardData.allSavingsLines,
       dashboardData.yearNetActual,
       dashboardData.transferImpacts,
@@ -44,24 +42,21 @@ export default async function WealthPage({
       loanData.yearStartAssetValueByCurrency,
     );
 
-    return (
-      <div className="space-y-6">
-        <header className="space-y-1">
-          <h1 className="text-xl font-semibold" style={{ color: "var(--color-text)" }}>
-            Wealth
-          </h1>
-          <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-            {year} — net worth, cash flow, portfolio and asset breakdown
-          </p>
-        </header>
+  return (
+    <div className="space-y-6">
+      <header className="space-y-1">
+        <h1 className="text-xl font-semibold" style={{ color: "var(--color-text)" }}>
+          Wealth
+        </h1>
+        <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
+          {year} — net worth, cash flow, portfolio and asset breakdown
+        </p>
+      </header>
 
-        <GrowthTab
-          growthAnalytics={growthAnalytics}
-          currentMonthIdx={dashboardData.currentMonthIdx}
-        />
-      </div>
-    );
-  } catch {
-    redirect("/app");
-  }
+      <GrowthTab
+        growthAnalytics={growthAnalytics}
+        currentMonthIdx={dashboardData.currentMonthIdx}
+      />
+    </div>
+  );
 }

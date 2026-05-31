@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 import { db } from "@/db/client";
 import { budgets } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
-import { getMessages } from "@/i18n";
 import { AuthService } from "@/lib/auth-service";
 import { LayoutContent } from "./layout-content";
 import { ThemeToggle } from "@/app/theme-toggle";
@@ -31,8 +30,6 @@ export default async function BudgetYearLayout({ children, params }: Props) {
   if (!budget) {
     redirect("/app");
   }
-
-  const messages = getMessages("en");
 
   return (
     <main

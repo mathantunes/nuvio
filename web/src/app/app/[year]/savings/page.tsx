@@ -6,7 +6,7 @@ import { and, eq, gte, lte } from "drizzle-orm";
 import { createSavingsSnapshotLine } from "./savings.actions";
 import { formatCurrency } from "../planning/currency-format";
 import { AuthService } from "@/lib/auth-service";
-import { Card, CardHeader, CardTitle, Table, Thead, Tbody, Tfoot, Th, Td, Tr } from "@/components/ui";
+import { Card, Table, Thead, Tbody, Th, Td, Tr } from "@/components/ui";
 
 type Props = {
   params: Promise<{ year: string }>;

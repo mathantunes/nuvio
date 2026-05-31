@@ -31,7 +31,6 @@ type Props = {
   allMonthlyVariance: MonthlyVarianceData[];
   currentMonthIdx: number;
   monthNames: string[];
-  year: number;
   savingsTimeline: SavingsTimeline;
   categoryTrends: CategoryTrends;
   disciplineScores: MonthlyDisciplineScore[];
@@ -40,6 +39,50 @@ type Props = {
 type MainTab = "monthly" | "ytd" | "savings" | "trends";
 type KindTab = "expenses" | "income";
 type DisplayMode = "chart" | "table";
+
+type VarianceTooltipEntry = {
+  dataKey?: string | number;
+  name?: string | number;
+  value?: string | number;
+  fill?: string;
+};
+
+function CurrencyChartsTooltip({
+  active,
+  payload,
+  label,
+  currency,
+}: {
+  active?: boolean;
+  payload?: VarianceTooltipEntry[];
+  label?: string | number;
+  currency: string;
+}) {
+  if (!active || !payload?.length) return null;
+
+  return (
+    <div
+      className="rounded-lg border p-3"
+      style={{
+        backgroundColor: "var(--color-surface)",
+        borderColor: "var(--color-border)",
+      }}
+    >
+      <p className="mb-1 text-xs font-semibold" style={{ color: "var(--color-text)" }}>
+        {label}
+      </p>
+      {payload.map((entry) => {
+        if (entry.value === null || entry.value === undefined) return null;
+
+        return (
+          <p key={String(entry.dataKey ?? entry.name)} className="text-xs" style={{ color: entry.fill }}>
+            {String(entry.dataKey ?? entry.name)}: {formatCurrency(Number(entry.value), currency)}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
 
 const PIE_COLORS = [
   "#6366f1", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6",
@@ -79,7 +122,6 @@ export function VarianceTabs({
   allMonthlyVariance,
   currentMonthIdx,
   monthNames,
-  year,
   savingsTimeline,
   categoryTrends,
   disciplineScores,
@@ -127,7 +169,6 @@ export function VarianceTabs({
       {mainTab === "savings" && (
         <SavingsInsightTab
           savingsTimeline={savingsTimeline}
-          disciplineScores={disciplineScores}
           currentMonthIdx={currentMonthIdx}
         />
       )}
@@ -270,28 +311,6 @@ function CurrencyCharts({
   const formatYAxis = (v: number) =>
     v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v);
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (!active || !payload?.length) return null;
-    return (
-      <div
-        className="rounded-lg border p-3"
-        style={{
-          backgroundColor: "var(--color-surface)",
-          borderColor: "var(--color-border)",
-        }}
-      >
-        <p className="mb-1 text-xs font-semibold" style={{ color: "var(--color-text)" }}>
-          {label}
-        </p>
-        {payload.map((p: any) => (
-          <p key={p.dataKey} className="text-xs" style={{ color: p.fill }}>
-            {p.dataKey}: {formatCurrency(p.value, currency)}
-          </p>
-        ))}
-      </div>
-    );
-  };
-
   return (
     <Card className="space-y-6">
       <CardTitle>{currency}</CardTitle>
@@ -304,15 +323,13 @@ function CurrencyCharts({
           <BarChart data={barData} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
             <XAxis dataKey="name" tick={{ fontSize: 11 }} />
             <YAxis tickFormatter={formatYAxis} tick={{ fontSize: 11 }} width={48} />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<CurrencyChartsTooltip currency={currency} />} />
             <Legend wrapperStyle={{ fontSize: 12 }} />
             <Bar dataKey="Planned" fill="#a1a1aa" radius={[3, 3, 0, 0]} />
             <Bar dataKey="Actual" radius={[3, 3, 0, 0]} label={false}>
               {rows.map((row, idx) => {
                 const over = isExpense ? row.actual > row.planned : row.actual < row.planned;
                 return <Cell key={idx} fill={over ? "#ef4444" : "#10b981"} />;
-                {/* Note: SVG fill doesn't support CSS vars. These hex values approximate
-                    --color-off-track and --color-on-track for light mode. */}
               })}
             </Bar>
           </BarChart>

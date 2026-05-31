@@ -1,7 +1,21 @@
 import React from "react";
 import { formatCurrency } from "../planning/currency-format";
-import { Card, CardHeader, CardTitle, Table, Thead, Tbody, Tfoot, Th, Td, Tr } from "@/components/ui";
+import { Card, Table, Thead, Tbody, Th, Td, Tr } from "@/components/ui";
 import { IconTrendUp, IconTrendDown, IconBarChart, IconCheck, IconWarning } from "@/components/icons";
+
+interface SavingsDeviation {
+  monthName: string;
+  deviation: number;
+  currency: string;
+}
+
+interface MonthlyCurrencyDeviation {
+  currency: string;
+  plannedNet: number;
+  actualNet: number;
+  deviation: number;
+  deviationPercent: number;
+}
 
 interface SavingsTabProps {
   savingsHealthByCurrency: Array<{
@@ -11,9 +25,9 @@ interface SavingsTabProps {
     savingsRate: number;
     onTrack: boolean;
   }>;
-  biggestPositiveDeviation: any;
-  biggestNegativeDeviation: any;
-  deviationsByMonth: Record<number, { monthName: string; currencies: any[] }>;
+  biggestPositiveDeviation: SavingsDeviation | null;
+  biggestNegativeDeviation: SavingsDeviation | null;
+  deviationsByMonth: Record<number, { monthName: string; currencies: MonthlyCurrencyDeviation[] }>;
   currentMonthIdx: number;
 }
 

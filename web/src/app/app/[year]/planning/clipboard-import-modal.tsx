@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect, useCallback } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { importClipboardRows, type ClipboardRow } from "./budget-lines.actions";
 import { CurrencyInput } from "@/components/currency-input";
@@ -71,16 +71,10 @@ type Props = {
 };
 
 export function ClipboardImportModal({ budgetId, year, baseCurrency, defaultKind, onClose, initialText }: Props) {
-  const [rows, setRows] = useState<ParsedRow[]>([]);
-  const [skipped, setSkipped] = useState<SkippedRow[]>([]);
+  const [rows, setRows] = useState<ParsedRow[]>(() => parseClipboard(initialText, baseCurrency, defaultKind).rows);
+  const [skipped] = useState<SkippedRow[]>(() => parseClipboard(initialText, baseCurrency, defaultKind).skipped);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const { rows: r, skipped: s } = parseClipboard(initialText, baseCurrency, defaultKind);
-    setRows(r);
-    setSkipped(s);
-  }, [initialText, baseCurrency]);
 
   const updateRow = (key: string, patch: Partial<ParsedRow>) => {
     setRows((prev) => prev.map((r) => (r.key === key ? { ...r, ...patch } : r)));

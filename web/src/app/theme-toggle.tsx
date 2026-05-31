@@ -1,12 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 type Theme = "light" | "dark" | "system";
 
-function getStoredTheme(): Theme {
-  if (typeof window === "undefined") return "system";
-  return (localStorage.getItem("nuvio-theme") as Theme) ?? "system";
+const THEME_KEY = "nuvio-theme";
+const THEME_EVENT = "nuvio-theme-change";
+
+function getSnapshot(): Theme {
+  return (localStorage.getItem(THEME_KEY) as Theme) ?? "system";
+}
+
+function getServerSnapshot(): Theme {
+  return "system";
+}
+
+function subscribe(callback: () => void): () => void {
+  window.addEventListener(THEME_EVENT, callback);
+  return () => window.removeEventListener(THEME_EVENT, callback);
 }
 
 function applyTheme(theme: Theme) {
@@ -21,20 +32,14 @@ function applyTheme(theme: Theme) {
 }
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>("system");
-
-  useEffect(() => {
-    const stored = getStoredTheme();
-    setTheme(stored);
-    applyTheme(stored);
-  }, []);
+  const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   function cycle() {
     const next: Theme =
       theme === "system" ? "dark" : theme === "dark" ? "light" : "system";
-    setTheme(next);
+    localStorage.setItem(THEME_KEY, next);
     applyTheme(next);
-    localStorage.setItem("nuvio-theme", next);
+    window.dispatchEvent(new Event(THEME_EVENT));
   }
 
   const label =

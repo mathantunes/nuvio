@@ -1,6 +1,6 @@
 "use client";
 
-import { DataList, DataListHeader, DataListRow, RowAction } from "@/components/ui";
+import { DataList, DataListRow, RowAction } from "@/components/ui";
 import { useState } from "react";
 import { updateCategory, deleteCategory, forceDeleteCategory, mergeCategories } from "./categories.actions";
 

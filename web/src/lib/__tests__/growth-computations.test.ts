@@ -32,7 +32,7 @@ describe("calculateGrowthAnalytics — instrument transfer impacts", () => {
       {},          // portfolioTotalReturn
       {},          // portfolioNetDeposits (not under test)
       {},          // instrumentTransferImpacts (none)
-      [],          // yearInstrumentTransfers (none)
+      {},          // loanTransferImpacts (none)
     );
 
     const chf = result.byCurrency.find((c) => c.currency === "CHF")!;
@@ -55,6 +55,7 @@ describe("calculateGrowthAnalytics — instrument transfer impacts", () => {
       {},
       {}, // portfolioNetDeposits (not under test)
       { CHF: 5962 }, // instrumentTransferImpacts
+      {},           // loanTransferImpacts (not under test)
       [{ accountId: "acc1", direction: "from_instrument", amount: "5962", currencyCode: "CHF", occurredAt: new Date("2026-03-06") }],
     );
 
@@ -77,6 +78,7 @@ describe("calculateGrowthAnalytics — instrument transfer impacts", () => {
       {},
       {}, // portfolioNetDeposits (not under test)
       { CHF: -2000 }, // to_instrument: cash lost
+      {},            // loanTransferImpacts (not under test)
       [{ accountId: "acc1", direction: "to_instrument", amount: "2000", currencyCode: "CHF", occurredAt: new Date("2026-01-05") }],
     );
 
@@ -111,6 +113,7 @@ describe("calculateGrowthAnalytics — instrument transfer impacts", () => {
       {},
       {}, // portfolioNetDeposits (not under test)
       instrumentTransferImpacts,
+      {}, // loanTransferImpacts (not under test)
       yearInstrumentTransfers,
     );
 
@@ -132,6 +135,7 @@ describe("calculateGrowthAnalytics — instrument transfer impacts", () => {
       {},
       {}, // portfolioNetDeposits (not under test)
       { USD: 500 }, // USD transfer — should not affect CHF
+      {},          // loanTransferImpacts (not under test)
       [{ accountId: "acc2", direction: "from_instrument", amount: "500", currencyCode: "USD", occurredAt: new Date("2026-02-01") }],
     );
 
@@ -162,6 +166,7 @@ describe("calculateGrowthAnalytics — instrument transfer impacts", () => {
       portfolioReturn,
       {}, // portfolioNetDeposits (not under test)
       { CHF: 5962 },
+      {},           // loanTransferImpacts (not under test)
       [{ accountId: "acc1", direction: "from_instrument", amount: "5962", currencyCode: "CHF", occurredAt: new Date("2026-03-06") }],
     );
 

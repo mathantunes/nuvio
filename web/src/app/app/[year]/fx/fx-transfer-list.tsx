@@ -66,8 +66,7 @@ export function FxTransferList({ transfers, onUpdate }: Props) {
         {transfers.map((transfer) => {
           const isSameCurrency = transfer.sourceCurrencyCode === transfer.targetCurrencyCode;
           const totalCosts = parseFloat(transfer.feeAmount ?? "0") + parseFloat(transfer.taxAmount ?? "0");
-          const netSourceAmount = parseFloat(transfer.sourceAmount) - totalCosts;
-          
+
           return (
             <div
               key={transfer.id}

@@ -29,7 +29,7 @@ export type MonthData = {
 };
 
 export type DashboardData = {
-  budget: any;
+  budget: typeof budgets.$inferSelect;
   monthlyData: MonthData[];
   currentMonthIdx: number;
   yearIncomePlanned: CurrencyTotals;

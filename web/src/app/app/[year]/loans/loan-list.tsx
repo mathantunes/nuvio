@@ -29,7 +29,7 @@ import {
 } from "./loans.actions";
 import { RecordAssetValuationForm } from "../assets/assets-page";
 import { CurrencyInput } from "@/components/currency-input";
-import { Card, CardHeader, CardTitle, Table, Thead, Tbody, Tfoot, Th, Td, Tr } from "@/components/ui";
+import { Card, CardTitle, Table, Thead, Tbody, Th, Td, Tr } from "@/components/ui";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -592,12 +592,10 @@ function AddLoanForm({
 
 function NewSimulationForm({
   year,
-  accounts,
   availableAssets,
   onDone,
 }: {
   year: number;
-  accounts: Account[];
   availableAssets: AvailableAsset[];
   onDone: () => void;
 }) {
@@ -1983,7 +1981,6 @@ export function LoanList({ loanData, accounts, availableAssets, year }: LoanList
             {showNewSim && (
               <NewSimulationForm
                 year={year}
-                accounts={accounts}
                 availableAssets={availableAssets}
                 onDone={() => setShowNewSim(false)}
               />

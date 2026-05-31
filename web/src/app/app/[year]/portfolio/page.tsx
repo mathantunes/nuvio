@@ -25,16 +25,15 @@ export default async function PortfolioPage({ params }: Props) {
 
   const user = await AuthService.getCurrentUser();
 
-  try {
-    const [portfolio, userAccounts] = await Promise.all([
-      fetchPortfolioData(user.id, year),
-      db
-        .select({ id: accounts.id, name: accounts.name, currencyCode: accounts.currencyCode })
-        .from(accounts)
-        .where(and(eq(accounts.userId, user.id), eq(accounts.isActive, true))),
-    ]);
+  const [portfolio, userAccounts] = await Promise.all([
+    fetchPortfolioData(user.id, year),
+    db
+      .select({ id: accounts.id, name: accounts.name, currencyCode: accounts.currencyCode })
+      .from(accounts)
+      .where(and(eq(accounts.userId, user.id), eq(accounts.isActive, true))),
+  ]);
 
-    const allCurrencies = Array.from(
+  const allCurrencies = Array.from(
       new Set([
         ...Object.keys(portfolio.totalValueByCurrency),
         ...Object.keys(portfolio.yearStartValueByCurrency),
@@ -147,7 +146,4 @@ export default async function PortfolioPage({ params }: Props) {
         </div>
       </div>
     );
-  } catch {
-    redirect("/app");
-  }
 }

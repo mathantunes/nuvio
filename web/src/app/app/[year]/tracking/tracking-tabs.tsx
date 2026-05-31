@@ -3,7 +3,7 @@
 import { startTransition, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { Card, DataList, DataListRow, RowAction } from "@/components/ui";
+import { DataList, DataListRow, RowAction } from "@/components/ui";
 import { TransactionForm } from "./transaction-form";
 import { formatAmount } from "../planning/currency-format";
 import { deleteTransaction, createUnplannedTransaction, confirmAsPaid } from "./transactions.actions";
@@ -53,7 +53,6 @@ type Category = {
 };
 
 type Props = {
-  budgetId: string;
   year: number;
   selectedMonth: number;
   incomeLines: BudgetLine[];
@@ -66,14 +65,12 @@ type Props = {
 };
 
 export function TrackingTabs({
-  budgetId,
   year,
   selectedMonth,
   incomeLines,
   expenseLines,
   transactions,
   accounts,
-  baseCurrency,
   incomeCategories,
   expenseCategories,
 }: Props) {
@@ -201,10 +198,6 @@ export function TrackingTabs({
   // Keep ref up to date for keyboard handler
   const monthNames = Array.from({ length: 12 }, (_, i) =>
     new Date(year, i).toLocaleString("en-US", { month: "short" })
-  );
-
-  const fullMonthNames = Array.from({ length: 12 }, (_, i) =>
-    new Date(year, i).toLocaleString("en-US", { month: "long" })
   );
 
   // Calculate percentage (actual / expected * 100)
