@@ -88,7 +88,7 @@ The app is organised into four sections:
 **Quick start:**
 
 ```bash
-git clone https://github.com/mathantunes/globudget.git
+git clone https://github.com/mathantunes/nuvio.git
 cd globudget
 cp .env.example .env   # fill in your values
 docker compose up -d

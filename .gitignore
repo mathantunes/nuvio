@@ -1,25 +1,15 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # dependencies
-/node_modules
-/.pnp
-.pnp.js
+node_modules/
 
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
+# next.js build output
+.next/
+out/
 
 # misc
 .DS_Store
 *.pem
 
-# debug
+# debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -34,4 +24,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-/backups/
+
+# local DB backups
+backups/

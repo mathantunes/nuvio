@@ -30,6 +30,7 @@ describe("calculateGrowthAnalytics — instrument transfer impacts", () => {
       {},          // portfolioYearStart
       {},          // portfolioLatest
       {},          // portfolioTotalReturn
+      {},          // portfolioNetDeposits (not under test)
       {},          // instrumentTransferImpacts (none)
       [],          // yearInstrumentTransfers (none)
     );
@@ -52,7 +53,8 @@ describe("calculateGrowthAnalytics — instrument transfer impacts", () => {
       {},
       {},
       {},
-      { CHF: 5962 }, // from_instrument: cash gained
+      {}, // portfolioNetDeposits (not under test)
+      { CHF: 5962 }, // instrumentTransferImpacts
       [{ accountId: "acc1", direction: "from_instrument", amount: "5962", currencyCode: "CHF", occurredAt: new Date("2026-03-06") }],
     );
 
@@ -73,6 +75,7 @@ describe("calculateGrowthAnalytics — instrument transfer impacts", () => {
       {},
       {},
       {},
+      {}, // portfolioNetDeposits (not under test)
       { CHF: -2000 }, // to_instrument: cash lost
       [{ accountId: "acc1", direction: "to_instrument", amount: "2000", currencyCode: "CHF", occurredAt: new Date("2026-01-05") }],
     );
@@ -106,6 +109,7 @@ describe("calculateGrowthAnalytics — instrument transfer impacts", () => {
       {},
       {},
       {},
+      {}, // portfolioNetDeposits (not under test)
       instrumentTransferImpacts,
       yearInstrumentTransfers,
     );
@@ -126,6 +130,7 @@ describe("calculateGrowthAnalytics — instrument transfer impacts", () => {
       {},
       {},
       {},
+      {}, // portfolioNetDeposits (not under test)
       { USD: 500 }, // USD transfer — should not affect CHF
       [{ accountId: "acc2", direction: "from_instrument", amount: "500", currencyCode: "USD", occurredAt: new Date("2026-02-01") }],
     );
@@ -155,6 +160,7 @@ describe("calculateGrowthAnalytics — instrument transfer impacts", () => {
       portfolioYearStart,
       portfolioLatest,
       portfolioReturn,
+      {}, // portfolioNetDeposits (not under test)
       { CHF: 5962 },
       [{ accountId: "acc1", direction: "from_instrument", amount: "5962", currencyCode: "CHF", occurredAt: new Date("2026-03-06") }],
     );
@@ -177,7 +183,9 @@ describe("calculateGrowthAnalytics — instrument transfer impacts", () => {
       {},
       {},
       {},
-      { CHF: 6262 },
+      {}, // portfolioNetDeposits (not under test)
+      { CHF: 6262 }, // instrumentTransferImpacts
+      {}, // loanTransferImpacts (not under test)
       [{ accountId: "acc1", direction: "from_instrument", amount: "6262", currencyCode: "CHF", occurredAt: new Date("2026-03-06") }],
     );
 

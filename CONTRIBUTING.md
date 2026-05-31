@@ -15,7 +15,7 @@ Thanks for your interest in contributing! This document covers how to get the pr
 ## Local setup
 
 ```bash
-git clone https://github.com/mathantunes/globudget.git
+git clone https://github.com/mathantunes/nuvio.git
 cd globudget
 
 # Install dependencies

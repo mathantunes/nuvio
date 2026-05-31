@@ -1,0 +1,350 @@
+@import "tailwindcss";
+
+/* ─── Nuvio Design Tokens ─────────────────────────────────────────────────── */
+
+:root {
+  /* Brand */
+  --color-brand:          #003040;
+  --color-brand-hover:    #001F2A;
+  --color-brand-subtle:   #C0DEE2;
+  --color-brand-muted:    #3D8A94;
+
+  /* Backgrounds — warm cream degrading lighter */
+  --color-bg:             #F9EDD8;
+  --color-surface:        #FEF8EE;
+  --color-surface-raised: #EDE0C8;
+
+  /* Text */
+  --color-text:           #2A1800;
+  --color-text-muted:     #7A5A38;
+  --color-text-subtle:    #B0896A;
+
+  /* Borders */
+  --color-border:         #E8C9A8;
+  --color-border-strong:  #D4B088;
+
+  /* Semantic */
+  --color-success:        #15803D;
+  --color-success-subtle: #DCFCE7;
+  --color-danger:         #B91C1C;
+  --color-danger-subtle:  #FEE2E2;
+  --color-warning:        #B45309;
+  --color-warning-subtle: #FEF3C7;
+
+  /*
+   * Budget tracking signals — use these instead of success/danger when
+   * expressing whether something is on-track or off-track relative to a plan.
+   * Currently alias to success/danger but kept separate so the mapping can
+   * change independently without touching semantic success/danger usages.
+   *
+   * Rules:
+   *   Expenses  — actual ≤ planned  → on-track  |  actual > planned  → off-track
+   *   Income    — actual ≥ planned  → on-track  |  actual < planned  → off-track
+   *   % (exp.)  — pct ≤ 100%       → on-track  |  pct > 100%        → off-track
+   *   % (inc.)  — pct ≥ 100%       → on-track  |  pct < 100%        → off-track
+   */
+  --color-on-track:         var(--color-success);
+  --color-on-track-subtle:  var(--color-success-subtle);
+  --color-off-track:        var(--color-danger);
+  --color-off-track-subtle: var(--color-danger-subtle);
+
+  /* Focus */
+  --color-focus:          #0D747B;
+}
+
+/* Dark mode — via system preference or explicit [data-theme="dark"] */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-brand:          #2DD4BF;
+    --color-brand-hover:    #5EEAD4;
+    --color-brand-subtle:   #0D2E2A;
+    --color-brand-muted:    #0F9D8E;
+
+    --color-bg:             #0B0F0E;
+    --color-surface:        #161F1D;
+    --color-surface-raised: #1F2E2B;
+
+    --color-text:           #EDF0EE;
+    --color-text-muted:     #90A8A4;
+    --color-text-subtle:    #5C7571;
+
+    --color-border:         #2A3D39;
+    --color-border-strong:  #3D5550;
+
+    --color-success:        #4ADE80;
+    --color-success-subtle: #052E16;
+    --color-danger:         #F87171;
+    --color-danger-subtle:  #2D1111;
+    --color-warning:        #FBBF24;
+    --color-warning-subtle: #2D1F04;
+
+    --color-on-track:         var(--color-success);
+    --color-on-track-subtle:  var(--color-success-subtle);
+    --color-off-track:        var(--color-danger);
+    --color-off-track-subtle: var(--color-danger-subtle);
+
+    --color-focus:          #2DD4BF;
+  }
+}
+
+/* Explicit dark override (system is light but user chose dark) */
+:root[data-theme="dark"] {
+  --color-brand:          #2DD4BF;
+  --color-brand-hover:    #5EEAD4;
+  --color-brand-subtle:   #0D2E2A;
+  --color-brand-muted:    #0F9D8E;
+
+  --color-bg:             #0B0F0E;
+  --color-surface:        #161F1D;
+  --color-surface-raised: #1F2E2B;
+
+  --color-text:           #EDF0EE;
+  --color-text-muted:     #90A8A4;
+  --color-text-subtle:    #5C7571;
+
+  --color-border:         #2A3D39;
+  --color-border-strong:  #3D5550;
+
+  --color-success:        #4ADE80;
+  --color-success-subtle: #052E16;
+  --color-danger:         #F87171;
+  --color-danger-subtle:  #2D1111;
+  --color-warning:        #FBBF24;
+  --color-warning-subtle: #2D1F04;
+
+  --color-on-track:         var(--color-success);
+  --color-on-track-subtle:  var(--color-success-subtle);
+  --color-off-track:        var(--color-danger);
+  --color-off-track-subtle: var(--color-danger-subtle);
+
+  --color-focus:          #2DD4BF;
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --color-brand:          var(--color-brand);
+  --color-brand-hover:    var(--color-brand-hover);
+  --color-brand-subtle:   var(--color-brand-subtle);
+  --color-brand-muted:    var(--color-brand-muted);
+
+  --color-bg:             var(--color-bg);
+  --color-surface:        var(--color-surface);
+  --color-surface-raised: var(--color-surface-raised);
+
+  --color-text:           var(--color-text);
+  --color-text-muted:     var(--color-text-muted);
+  --color-text-subtle:    var(--color-text-subtle);
+
+  --color-border:         var(--color-border);
+  --color-border-strong:  var(--color-border-strong);
+
+  --color-success:        var(--color-success);
+  --color-success-subtle: var(--color-success-subtle);
+  --color-danger:         var(--color-danger);
+  --color-danger-subtle:  var(--color-danger-subtle);
+  --color-warning:        var(--color-warning);
+  --color-warning-subtle: var(--color-warning-subtle);
+  --color-on-track:         var(--color-on-track);
+  --color-on-track-subtle:  var(--color-on-track-subtle);
+  --color-off-track:        var(--color-off-track);
+  --color-off-track-subtle: var(--color-off-track-subtle);
+}
+
+/* ─── Base styles ─────────────────────────────────────────────────────────── */
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* ─── Shared component utilities ──────────────────────────────────────────── */
+
+/* Primary button */
+.btn-primary {
+  @apply inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium transition-colors;
+  background-color: var(--color-brand);
+  color: var(--color-bg);
+}
+.btn-primary:hover { background-color: var(--color-brand-hover); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Ghost button */
+.btn-ghost {
+  @apply inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+.btn-ghost:hover {
+  background-color: var(--color-surface-raised);
+  color: var(--color-text);
+}
+
+/* Form input */
+.input {
+  @apply block w-full rounded-lg px-3 py-2 text-sm transition outline-none;
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+.input::placeholder { color: var(--color-text-subtle); }
+.input:focus {
+  border-color: var(--color-focus);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-focus) 20%, transparent);
+}
+
+/* Card surface */
+.card {
+  @apply rounded-xl p-4;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+/* Nav link active / inactive */
+.nav-link {
+  @apply block rounded-lg px-3 py-1.5 text-sm font-medium transition-colors;
+  color: var(--color-text-muted);
+}
+.nav-link:hover {
+  background-color: var(--color-surface-raised);
+  color: var(--color-text);
+}
+.nav-link.active {
+  background-color: var(--color-brand-subtle);
+  color: var(--color-brand);
+  font-weight: 600;
+  border-left: 2px solid var(--color-brand);
+  padding-left: calc(0.75rem - 2px);
+}
+
+/* Tab bar — ghost pill style */
+.tab-bar {
+  @apply flex items-center gap-1 flex-wrap;
+}
+
+.tab-btn {
+  @apply inline-flex items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors;
+  color: var(--color-text-muted);
+}
+.tab-btn:hover {
+  background-color: var(--color-surface-raised);
+  color: var(--color-text);
+}
+.tab-btn.active {
+  background-color: var(--color-brand-subtle);
+  color: var(--color-brand);
+  font-weight: 600;
+}
+
+/* Brand wordmark */
+.wordmark {
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--color-brand);
+}
+
+/* Section label in nav */
+.nav-section-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-brand-muted);
+  padding: 0 0.5rem;
+  margin-bottom: 0.375rem;
+}
+
+/* ─── Data table ──────────────────────────────────────────────────────────── */
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem; /* 12px */
+}
+.data-table thead tr {
+  background-color: var(--color-surface-raised);
+  border-bottom: 1px solid var(--color-border);
+}
+.data-table th {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  font-size: 0.6875rem; /* 11px */
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--color-text-subtle);
+  white-space: nowrap;
+}
+.data-table th:first-child { padding-left: 1rem; }
+.data-table th:last-child  { padding-right: 1rem; }
+.data-table td {
+  padding: 0.5rem 0.75rem;
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+.data-table td:first-child { padding-left: 1rem; }
+.data-table td:last-child  { padding-right: 1rem; }
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover td { background-color: var(--color-surface-raised); }
+.data-table .col-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.data-table .col-muted { color: var(--color-text-muted); }
+
+/* ─── Data list (ul-based rows) ──────────────────────────────────────────── */
+
+.data-list-header {
+  display: flex;
+  align-items: center;
+  padding: 0.375rem 1rem;
+  background-color: var(--color-surface-raised);
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--color-text-subtle);
+}
+.data-list-row {
+  display: flex;
+  align-items: center;
+  padding: 0.625rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  transition: background-color 0.15s;
+  font-size: 0.75rem;
+}
+.data-list-row:hover { background-color: var(--color-surface-raised); }
+.data-list-row:last-child { border-bottom: none; }
+
+/* Row action buttons */
+.row-action {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  transition: opacity 0.15s;
+  color: var(--color-text-subtle);
+}
+.row-action:hover { color: var(--color-text); }
+.row-action-danger { color: var(--color-danger); opacity: 0.7; }
+.row-action-danger:hover { opacity: 1; }
+
+/* Hide scrollbar while keeping scroll functionality */
+.scrollbar-hide {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+/* Logo: invert to white on dark backgrounds so the dark teal remains visible */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .logo {
+    filter: brightness(0) invert(1);
+  }
+}
+:root[data-theme="dark"] .logo {
+  filter: brightness(0) invert(1);
+}
