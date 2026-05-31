@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { BudgetLineForm } from "./budget-line-form";
 import { formatAmount } from "./currency-format";
 import { CardTitle, Table, Thead, Tbody, Th, Td, Tr } from "@/components/ui";
+import { ClipboardImportModal } from "./clipboard-import-modal";
 
 type BudgetLine = {
   id: string;
@@ -47,8 +48,25 @@ export function PlanningTabs({
   const [activeTab, setActiveTab] = useState<"income" | "expense">("expense");
   const [editingLine, setEditingLine] = useState<BudgetLine | null>(null);
   const [formAnchorPos, setFormAnchorPos] = useState<{ x: number; y: number } | null>(null);
-  // track the cell button that triggered the form so we can restore focus
   const [triggerCellId, setTriggerCellId] = useState<string | null>(null);
+  const [clipboardText, setClipboardText] = useState<string | null>(null);
+
+  // Ctrl+V listener: intercept paste when not focused on an input
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
+      const text = e.clipboardData?.getData("text") ?? "";
+      if (!text.trim()) return;
+      // Must look like tabular data: multiple cells or multiple rows
+      const hasDelimiter = text.includes("\t") || text.includes(";") || (text.includes(",") && text.includes("\n"));
+      if (!hasDelimiter) return;
+      e.preventDefault();
+      setClipboardText(text);
+    };
+    document.addEventListener("paste", handlePaste);
+    return () => document.removeEventListener("paste", handlePaste);
+  }, []);
 
   function anchorFromElement(el: Element) {
     const FORM_WIDTH = 320;
@@ -156,24 +174,42 @@ export function PlanningTabs({
 
   return (
     <div className="space-y-4">
-      <div className="tab-bar">
+      <div className="flex items-center justify-between gap-4">
+        <div className="tab-bar">
+          <button
+            onClick={() => {
+              setActiveTab("expense");
+              closeForm();
+            }}
+            className={`tab-btn ${activeTab === "expense" ? "active" : ""}`}
+          >
+            Expenses
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab("income");
+              closeForm();
+            }}
+            className={`tab-btn ${activeTab === "income" ? "active" : ""}`}
+          >
+            Income
+          </button>
+        </div>
         <button
+          type="button"
           onClick={() => {
-            setActiveTab("expense");
-            closeForm();
+            navigator.clipboard.readText().then((text) => {
+              if (text.trim()) setClipboardText(text);
+            }).catch(() => {
+              // Fallback: show an empty modal so user knows the feature exists
+              setClipboardText("\t");
+            });
           }}
-          className={`tab-btn ${activeTab === "expense" ? "active" : ""}`}
+          className="text-xs hover:opacity-70 flex items-center gap-1"
+          style={{ color: "var(--color-text-subtle)" }}
+          title="Paste rows from a spreadsheet to bulk-import budget lines"
         >
-          Expenses
-        </button>
-        <button
-          onClick={() => {
-            setActiveTab("income");
-            closeForm();
-          }}
-          className={`tab-btn ${activeTab === "income" ? "active" : ""}`}
-        >
-          Income
+          ⌘V Import from spreadsheet
         </button>
       </div>
 
@@ -375,6 +411,17 @@ export function PlanningTabs({
           />
         </div>,
         document.body
+      )}
+
+      {clipboardText && (
+        <ClipboardImportModal
+          budgetId={budgetId}
+          year={year}
+          baseCurrency={baseCurrency}
+          initialText={clipboardText}
+          defaultKind={activeTab}
+          onClose={() => setClipboardText(null)}
+        />
       )}
     </div>
   );

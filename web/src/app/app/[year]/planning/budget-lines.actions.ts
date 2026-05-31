@@ -82,6 +82,13 @@ export async function createBudgetLine(formData: FormData) {
     } = parsed.data;
 
     // Find or create the category
+    const budget = await db.query.budgets.findFirst({
+      where: and(eq(budgets.id, budgetId), eq(budgets.userId, user.id)),
+    });
+
+    if (!budget) return { error: "Budget not found." };
+
+    // Find or create the category
     let category = await db.query.categories.findFirst({
       where: and(
         eq(categories.userId, user.id),
@@ -128,6 +135,34 @@ export async function createBudgetLine(formData: FormData) {
   }
 }
 
+export async function deleteBudgetLine(budgetLineId: string, year: number) {
+  try {
+    const user = await AuthService.getCurrentUser();
+
+    const budgetLine = await db.query.budgetLines.findFirst({
+      where: eq(budgetLines.id, budgetLineId),
+    });
+
+    if (!budgetLine) return { error: "Budget line not found." };
+
+    const budget = await db.query.budgets.findFirst({
+      where: eq(budgets.id, budgetLine.budgetId),
+    });
+
+    if (!budget || budget.userId !== user.id) return { error: "Access denied." };
+
+    await db.delete(budgetLines).where(eq(budgetLines.id, budgetLineId));
+
+    revalidatePath(`/app/${year}/planning`);
+    revalidatePath(`/app/${year}`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete budget line:", error);
+    return { error: error instanceof Error ? error.message : "Failed to delete budget line." };
+  }
+}
+
 export async function updateBudgetLine(formData: FormData) {
   try {
     const user = await AuthService.getCurrentUser();
@@ -147,22 +182,17 @@ export async function updateBudgetLine(formData: FormData) {
 
     const { budgetLineId, plannedAmount, currencyCode, notes } = parsed.data;
 
-    // Verify ownership via budget
     const budgetLine = await db.query.budgetLines.findFirst({
       where: eq(budgetLines.id, budgetLineId),
     });
 
-    if (!budgetLine) {
-      return { error: "Budget line not found." };
-    }
+    if (!budgetLine) return { error: "Budget line not found." };
 
     const budget = await db.query.budgets.findFirst({
       where: eq(budgets.id, budgetLine.budgetId),
     });
 
-    if (!budget || budget.userId !== user.id) {
-      return { error: "Access denied." };
-    }
+    if (!budget || budget.userId !== user.id) return { error: "Access denied." };
 
     await db
       .update(budgetLines)
@@ -183,3 +213,81 @@ export async function updateBudgetLine(formData: FormData) {
     return { error: error instanceof Error ? error.message : "Failed to update budget line." };
   }
 }
+
+export type ClipboardRow = {
+  categoryName: string;
+  kind: "income" | "expense";
+  currencyCode: string;
+  amounts: { month: number; amount: number }[];
+};
+
+export async function importClipboardRows(
+  budgetId: string,
+  year: number,
+  rows: ClipboardRow[]
+) {
+  try {
+    const user = await AuthService.getCurrentUser();
+
+    const budget = await db.query.budgets.findFirst({
+      where: and(eq(budgets.id, budgetId), eq(budgets.userId, user.id)),
+    });
+
+    if (!budget) return { error: "Budget not found." };
+
+    for (const row of rows) {
+      if (!row.categoryName.trim() || row.amounts.length === 0) continue;
+
+      // Find or create category
+      let category = await db.query.categories.findFirst({
+        where: and(
+          eq(categories.userId, user.id),
+          eq(categories.name, row.categoryName.trim())
+        ),
+      });
+
+      if (!category) {
+        const [newCategory] = await db
+          .insert(categories)
+          .values({ userId: user.id, name: row.categoryName.trim(), kind: row.kind })
+          .returning();
+        category = newCategory;
+      }
+
+      for (const { month, amount } of row.amounts) {
+        // Find existing budget line for this category + month
+        const existing = await db.query.budgetLines.findFirst({
+          where: and(
+            eq(budgetLines.budgetId, budgetId),
+            eq(budgetLines.categoryId, category.id),
+            eq(budgetLines.month, month)
+          ),
+        });
+
+        if (existing) {
+          await db
+            .update(budgetLines)
+            .set({ plannedAmount: amount.toString(), currencyCode: row.currencyCode, updatedAt: new Date() })
+            .where(eq(budgetLines.id, existing.id));
+        } else {
+          await db.insert(budgetLines).values({
+            budgetId,
+            categoryId: category.id,
+            month,
+            plannedAmount: amount.toString(),
+            currencyCode: row.currencyCode,
+          });
+        }
+      }
+    }
+
+    revalidatePath(`/app/${year}/planning`);
+    revalidatePath(`/app/${year}`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to import clipboard rows:", error);
+    return { error: error instanceof Error ? error.message : "Failed to import." };
+  }
+}
+

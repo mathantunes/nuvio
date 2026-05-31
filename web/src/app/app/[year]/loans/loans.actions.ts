@@ -7,15 +7,28 @@ import {
   loanPayments,
   loanAmortizations,
   instrumentTransfers,
+  assets,
+  accounts,
 } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { AuthService } from "@/lib/auth-service";
 
 // ── Loan actions ──────────────────────────────────────────────────────────────
 
+async function verifyAccountOwnership(accountId: string, userId: string) {
+  const [account] = await db.select({ id: accounts.id }).from(accounts).where(and(eq(accounts.id, accountId), eq(accounts.userId, userId)));
+  if (!account) throw new Error("Account not found.");
+}
+
 export async function createSimulation(formData: FormData) {
   const user = await AuthService.getCurrentUser();
   const year = formData.get("year") as string;
+  const rawAssetId = (formData.get("assetId") as string) || null;
+
+  if (rawAssetId) {
+    const [asset] = await db.select({ id: assets.id }).from(assets).where(and(eq(assets.id, rawAssetId), eq(assets.userId, user.id)));
+    if (!asset) throw new Error("Asset not found.");
+  }
 
   await db.insert(loans).values({
     userId: user.id,
@@ -27,7 +40,7 @@ export async function createSimulation(formData: FormData) {
     termMonths: parseInt(formData.get("termMonths") as string, 10),
     startDate: new Date(formData.get("startDate") as string),
     status: "simulation",
-    assetId: (formData.get("assetId") as string) || null,
+    assetId: rawAssetId,
     notes: (formData.get("notes") as string) || null,
   });
 
@@ -38,10 +51,16 @@ export async function updateSimulation(formData: FormData) {
   const user = await AuthService.getCurrentUser();
   const loanId = formData.get("loanId") as string;
   const year = formData.get("year") as string;
+  const rawAssetId = (formData.get("assetId") as string) || null;
 
   const [loan] = await db.select().from(loans).where(eq(loans.id, loanId));
   if (!loan || loan.userId !== user.id) throw new Error("Not found");
   if (loan.status !== "simulation") throw new Error("Only simulations can be edited");
+
+  if (rawAssetId) {
+    const [asset] = await db.select({ id: assets.id }).from(assets).where(and(eq(assets.id, rawAssetId), eq(assets.userId, user.id)));
+    if (!asset) throw new Error("Asset not found.");
+  }
 
   await db.update(loans).set({
     name: formData.get("name") as string,
@@ -51,7 +70,7 @@ export async function updateSimulation(formData: FormData) {
     interestRate: formData.get("interestRate") as string,
     termMonths: parseInt(formData.get("termMonths") as string, 10),
     startDate: new Date(formData.get("startDate") as string),
-    assetId: (formData.get("assetId") as string) || null,
+    assetId: rawAssetId,
     notes: (formData.get("notes") as string) || null,
   }).where(eq(loans.id, loanId));
 
@@ -71,6 +90,7 @@ export async function promoteToActive(formData: FormData) {
 
   // Optional: record the bank disbursement as cash inflow on a linked account
   if (accountId && disbursementDate) {
+    await verifyAccountOwnership(accountId, user.id);
     await db.insert(instrumentTransfers).values({
       userId: user.id,
       accountId,
@@ -111,6 +131,7 @@ export async function recordPayment(formData: FormData) {
   let instrumentTransferId: string | null = null;
 
   if (accountId) {
+    await verifyAccountOwnership(accountId, user.id);
     const [transfer] = await db
       .insert(instrumentTransfers)
       .values({
@@ -163,6 +184,7 @@ export async function recordAmortization(formData: FormData) {
   let instrumentTransferId: string | null = null;
 
   if (accountId) {
+    await verifyAccountOwnership(accountId, user.id);
     const [transfer] = await db
       .insert(instrumentTransfers)
       .values({
@@ -205,6 +227,11 @@ export async function linkAssetToLoan(formData: FormData) {
 
   const [loan] = await db.select().from(loans).where(eq(loans.id, loanId));
   if (!loan || loan.userId !== user.id) throw new Error("Not found");
+
+  if (assetId) {
+    const [asset] = await db.select({ id: assets.id }).from(assets).where(and(eq(assets.id, assetId), eq(assets.userId, user.id)));
+    if (!asset) throw new Error("Asset not found.");
+  }
 
   await db.update(loans).set({ assetId }).where(eq(loans.id, loanId));
 

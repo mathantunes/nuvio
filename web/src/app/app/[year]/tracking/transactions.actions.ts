@@ -95,7 +95,7 @@ export async function createTransaction(formData: FormData) {
   const { budgetLineId, accountId, amount, currencyCode, occurredAt, description } =
     parsed.data;
 
-  // Get budget line with category to determine transaction type
+  // Get budget line with category to determine transaction type — verify user owns it via category
   const budgetLineResult = await db
     .select({
       budgetLineId: budgetLines.id,
@@ -104,7 +104,7 @@ export async function createTransaction(formData: FormData) {
     })
     .from(budgetLines)
     .innerJoin(categories, eq(budgetLines.categoryId, categories.id))
-    .where(eq(budgetLines.id, budgetLineId))
+    .where(and(eq(budgetLines.id, budgetLineId), eq(categories.userId, user.id)))
     .limit(1);
 
   if (budgetLineResult.length === 0) {
@@ -187,7 +187,7 @@ export async function updateTransaction(formData: FormData) {
 
     // Handle budget line change
     if (budgetLineId !== undefined && budgetLineId !== existingTransaction[0].budgetLineId) {
-      // Get new budget line with category to determine transaction type
+      // Get new budget line with category — verify user owns it via category
       const budgetLineResult = await db
         .select({
           categoryId: budgetLines.categoryId,
@@ -195,7 +195,7 @@ export async function updateTransaction(formData: FormData) {
         })
         .from(budgetLines)
         .innerJoin(categories, eq(budgetLines.categoryId, categories.id))
-        .where(eq(budgetLines.id, budgetLineId))
+        .where(and(eq(budgetLines.id, budgetLineId), eq(categories.userId, user.id)))
         .limit(1);
 
       if (budgetLineResult.length === 0) {

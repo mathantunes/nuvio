@@ -7,8 +7,9 @@ import {
   investmentValuations,
   investmentFlows,
   instrumentTransfers,
+  accounts,
 } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { AuthService } from "@/lib/auth-service";
 
 export async function recordValuation(formData: FormData) {
@@ -57,6 +58,9 @@ export async function recordFlow(formData: FormData) {
   let instrumentTransferId: string | null = null;
 
   if (accountId) {
+    const [account] = await db.select({ id: accounts.id }).from(accounts).where(and(eq(accounts.id, accountId), eq(accounts.userId, user.id)));
+    if (!account) throw new Error("Account not found.");
+
     // direction: deposits go TO the instrument; withdrawals/dividends come FROM it
     const direction: "to_instrument" | "from_instrument" =
       flowKind === "deposit" ? "to_instrument" : "from_instrument";

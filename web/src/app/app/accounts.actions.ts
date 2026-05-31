@@ -106,9 +106,9 @@ export async function createAccount(formData: FormData) {
 
 export async function deleteAccount(accountId: string) {
   try {
-    const _ = await AuthService.getCurrentUser();
+    const user = await AuthService.getCurrentUser();
 
-    await db.delete(accounts).where(eq(accounts.id, accountId));
+    await db.delete(accounts).where(and(eq(accounts.id, accountId), eq(accounts.userId, user.id)));
 
     revalidatePath("/app");
 
