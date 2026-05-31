@@ -64,6 +64,7 @@ export default function LoginPage() {
             </button>
             <button
               type="button"
+              data-testid="tab-signup"
               onClick={() => switchMode("signup")}
               className={`tab-btn ${mode === "signup" ? "active" : ""}`}
             >

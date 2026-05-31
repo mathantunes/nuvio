@@ -7,9 +7,9 @@ const TEST_YEAR = new Date().getFullYear();
 test.describe("Clipboard import flow", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/login");
-    await page.locator("[data-testid='email-input']").fill(TEST_EMAIL);
-    await page.locator("[data-testid='password-input']").fill(TEST_PASSWORD);
-    await page.locator("[data-testid='auth-submit']").click();
+    await page.getByTestId("email-input").fill(TEST_EMAIL);
+    await page.getByTestId("password-input").fill(TEST_PASSWORD);
+    await page.getByTestId("auth-submit").click();
     await page.waitForURL("/app");
   });
 
@@ -18,13 +18,13 @@ test.describe("Clipboard import flow", () => {
   });
 
   test("can create or open a budget for the current year", async ({ page }) => {
-    const existingLink = page.locator(`[data-testid='budget-link-${TEST_YEAR}']`);
+    const existingLink = page.getByTestId(`budget-link-${TEST_YEAR}`);
 
     if (await existingLink.isVisible()) {
       await existingLink.click();
     } else {
-      await page.locator("[data-testid='create-budget-submit']").click();
-      await page.waitForURL(`/app/${TEST_YEAR}*`);
+      await page.getByTestId("create-budget-submit").click();
+      await page.waitForURL(new RegExp(`/app/${TEST_YEAR}`));
     }
 
     await expect(page).toHaveURL(new RegExp(`/app/${TEST_YEAR}`));
@@ -43,9 +43,9 @@ test.describe("Clipboard import flow", () => {
     ].join("\n");
     await page.evaluate((text) => navigator.clipboard.writeText(text), clipboardData);
 
-    await page.locator("[data-testid='import-from-spreadsheet']").click();
+    await page.getByTestId("import-from-spreadsheet").click();
 
-    await expect(page.locator("[data-testid='clipboard-import-modal']")).toBeVisible();
-    await expect(page.locator("[data-testid='import-rows'] [data-testid='import-row']")).toHaveCount(3);
+    await expect(page.getByTestId("clipboard-import-modal")).toBeVisible();
+    await expect(page.getByTestId("import-row")).toHaveCount(3);
   });
 });
