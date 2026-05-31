@@ -32,6 +32,7 @@ export default async function SettingsPage() {
               alt="Nuvio"
               width={352}
               height={116}
+              className="logo"
               style={{ width: "auto", height: "28px", objectFit: "contain", objectPosition: "left" }}
             />
           </Link>

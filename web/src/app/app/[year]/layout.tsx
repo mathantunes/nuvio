@@ -53,7 +53,7 @@ export default async function BudgetYearLayout({ children, params }: Props) {
           }}
         >
         <div className="mb-4 space-y-2">
-          <Image src="/logo.png" alt="Nuvio" width={352} height={116} style={{ width: "auto", height: "28px", objectFit: "contain", objectPosition: "left" }} />
+          <Image src="/logo.png" alt="Nuvio" width={352} height={116} className="logo" style={{ width: "auto", height: "28px", objectFit: "contain", objectPosition: "left" }} />
           <Link
             href="/app"
             className="flex items-center gap-1 text-sm font-semibold transition-opacity hover:opacity-70"

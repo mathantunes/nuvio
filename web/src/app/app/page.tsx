@@ -36,6 +36,7 @@ export default async function AppHomePage() {
               alt="Nuvio"
               width={352}
               height={116}
+              className="logo"
               style={{ width: "auto", height: "32px", objectFit: "contain", objectPosition: "left" }}
             />
             <div>
@@ -90,6 +91,7 @@ export default async function AppHomePage() {
             alt="Nuvio"
             width={352}
             height={116}
+            className="logo"
             style={{ width: "auto", height: "32px", objectFit: "contain", objectPosition: "left" }}
           />
           <div>

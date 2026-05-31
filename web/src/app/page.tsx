@@ -134,7 +134,7 @@ export default function LandingPage() {
       {/* Nav */}
       <div className="sticky top-0 z-40 border-b" style={{ backgroundColor: "var(--color-bg)", borderColor: "var(--color-border)" }}>
         <nav className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <Image src="/logo.png" alt="Nuvio" width={352} height={116} style={{ width: "auto", height: "24px", objectFit: "contain" }} />
+          <Image src="/logo.png" alt="Nuvio" width={352} height={116} className="logo" style={{ width: "auto", height: "24px", objectFit: "contain" }} />
           <div className="flex items-center gap-3">
             <a href="https://github.com/mathantunes/globudget" target="_blank" rel="noopener noreferrer"
               className="hidden text-sm sm:block" style={{ color: "var(--color-text-muted)" }}>
@@ -433,7 +433,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t py-8" style={{ borderColor: "var(--color-border)" }}>
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-3 px-6 text-xs sm:flex-row sm:justify-between" style={{ color: "var(--color-text-subtle)" }}>
-          <Image src="/logo.png" alt="Nuvio" width={352} height={116} style={{ width: "auto", height: "18px", objectFit: "contain" }} />
+          <Image src="/logo.png" alt="Nuvio" width={352} height={116} className="logo" style={{ width: "auto", height: "18px", objectFit: "contain" }} />
           <p>
             AGPLv3 licensed · Built in the open ·{" "}
             <a href="https://github.com/mathantunes/globudget" target="_blank" rel="noopener noreferrer" style={{ color: "var(--color-text-muted)" }}>

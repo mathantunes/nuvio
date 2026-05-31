@@ -341,10 +341,10 @@ body {
 
 /* Logo: invert to white on dark backgrounds so the dark teal remains visible */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .logo {
+  :root:not([data-theme="light"]) img[alt="Nuvio"] {
     filter: brightness(0) invert(1);
   }
 }
-:root[data-theme="dark"] .logo {
+:root[data-theme="dark"] img[alt="Nuvio"] {
   filter: brightness(0) invert(1);
 }
