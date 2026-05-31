@@ -2,64 +2,14 @@
 
 import { useState, useTransition, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { importClipboardRows, type ClipboardRow } from "./budget-lines.actions";
+import { importClipboardRows } from "./budget-lines.actions";
 import { CurrencyInput } from "@/components/currency-input";
+import { parseClipboard, type ParsedClipboardRow, type SkippedClipboardRow } from "@/lib/clipboard-parser";
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-type ParsedRow = ClipboardRow & { key: string };
-type SkippedRow = { raw: string; reason: string };
-
-function detectDelimiter(text: string): string {
-  const firstLine = text.split("\n")[0] ?? "";
-  if (firstLine.includes("\t")) return "\t";
-  if (firstLine.includes(";")) return ";";
-  return ",";
-}
-
-function parseClipboard(text: string, baseCurrency: string, defaultKind: "income" | "expense"): { rows: ParsedRow[]; skipped: SkippedRow[] } {
-  const delimiter = detectDelimiter(text);
-  const lines = text.trim().split("\n").map((l) => l.trimEnd());
-  const rows: ParsedRow[] = [];
-  const skipped: SkippedRow[] = [];
-
-  lines.forEach((line, i) => {
-    if (!line.trim()) return;
-    const cells = line.split(delimiter);
-    const categoryName = cells[0]?.trim() ?? "";
-
-    if (!categoryName || /^\d/.test(categoryName)) {
-      skipped.push({ raw: line, reason: "First cell is not a category name" });
-      return;
-    }
-
-    const amounts: { month: number; amount: number }[] = [];
-    for (let col = 1; col <= 12; col++) {
-      // Strip trailing currency codes/symbols (e.g. " 8.94 CHF" → "8.94")
-    const raw = (cells[col]?.trim().replace(/[A-Z]{3}$/, "").trim().replace(",", ".")) ?? "";
-      if (!raw) continue;
-      const val = parseFloat(raw);
-      if (!isNaN(val) && val > 0) {
-        amounts.push({ month: col, amount: val });
-      }
-    }
-
-    if (amounts.length === 0) {
-      skipped.push({ raw: line, reason: "No valid amounts found" });
-      return;
-    }
-
-    rows.push({
-      key: `row-${i}`,
-      categoryName,
-      kind: defaultKind,
-      currencyCode: baseCurrency,
-      amounts,
-    });
-  });
-
-  return { rows, skipped };
-}
+type ParsedRow = ParsedClipboardRow;
+type SkippedRow = SkippedClipboardRow;
 
 type Props = {
   budgetId: string;
