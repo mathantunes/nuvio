@@ -1,17 +1,63 @@
 # Nuvio
 
-Nuvio is an open source personal finance dashboard for people managing money across countries and currencies. It covers the full picture — budgeting, spending, savings, investments, loans, and net worth — all in one place, with proper multi-currency support throughout.
+> **Personal finance for people across borders.**
+
+Open source · Self-hostable · AGPLv3
+
+Your entire financial picture, in one place — budgets, investments, loans, and net worth, across every currency.
+
+---
 
 ## Why Nuvio?
 
-As an immigrant, managing finances across countries can get messy. Income and daily expenses may be tied to one country, while savings, investments, or obligations exist elsewhere.
+As an immigrant, managing finances across countries gets messy fast. Income arrives in one currency. Daily expenses run in another. Savings, a pension, a mortgage, or a brokerage account may each live in a third.
 
-Nuvio was built to solve that problem:
+Most tools assume you live in one country with one currency. Spreadsheets let you model anything — until the FX formula breaks, the tabs multiply, and you lose confidence in the numbers.
 
-* Budget and track expenses in your day-to-day currency
-* Hold accounts, investments, and loans in different currencies
-* Record FX transfers with real exchange rates and fees
-* See your true net worth converted to a single base currency
+Nuvio was built to close that gap:
+
+- Budget and track expenses in your day-to-day currency
+- Hold accounts, investments, and loans in different currencies
+- Record FX transfers with real exchange rates and fees
+- See your true net worth converted to a single base currency — always up to date
+
+---
+
+## The problem with spreadsheets
+
+| | Spreadsheet | Nuvio |
+|---|---|---|
+| Multi-currency FX with rates + fees | Manual | ✓ |
+| Budget vs actual tracking | Manual | ✓ |
+| On-track / over-budget signals | ✗ | ✓ |
+| Loan amortization & collateral | Manual | ✓ |
+| Portfolio returns vs contributions | Manual | ✓ |
+| Net worth across all asset types | Manual | ✓ |
+| Your data stays yours | ✓ | ✓ |
+
+---
+
+## Features
+
+### 📊 Full net worth picture
+Assets, loans, investments, and cash — all tracked together and converted to your base currency. See how every part moves your total.
+
+### 💱 Real multi-currency support
+Every account carries its own currency. FX transfers record the rate, fees, and taxes used. No assumptions, no rounding errors.
+
+### 📈 Budget vs actual
+Plan your year by category. Record transactions against it. See monthly variance with clear on-track / over-budget signals.
+
+### 🏦 Investment & loan tracking
+Track portfolio returns separately from contributions. Model loan amortization. Link collateral assets to see your loan-to-value ratio.
+
+### 🔒 Self-hostable & open source
+Run it yourself on your own infrastructure. Your financial data stays on your server. AGPLv3 licensed — fully auditable.
+
+### 🌐 Built for complexity
+Income in one currency, savings in another, investments in a third. Nuvio handles the full picture without losing any detail.
+
+---
 
 ## Navigation
 
@@ -24,55 +70,51 @@ The app is organised into four sections:
 | **Net Worth** | Assets, Loans, Portfolio, Wealth | Full balance sheet and wealth growth over time |
 | **Settings** | Accounts, Categories | Configure accounts and budget categories |
 
-## Features
+---
 
-### 💱 Multi-currency
-- All accounts carry an explicit currency code (ISO 4217)
-- FX transfers record the rate used, fees, and taxes
-- Every summary can be converted to a configurable base currency
+## Tech stack
 
-### 📊 Budget vs Actual
-- Plan income and expense categories for the year
-- Record actual transactions against those categories
-- See monthly variance with charts and per-category breakdowns
+| Layer | Technology |
+|---|---|
+| Frontend | [Next.js](https://nextjs.org) (App Router, TypeScript) |
+| Self-hosting | Docker + Docker Compose |
 
-### 💰 Savings goals
-- Define savings goals per year
-- Track contributions and see progress toward each target
+---
 
-### 📈 Investment portfolio
-- Track portfolios across multiple brokers and currencies
-- Record contributions, withdrawals, and dividends
-- See year-to-date market return vs net deposits separately
+## Self-hosting
 
-### 🏠 Assets
-- Track real estate, vehicles, and other assets
-- Record valuations over time to see appreciation
-- Assets feed directly into the net worth calculation
+> 📖 A step-by-step interactive self-hosting tutorial is coming soon. <!-- TODO: link to mathantunes.github.io/globudget once published -->
 
-### 🏦 Loans & mortgages
-- Model mortgages and other loans with amortization schedules
-- Record payments against a linked bank account
-- Optionally link a collateral asset to track loan-to-value
+**Quick start:**
 
-### 📉 Wealth growth
-- Monthly chart breaking down cash flow, portfolio flow, loan repayments, and FX impact
-- Year-start vs current breakdown across cash, portfolio, assets, and liabilities
-- All figures converted to base currency for a single net wealth number
+```bash
+git clone https://github.com/mathantunes/globudget.git
+cd globudget
+cp .env.example .env   # fill in your values
+docker compose up -d
+```
+
+Then open [http://localhost:3000](http://localhost:3000).
+
+---
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for local setup, project structure, and PR guidelines.
+
+---
 
 ## Philosophy
 
 This project is intentionally:
 
-* **Transparent** – no hidden calculations; every number is traceable
-* **Multi-currency first** – amounts always carry a currency; conversions are always explicit
-* **Self-hosted** – your data stays yours
+- **Transparent** — no hidden calculations; every number is traceable
+- **Multi-currency first** — amounts always carry a currency; conversions are always explicit
+- **Self-hosted** — your data stays yours
+
+---
 
 ## License
 
 Nuvio is licensed under the [GNU Affero General Public License v3.0](LICENSE). In short: you can freely use, modify, and self-host it, but if you run a modified version as a network service you must also release your changes under the same license.
-
-## Status
-
-🚧 Self-hosted only
 
