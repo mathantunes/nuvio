@@ -4,6 +4,20 @@ const TEST_EMAIL = process.env.TEST_EMAIL ?? "test@nuvio.local";
 const TEST_PASSWORD = process.env.TEST_PASSWORD ?? "testpassword123";
 const TEST_YEAR = new Date().getFullYear();
 
+async function ensureBudgetExists(page: Parameters<Parameters<typeof test>[1]>[0]["page"]) {
+  const existingLink = page.getByTestId(`budget-link-${TEST_YEAR}`);
+  if (await existingLink.isVisible()) {
+    await existingLink.click();
+    await page.waitForURL(`/app/${TEST_YEAR}`);
+    return;
+  }
+  // First-time setup: currency field is required
+  await page.getByTestId("currency-input-base").fill("USD");
+  await page.getByRole("option", { name: "USD" }).first().click();
+  await page.getByTestId("create-budget-submit").click();
+  await page.waitForURL(`/app/${TEST_YEAR}`);
+}
+
 test.describe("Clipboard import flow", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/login");
@@ -18,20 +32,14 @@ test.describe("Clipboard import flow", () => {
   });
 
   test("can create or open a budget for the current year", async ({ page }) => {
-    const existingLink = page.getByTestId(`budget-link-${TEST_YEAR}`);
-
-    if (await existingLink.isVisible()) {
-      await existingLink.click();
-    } else {
-      await page.getByTestId("create-budget-submit").click();
-      await page.waitForURL(new RegExp(`/app/${TEST_YEAR}`));
-    }
-
-    await expect(page).toHaveURL(new RegExp(`/app/${TEST_YEAR}`));
+    await ensureBudgetExists(page);
+    await expect(page).toHaveURL(`/app/${TEST_YEAR}`);
   });
 
   test("clipboard import modal opens and parses pasted rows", async ({ page, context }) => {
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+
+    await ensureBudgetExists(page);
 
     await page.goto(`/app/${TEST_YEAR}/planning`);
     await page.waitForLoadState("networkidle");

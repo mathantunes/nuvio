@@ -76,6 +76,7 @@ type Props = {
   required?: boolean;
   className?: string;
   placeholder?: string;
+  "data-testid"?: string;
 };
 
 export function CurrencyInput({
@@ -86,6 +87,7 @@ export function CurrencyInput({
   required,
   className = "input text-xs uppercase tracking-widest",
   placeholder = "USD",
+  "data-testid": testId,
 }: Props) {
   const isControlled = controlledValue !== undefined;
   const [internalValue, setInternalValue] = useState(defaultValue ?? "");
@@ -155,6 +157,7 @@ export function CurrencyInput({
         className={className}
         placeholder={placeholder}
         autoComplete="off"
+        data-testid={testId}
       />
       {open && filtered.length > 0 && (
         <ul

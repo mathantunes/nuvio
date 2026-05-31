@@ -69,6 +69,7 @@ export function CreateYearTrackerForm({ currentYear, showCurrencyField }: Props)
               onChange={setBaseCurrency}
               required
               placeholder="USD"
+              data-testid="currency-input-base"
             />
           </div>
         )}
