@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/db/client";
 import { profiles, savingsSnapshotLines, savingsSnapshots, accounts } from "@/db/schema";
 import { and, eq, gte, lte } from "drizzle-orm";
-import { createSavingsSnapshotLine } from "./savings.actions";
+import { createSavingsSnapshotLine, deleteSavingsSnapshotLine } from "./savings.actions";
 import { formatCurrency } from "../planning/currency-format";
 import { AuthService } from "@/lib/auth-service";
 import { Card, Table, Thead, Tbody, Th, Td, Tr } from "@/components/ui";
@@ -77,6 +77,7 @@ export default async function SavingsPage({ params }: Props) {
               <Th>Account</Th>
               <Th>Label</Th>
               <Th>Amount</Th>
+              <Th></Th>
             </Tr>
           </Thead>
           <Tbody>
@@ -88,6 +89,16 @@ export default async function SavingsPage({ params }: Props) {
                 <Td muted>{line.label}</Td>
                 <Td muted>
                   {formatCurrency(Number(line.amount), allAccounts.find((a) => a.id == line.accountId)?.currencyCode ?? baseCurrency)}
+                </Td>
+                <Td muted>
+                  <form action={async () => {
+                    "use server";
+                    await deleteSavingsSnapshotLine(line.id, year);
+                  }}>
+                    <button type="submit" className="text-xs hover:opacity-70 transition-opacity" style={{ color: "var(--color-danger)" }}>
+                      Delete
+                    </button>
+                  </form>
                 </Td>
               </Tr>
             ))}

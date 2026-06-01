@@ -6,6 +6,33 @@ import { AuthService } from "@/lib/auth-service";
 import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
 
+export async function deleteSavingsSnapshotLine(lineId: string, year: number) {
+    try {
+        const user = await AuthService.getCurrentUser();
+
+        // Verify ownership via the parent snapshot
+        const line = await db.query.savingsSnapshotLines.findFirst({
+            where: eq(savingsSnapshotLines.id, lineId),
+        });
+        if (!line) return { error: "Line not found." };
+
+        const snapshot = await db.query.savingsSnapshots.findFirst({
+            where: and(eq(savingsSnapshots.id, line.snapshotId), eq(savingsSnapshots.userId, user.id)),
+        });
+        if (!snapshot) return { error: "Not authorised." };
+
+        await db.delete(savingsSnapshotLines).where(eq(savingsSnapshotLines.id, lineId));
+
+        revalidatePath(`/app/${year}/savings`);
+        revalidatePath(`/app/${year}`);
+
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to delete savings snapshot line:", error);
+        return { error: error instanceof Error ? error.message : "Failed to delete savings snapshot line." };
+    }
+}
+
 export async function createSavingsSnapshotLine(formData: FormData) {
     try {
         const user = await AuthService.getCurrentUser();
