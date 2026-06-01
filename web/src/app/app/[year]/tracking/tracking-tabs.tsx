@@ -82,6 +82,7 @@ export function TrackingTabs({
     useState<Transaction | null>(null);
   const [openPopupId, setOpenPopupId] = useState<string | null>(null);
   const [formAnchorPos, setFormAnchorPos] = useState<{ x: number; y: number } | null>(null);
+  const [popoverAnchorPos, setPopoverAnchorPos] = useState<{ x: number; y: number } | null>(null);
   const [confirmStatus, setConfirmStatus] = useState<Record<string, "pending" | "error">>({});
 
   function anchorFromEvent(e: { clientX: number; clientY: number }) {
@@ -109,6 +110,8 @@ export function TrackingTabs({
     setSelectedBudgetLine(null);
     setEditingTransaction(null);
     setFormAnchorPos(null);
+    setOpenPopupId(null);
+    setPopoverAnchorPos(null);
   }
 
   // Close both popovers when clicking outside any [data-transaction-popup] element
@@ -116,21 +119,13 @@ export function TrackingTabs({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const isInsidePopup = (event.target as Element)?.closest?.('[data-transaction-popup]');
-      if (!isInsidePopup) {
-        setOpenPopupId(null);
-        setSelectedBudgetLine(null);
-        setEditingTransaction(null);
-        setFormAnchorPos(null);
-      }
+      if (!isInsidePopup) closeForm();
     };
     const handleScroll = (event: Event) => {
       // Don't close if the scroll happened inside the popup itself
       const target = event.target as Element | null;
       if (target?.closest?.('[data-transaction-popup]')) return;
-      setOpenPopupId(null);
-      setSelectedBudgetLine(null);
-      setEditingTransaction(null);
-      setFormAnchorPos(null);
+      closeForm();
     };
     if (openPopupId || selectedBudgetLine) {
       document.addEventListener('mousedown', handleClickOutside);
@@ -446,26 +441,20 @@ export function TrackingTabs({
                         <div className="relative inline-block" data-transaction-popup>
                           <RowAction
                             type="button"
-                            onClick={() => setOpenPopupId(openPopupId === line.id ? null : line.id)}
+                            onClick={(e) => {
+                              if (openPopupId === line.id) {
+                                setOpenPopupId(null);
+                                setPopoverAnchorPos(null);
+                              } else {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                setOpenPopupId(line.id);
+                                setPopoverAnchorPos({ x: rect.left, y: rect.bottom + 4 });
+                              }
+                            }}
                             className="underline decoration-dotted underline-offset-2"
                           >
                             {transactionLabel}
                           </RowAction>
-                          {openPopupId === line.id && (
-                            <div
-                          className="absolute left-0 z-50 mt-1 w-80 max-w-[calc(100vw-3rem)] shadow-xl"
-                              data-transaction-popup
-                            >
-                              <TransactionPopover
-                                transactions={line.transactions}
-                                onEdit={(tx, rect) => {
-                                  setOpenPopupId(null);
-                                  openForm(line, anchorFromEvent({ clientX: rect.left, clientY: rect.bottom }));
-                                  setEditingTransaction(tx);
-                                }}
-                              />
-                            </div>
-                          )}
                         </div>
                       </div>
                     )}
@@ -476,26 +465,20 @@ export function TrackingTabs({
                       <>
                         <RowAction
                           type="button"
-                          onClick={() => setOpenPopupId(openPopupId === line.id ? null : line.id)}
+                          onClick={(e) => {
+                            if (openPopupId === line.id) {
+                              setOpenPopupId(null);
+                              setPopoverAnchorPos(null);
+                            } else {
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              setOpenPopupId(line.id);
+                              setPopoverAnchorPos({ x: rect.left, y: rect.bottom + 4 });
+                            }
+                          }}
                           className="underline decoration-dotted underline-offset-2"
                         >
                           {transactionLabel}
                         </RowAction>
-                        {openPopupId === line.id && (
-                          <div
-                          className="absolute left-0 z-50 mt-1 w-80 shadow-xl"
-                            data-transaction-popup
-                          >
-                            <TransactionPopover
-                              transactions={line.transactions}
-                              onEdit={(tx, rect) => {
-                                setEditingTransaction(tx);
-                                setOpenPopupId(null);
-                                openForm(line, anchorFromEvent({ clientX: rect.left, clientY: rect.bottom }));
-                              }}
-                            />
-                          </div>
-                        )}
                       </>
                     ) : (
                       <span className="text-xs" style={{ color: "var(--color-text-subtle)" }}>
@@ -674,6 +657,32 @@ export function TrackingTabs({
           </div>
         )}
       </div>
+
+      {/* Fixed-position transaction popover — portaled to body so overflow:hidden rows don't clip it */}
+      {(() => {
+        const openLine = openPopupId ? linesWithActuals.find((l) => l.id === openPopupId) ?? null : null;
+        if (!openLine || !popoverAnchorPos) return null;
+        const POPOVER_WIDTH = 320;
+        const left = Math.min(popoverAnchorPos.x, window.innerWidth - POPOVER_WIDTH - 16);
+        return createPortal(
+          <div
+            data-transaction-popup
+            onMouseDown={(e) => e.stopPropagation()}
+            style={{ position: "fixed", left, top: popoverAnchorPos.y, width: POPOVER_WIDTH, zIndex: 50 }}
+            className="shadow-xl"
+          >
+            <TransactionPopover
+              transactions={openLine.transactions}
+              onEdit={(tx, rect) => {
+                closeForm();
+                openForm(openLine, anchorFromEvent({ clientX: rect.left, clientY: rect.bottom }));
+                setEditingTransaction(tx);
+              }}
+            />
+          </div>,
+          document.body
+        );
+      })()}
 
       {/* Fixed-position transaction form — portaled to body so no parent transform affects it */}
       {selectedBudgetLine && formAnchorPos && createPortal(
