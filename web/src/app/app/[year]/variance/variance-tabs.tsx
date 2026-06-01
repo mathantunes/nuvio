@@ -183,6 +183,12 @@ export function VarianceTabs({
 
       {(mainTab === "monthly" || mainTab === "ytd") && (
         <>
+          {/* KPI summary cards */}
+          <VarianceKpiCards
+            income={mainTab === "monthly" ? monthlyData.income : ytdVariance.income}
+            expenses={mainTab === "monthly" ? monthlyData.expenses : ytdVariance.expenses}
+          />
+
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <label className="text-sm font-medium" style={{ color: "var(--color-text)" }}>
@@ -255,6 +261,118 @@ export function VarianceTabs({
           )}
         </>
       )}
+    </div>
+  );
+}
+
+type VarianceRow = CategoryVarianceRow | CategoryVarianceSummary;
+
+function aggregateByCurrency(rows: VarianceRow[]): Record<string, { planned: number; actual: number }> {
+  const result: Record<string, { planned: number; actual: number }> = {};
+  for (const row of rows) {
+    if (!result[row.currencyCode]) result[row.currencyCode] = { planned: 0, actual: 0 };
+    result[row.currencyCode].planned += row.planned;
+    result[row.currencyCode].actual += row.actual;
+  }
+  return result;
+}
+
+function VarianceKpiCards({
+  income,
+  expenses,
+}: {
+  income: VarianceRow[];
+  expenses: VarianceRow[];
+}) {
+  const incomeByCurrency = aggregateByCurrency(income);
+  const expensesByCurrency = aggregateByCurrency(expenses);
+  const currencies = [...new Set([...Object.keys(incomeByCurrency), ...Object.keys(expensesByCurrency)])].sort();
+
+  if (currencies.length === 0) return null;
+
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      {/* Income KPI */}
+      <Card>
+        <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-subtle)" }}>
+          Income
+        </p>
+        <div className="space-y-3">
+          {currencies.map((currency, i) => {
+            const { planned, actual } = incomeByCurrency[currency] ?? { planned: 0, actual: 0 };
+            const pct = planned > 0 ? Math.round((actual / planned) * 100) : null;
+            const isAhead = actual >= planned;
+            const actualColor = actual > 0
+              ? planned > 0
+                ? isAhead ? "var(--color-on-track)" : "var(--color-text)"
+                : "var(--color-text)"
+              : "var(--color-text-subtle)";
+            return (
+              <div key={currency} className="first:pt-0 last:pb-0"
+                style={i > 0 ? { borderTop: "1px solid var(--color-border)", paddingTop: "0.75rem" } : undefined}>
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-subtle)" }}>
+                    {currency}
+                  </span>
+                  {pct !== null && (
+                    <span className="text-xs font-semibold tabular-nums"
+                      style={{ color: isAhead ? "var(--color-on-track)" : "var(--color-off-track)" }}>
+                      {isAhead ? "↑" : "↓"} {pct}%
+                    </span>
+                  )}
+                </div>
+                <div className="mt-0.5 text-xl font-bold tabular-nums leading-tight" style={{ color: actualColor }}>
+                  {actual > 0 ? formatCurrency(actual, currency) : "—"}
+                </div>
+                <div className="mt-0.5 text-[11px]" style={{ color: "var(--color-text-subtle)" }}>
+                  of {planned > 0 ? formatCurrency(planned, currency) : "—"} planned
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+
+      {/* Expenses KPI */}
+      <Card>
+        <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-subtle)" }}>
+          Expenses
+        </p>
+        <div className="space-y-3">
+          {currencies.map((currency, i) => {
+            const { planned, actual } = expensesByCurrency[currency] ?? { planned: 0, actual: 0 };
+            const pct = planned > 0 ? Math.round((actual / planned) * 100) : null;
+            const isOver = actual > planned;
+            const actualColor = actual > 0
+              ? planned > 0
+                ? isOver ? "var(--color-off-track)" : "var(--color-text)"
+                : "var(--color-text)"
+              : "var(--color-text-subtle)";
+            return (
+              <div key={currency} className="first:pt-0 last:pb-0"
+                style={i > 0 ? { borderTop: "1px solid var(--color-border)", paddingTop: "0.75rem" } : undefined}>
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-subtle)" }}>
+                    {currency}
+                  </span>
+                  {pct !== null && (
+                    <span className="text-xs font-semibold tabular-nums"
+                      style={{ color: isOver ? "var(--color-off-track)" : "var(--color-on-track)" }}>
+                      {isOver ? "↑" : "↓"} {pct}%
+                    </span>
+                  )}
+                </div>
+                <div className="mt-0.5 text-xl font-bold tabular-nums leading-tight" style={{ color: actualColor }}>
+                  {actual > 0 ? formatCurrency(actual, currency) : "—"}
+                </div>
+                <div className="mt-0.5 text-[11px]" style={{ color: "var(--color-text-subtle)" }}>
+                  of {planned > 0 ? formatCurrency(planned, currency) : "—"} planned
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
     </div>
   );
 }
