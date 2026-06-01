@@ -123,7 +123,10 @@ export function TrackingTabs({
         setFormAnchorPos(null);
       }
     };
-    const handleScroll = () => {
+    const handleScroll = (event: Event) => {
+      // Don't close if the scroll happened inside the popup itself
+      const target = event.target as Element | null;
+      if (target?.closest?.('[data-transaction-popup]')) return;
       setOpenPopupId(null);
       setSelectedBudgetLine(null);
       setEditingTransaction(null);

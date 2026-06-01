@@ -1,10 +1,10 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 
 const TEST_EMAIL = process.env.TEST_EMAIL ?? "test@nuvio.local";
 const TEST_PASSWORD = process.env.TEST_PASSWORD ?? "testpassword123";
 const TEST_YEAR = new Date().getFullYear();
 
-async function ensureBudgetExists(page: Parameters<Parameters<typeof test>[1]>[0]["page"]) {
+async function ensureBudgetExists(page: Page) {
   const existingLink = page.getByTestId(`budget-link-${TEST_YEAR}`);
   if (await existingLink.isVisible()) {
     await existingLink.click();
